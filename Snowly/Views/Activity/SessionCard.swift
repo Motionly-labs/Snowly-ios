@@ -1,0 +1,66 @@
+//
+//  SessionCard.swift
+//  Snowly
+//
+//  Session card component for list rows.
+//  Date label, resort name, runs count, 4-column stats.
+//
+
+import SwiftUI
+
+struct SessionCard: View {
+    let session: SkiSession
+    let unitSystem: UnitSystem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Date label
+            Text(session.startDate.shortDisplay.uppercased())
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(Color.accentColor)
+
+            // Resort name + Runs
+            HStack(alignment: .center) {
+                Text(session.resort?.name ?? String(localized: "session_card_unknown_resort"))
+                    .font(.headline)
+
+                Spacer()
+
+                Text("\(session.runCount) \(String(localized: "common_runs"))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            // 4-column stats grid
+            HStack(spacing: 0) {
+                statColumn(
+                    value: Formatters.distance(session.totalDistance, unit: unitSystem),
+                    label: String(localized: "common_distance")
+                )
+                statColumn(
+                    value: Formatters.vertical(session.totalVertical, unit: unitSystem),
+                    label: String(localized: "common_vertical")
+                )
+                statColumn(
+                    value: Formatters.duration(session.duration),
+                    label: String(localized: "common_time")
+                )
+                statColumn(
+                    value: Formatters.speed(session.maxSpeed, unit: unitSystem),
+                    label: String(localized: "session_card_stat_max")
+                )
+            }
+        }
+    }
+
+    private func statColumn(value: String, label: String) -> some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(.caption.bold())
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}

@@ -2,16 +2,15 @@
 //  SnowlyTests.swift
 //  SnowlyTests
 //
-//  Created by Roy Kid on 2026-03-02.
+//  Main test entry — individual test files are in separate files.
 //
 
 import Testing
 @testable import Snowly
 
 struct SnowlyTests {
-
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+    @Test func appBuilds() async throws {
+        // Smoke test: the app module compiles and can be imported
+        #expect(true)
     }
-
 }

@@ -1,0 +1,2276 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "": {},
+    "-%@": {},
+    "·": {},
+    "%lld %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld %2$@"
+          }
+        }
+      }
+    },
+    "%lld%%": {},
+    "+%@": {},
+    "1.0": {},
+    "1.0 (1)": {},
+    "activity_empty_start_tracking_hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start tracking, and your ski days will appear here."
+          }
+        }
+      }
+    },
+    "activity_empty_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Ski Days Yet"
+          }
+        }
+      }
+    },
+    "activity_nav_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tracks"
+          }
+        }
+      }
+    },
+    "activity_section_recent_ski_days": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent Ski Days"
+          }
+        }
+      }
+    },
+    "activity_stat_runs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs"
+          }
+        }
+      }
+    },
+    "activity_stat_ski_days": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ski Days"
+          }
+        }
+      }
+    },
+    "activity_stat_vertical": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vertical"
+          }
+        }
+      }
+    },
+    "battery_time_remaining_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "~%1$@ left"
+          }
+        }
+      }
+    },
+    "common_active": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        }
+      }
+    },
+    "common_cancel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        }
+      }
+    },
+    "common_continue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        }
+      }
+    },
+    "common_date": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date"
+          }
+        }
+      }
+    },
+    "common_delete": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        }
+      }
+    },
+    "common_distance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Distance"
+          }
+        }
+      }
+    },
+    "common_done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "common_duration": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duration"
+          }
+        }
+      }
+    },
+    "common_end": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End"
+          }
+        }
+      }
+    },
+    "common_min_abbrev": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "min"
+          }
+        }
+      }
+    },
+    "common_ok": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "common_open_settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        }
+      }
+    },
+    "common_resort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resort"
+          }
+        }
+      }
+    },
+    "common_runs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs"
+          }
+        }
+      }
+    },
+    "common_save": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        }
+      }
+    },
+    "common_ski_time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ski Time"
+          }
+        }
+      }
+    },
+    "common_start": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start"
+          }
+        }
+      }
+    },
+    "common_time": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time"
+          }
+        }
+      }
+    },
+    "common_vertical": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vertical"
+          }
+        }
+      }
+    },
+    "gear_alert_reset_confirm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset"
+          }
+        }
+      }
+    },
+    "gear_alert_reset_message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uncheck all items? This won't delete any items."
+          }
+        }
+      }
+    },
+    "gear_alert_reset_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset Checklist"
+          }
+        }
+      }
+    },
+    "gear_banner_ready_to_ride": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to ride!"
+          }
+        }
+      }
+    },
+    "gear_category_add_item": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Item"
+          }
+        }
+      }
+    },
+    "gear_category_no_items": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No items"
+          }
+        }
+      }
+    },
+    "gear_category_ready_count_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld/%2$lld ready"
+          }
+        }
+      }
+    },
+    "gear_default_setup_name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My Setup"
+          }
+        }
+      }
+    },
+    "gear_detail_action_uncheck_all": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uncheck All"
+          }
+        }
+      }
+    },
+    "gear_edit_action_add_default_items": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Default Items"
+          }
+        }
+      }
+    },
+    "gear_edit_field_brand_optional": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brand (optional)"
+          }
+        }
+      }
+    },
+    "gear_edit_field_model_optional": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model (optional)"
+          }
+        }
+      }
+    },
+    "gear_edit_field_setup_name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Setup Name"
+          }
+        }
+      }
+    },
+    "gear_edit_nav_title_edit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Setup"
+          }
+        }
+      }
+    },
+    "gear_edit_nav_title_new": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Setup"
+          }
+        }
+      }
+    },
+    "gear_edit_section_details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        }
+      }
+    },
+    "gear_empty_action_create_setup": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create Setup"
+          }
+        }
+      }
+    },
+    "gear_empty_description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a gear checklist to make sure you never forget anything on the mountain."
+          }
+        }
+      }
+    },
+    "gear_empty_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Gear Setups"
+          }
+        }
+      }
+    },
+    "gear_item_edit_field_name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Item Name"
+          }
+        }
+      }
+    },
+    "gear_item_edit_nav_title_add": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Item"
+          }
+        }
+      }
+    },
+    "gear_item_edit_nav_title_edit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Item"
+          }
+        }
+      }
+    },
+    "gear_item_edit_picker_body_zone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Body Zone"
+          }
+        }
+      }
+    },
+    "gear_item_edit_section_details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Item Details"
+          }
+        }
+      }
+    },
+    "gear_menu_new_preset": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Preset"
+          }
+        }
+      }
+    },
+    "gear_menu_reset_checklist": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset Checklist"
+          }
+        }
+      }
+    },
+    "gear_nav_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gear"
+          }
+        }
+      }
+    },
+    "gear_progress_item_total_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld items total"
+          }
+        }
+      }
+    },
+    "gear_progress_status_all_packed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All packed!"
+          }
+        }
+      }
+    },
+    "gear_progress_status_almost_there": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Almost there"
+          }
+        }
+      }
+    },
+    "gear_progress_status_getting_ready": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Getting ready"
+          }
+        }
+      }
+    },
+    "gear_progress_status_not_started": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not started"
+          }
+        }
+      }
+    },
+    "gear_setup_items_count_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld items"
+          }
+        }
+      }
+    },
+    "gear_status_almost_there": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Almost there!"
+          }
+        }
+      }
+    },
+    "gear_status_getting_started": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Getting started..."
+          }
+        }
+      }
+    },
+    "gear_status_lets_get_ready": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let's get ready!"
+          }
+        }
+      }
+    },
+    "gear_status_ready_to_ride": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to ride!"
+          }
+        }
+      }
+    },
+    "home_gps_status_denied": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GPS DENIED"
+          }
+        }
+      }
+    },
+    "home_gps_status_locating": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LOCATING..."
+          }
+        }
+      }
+    },
+    "home_gps_status_pending": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GPS PENDING"
+          }
+        }
+      }
+    },
+    "home_gps_status_ready": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GPS READY"
+          }
+        }
+      }
+    },
+    "home_start_button_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let's Ride!"
+          }
+        }
+      }
+    },
+    "home_tab_trail_map": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trail Map"
+          }
+        }
+      }
+    },
+    "home_ui_test_start": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UI Test Start"
+          }
+        }
+      }
+    },
+    "home_weather_status_allow_location_access": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow location access to load weather"
+          }
+        }
+      }
+    },
+    "home_weather_status_location_required": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location required for weather"
+          }
+        }
+      }
+    },
+    "home_weather_status_updating": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updating weather"
+          }
+        }
+      }
+    },
+    "home_weather_status_waiting_for_gps": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for GPS"
+          }
+        }
+      }
+    },
+    "music_access_required_description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Snowly to access Apple Music to control playback."
+          }
+        }
+      }
+    },
+    "music_access_required_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Music Access Required"
+          }
+        }
+      }
+    },
+    "music_now_playing_not_playing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Playing"
+          }
+        }
+      }
+    },
+    "music_playlists_empty_description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create playlists in Apple Music to see them here."
+          }
+        }
+      }
+    },
+    "music_playlists_empty_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No playlists"
+          }
+        }
+      }
+    },
+    "music_playlists_loading": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading playlists…"
+          }
+        }
+      }
+    },
+    "music_playlists_nav_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playlists"
+          }
+        }
+      }
+    },
+    "music_playlists_search_prompt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search playlists"
+          }
+        }
+      }
+    },
+    "onboarding_permissions_health_subtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save ski workouts to Health"
+          }
+        }
+      }
+    },
+    "onboarding_permissions_health_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Health"
+          }
+        }
+      }
+    },
+    "onboarding_permissions_location_subtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GPS for speed, distance & altitude"
+          }
+        }
+      }
+    },
+    "onboarding_permissions_location_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location"
+          }
+        }
+      }
+    },
+    "onboarding_permissions_subtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snowly needs a few permissions to track your ski day. Ski data can sync privately with your iCloud account."
+          }
+        }
+      }
+    },
+    "onboarding_permissions_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permissions"
+          }
+        }
+      }
+    },
+    "onboarding_permissions_weather_subtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temperature, wind & UV via WeatherKit (uses location)"
+          }
+        }
+      }
+    },
+    "onboarding_permissions_weather_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weather"
+          }
+        }
+      }
+    },
+    "onboarding_preferences_cta_start_day": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Your Ski Day"
+          }
+        }
+      }
+    },
+    "onboarding_preferences_name_placeholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skier Name (optional)"
+          }
+        }
+      }
+    },
+    "onboarding_preferences_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready for the Slopes"
+          }
+        }
+      }
+    },
+    "onboarding_preferences_units_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Units"
+          }
+        }
+      }
+    },
+    "onboarding_welcome_cta_plan_first_run": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan Your First Run"
+          }
+        }
+      }
+    },
+    "onboarding_welcome_subtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your mountain companion. Track runs, check your gear, and share your ski day."
+          }
+        }
+      }
+    },
+    "onboarding_welcome_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welcome to Snowly"
+          }
+        }
+      }
+    },
+    "privacy_last_updated": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last updated: March 2026"
+          }
+        }
+      }
+    },
+    "privacy_nav_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy"
+          }
+        }
+      }
+    },
+    "privacy_section_background_location_content": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snowly uses background location access exclusively during active ski tracking to record your runs. A blue indicator bar is always visible when background tracking is active. Background tracking stops when you end your session."
+          }
+        }
+      }
+    },
+    "privacy_section_background_location_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background Location"
+          }
+        }
+      }
+    },
+    "privacy_section_collect_content": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snowly collects the following data to provide ski tracking:\n- GPS location (latitude, longitude, altitude) during active tracking\n- Motion sensor data for activity detection (skiing vs chairlift)\n- Battery level for tracking time estimation"
+          }
+        }
+      }
+    },
+    "privacy_section_collect_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What We Collect"
+          }
+        }
+      }
+    },
+    "privacy_section_rights_content": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can export all your data as JSON from Settings > Export Data. You can delete all data from Settings > Delete All Data. You can also disable iCloud for Snowly in iOS settings to stop cloud sync."
+          }
+        }
+      }
+    },
+    "privacy_section_rights_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Rights (GDPR)"
+          }
+        }
+      }
+    },
+    "privacy_section_share_cards_content": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you share a session card, the image contains aggregated statistics (speed, distance, vertical) but does not include GPS coordinates, protecting your location privacy."
+          }
+        }
+      }
+    },
+    "privacy_section_share_cards_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Cards"
+          }
+        }
+      }
+    },
+    "privacy_section_sharing_content": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snowly does not sell your data and does not share it with advertisers or analytics providers. Cloud sync uses Apple's CloudKit infrastructure."
+          }
+        }
+      }
+    },
+    "privacy_section_sharing_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Third-Party Sharing"
+          }
+        }
+      }
+    },
+    "privacy_section_storage_content": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snowly stores data locally on your device with encrypted storage (NSFileProtectionComplete). Ski sessions, gear, and profile data can sync through your private iCloud CloudKit database when iCloud is available. Device-specific settings (onboarding status and Health preference) stay local."
+          }
+        }
+      }
+    },
+    "privacy_section_storage_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where Data Is Stored"
+          }
+        }
+      }
+    },
+    "profile_best_longest_distance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Longest Distance"
+          }
+        }
+      }
+    },
+    "profile_best_most_runs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most Runs"
+          }
+        }
+      }
+    },
+    "profile_best_most_vertical": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most Vertical"
+          }
+        }
+      }
+    },
+    "profile_best_top_speed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top Speed"
+          }
+        }
+      }
+    },
+    "profile_default_display_name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skier"
+          }
+        }
+      }
+    },
+    "profile_member_since_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Member since %1$@"
+          }
+        }
+      }
+    },
+    "profile_nav_privacy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy"
+          }
+        }
+      }
+    },
+    "profile_nav_settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        }
+      }
+    },
+    "profile_nav_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile"
+          }
+        }
+      }
+    },
+    "profile_section_season_bests": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Season Bests"
+          }
+        }
+      }
+    },
+    "profile_version_label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version"
+          }
+        }
+      }
+    },
+    "run_detail_end_altitude": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End Altitude"
+          }
+        }
+      }
+    },
+    "run_detail_gps_points": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GPS Points"
+          }
+        }
+      }
+    },
+    "run_detail_section_stats": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run Stats"
+          }
+        }
+      }
+    },
+    "run_detail_section_timing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timing"
+          }
+        }
+      }
+    },
+    "run_detail_section_track_data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Track Data"
+          }
+        }
+      }
+    },
+    "run_detail_start_altitude": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Altitude"
+          }
+        }
+      }
+    },
+    "session_card_stat_max": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max"
+          }
+        }
+      }
+    },
+    "session_card_unknown_resort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown Resort"
+          }
+        }
+      }
+    },
+    "session_detail_section_chairlift_rides": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chairlift Rides"
+          }
+        }
+      }
+    },
+    "session_detail_section_overview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ski Day Overview"
+          }
+        }
+      }
+    },
+    "session_detail_section_runs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs"
+          }
+        }
+      }
+    },
+    "session_detail_section_stats": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ski Day Stats"
+          }
+        }
+      }
+    },
+    "session_run_title_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run %1$lld"
+          }
+        }
+      }
+    },
+    "session_summary_no_gps_track": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No GPS track was recorded for this ski day."
+          }
+        }
+      }
+    },
+    "settings_about_app_version": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Version"
+          }
+        }
+      }
+    },
+    "settings_about_privacy_policy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Policy"
+          }
+        }
+      }
+    },
+    "settings_alert_delete_confirm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Everything"
+          }
+        }
+      }
+    },
+    "settings_alert_delete_message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This will permanently delete all your sessions, gear setups, and profile data. This action cannot be undone."
+          }
+        }
+      }
+    },
+    "settings_alert_delete_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete All Data?"
+          }
+        }
+      }
+    },
+    "settings_alert_export_complete_message": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your data has been saved to the Files app."
+          }
+        }
+      }
+    },
+    "settings_alert_export_complete_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export Complete"
+          }
+        }
+      }
+    },
+    "settings_alert_export_failed_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export Failed"
+          }
+        }
+      }
+    },
+    "settings_alert_export_unknown_error": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown export error."
+          }
+        }
+      }
+    },
+    "settings_appearance_dark": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark"
+          }
+        }
+      }
+    },
+    "settings_appearance_light": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
+          }
+        }
+      }
+    },
+    "settings_appearance_system": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System"
+          }
+        }
+      }
+    },
+    "settings_data_delete_all": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete All Data"
+          }
+        }
+      }
+    },
+    "settings_data_export_json": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export Data (JSON)"
+          }
+        }
+      }
+    },
+    "settings_nav_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        }
+      }
+    },
+    "settings_profile_name_label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        }
+      }
+    },
+    "settings_profile_name_placeholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your name"
+          }
+        }
+      }
+    },
+    "settings_section_about": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
+          }
+        }
+      }
+    },
+    "settings_section_appearance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
+          }
+        }
+      }
+    },
+    "settings_section_data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data"
+          }
+        }
+      }
+    },
+    "settings_section_profile": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile"
+          }
+        }
+      }
+    },
+    "settings_section_units": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Units"
+          }
+        }
+      }
+    },
+    "settings_sync_error_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync Error"
+          }
+        }
+      }
+    },
+    "settings_sync_footer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snowly syncs ski data to your private iCloud account. Disable iCloud for Snowly in iOS Settings to keep data local only."
+          }
+        }
+      }
+    },
+    "settings_sync_in_progress": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syncing with iCloud..."
+          }
+        }
+      }
+    },
+    "settings_sync_last_sync_label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last Sync"
+          }
+        }
+      }
+    },
+    "settings_sync_retry_notice": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your data remains available locally, and syncing will retry automatically."
+          }
+        }
+      }
+    },
+    "settings_sync_section_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iCloud Sync"
+          }
+        }
+      }
+    },
+    "settings_sync_status_label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        }
+      }
+    },
+    "settings_sync_status_needs_attention": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs Attention"
+          }
+        }
+      }
+    },
+    "settings_sync_status_not_synced": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Synced Yet"
+          }
+        }
+      }
+    },
+    "settings_sync_status_syncing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syncing"
+          }
+        }
+      }
+    },
+    "settings_sync_status_up_to_date": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to Date"
+          }
+        }
+      }
+    },
+    "settings_units_imperial": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imperial (mph, ft, °F)"
+          }
+        }
+      }
+    },
+    "settings_units_metric": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metric (km/h, m, °C)"
+          }
+        }
+      }
+    },
+    "settings_units_picker_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unit System"
+          }
+        }
+      }
+    },
+    "share_card_logged_with": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logged with Snowly"
+          }
+        }
+      }
+    },
+    "SNOWLY": {},
+    "splash_tagline_primary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stay safe, have fun."
+          }
+        }
+      }
+    },
+    "stat_avg_speed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avg Speed"
+          }
+        }
+      }
+    },
+    "stat_max_speed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max Speed"
+          }
+        }
+      }
+    },
+    "stat_peak_speed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Peak Speed"
+          }
+        }
+      }
+    },
+    "stat_top_speed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top Speed"
+          }
+        }
+      }
+    },
+    "stat_total_distance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total Distance"
+          }
+        }
+      }
+    },
+    "stat_vertical_drop": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vertical Drop"
+          }
+        }
+      }
+    },
+    "summary_empty_description": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish tracking your ski day to see the recap."
+          }
+        }
+      }
+    },
+    "summary_empty_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Ski Day Data"
+          }
+        }
+      }
+    },
+    "summary_nav_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ski Day Recap"
+          }
+        }
+      }
+    },
+    "summary_new_personal_best_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Ski Personal Best!"
+          }
+        }
+      }
+    },
+    "summary_no_route_map_title": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No ski route map yet"
+          }
+        }
+      }
+    },
+    "summary_share_cta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Ski Day"
+          }
+        }
+      }
+    },
+    "tab_gear": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gear"
+          }
+        }
+      }
+    },
+    "tab_ride": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ride"
+          }
+        }
+      }
+    },
+    "tab_tracks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tracks"
+          }
+        }
+      }
+    },
+    "tracking_avg_label_last_run": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last run average"
+          }
+        }
+      }
+    },
+    "tracking_avg_label_session": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session average"
+          }
+        }
+      }
+    },
+    "tracking_chart_speed_by_run": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speed by Run"
+          }
+        }
+      }
+    },
+    "tracking_goal_progress_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "of your %1$lldh ski goal"
+          }
+        }
+      }
+    },
+    "tracking_metric_peak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Peak"
+          }
+        }
+      }
+    },
+    "tracking_peak_subtitle_last_run_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ vertical · %2$.1f min"
+          }
+        }
+      }
+    },
+    "tracking_peak_subtitle_session_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ vertical · %2$.0f min"
+          }
+        }
+      }
+    },
+    "tracking_resume_button_label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tracking"
+          }
+        }
+      }
+    },
+    "tracking_resume_cta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume Tracking"
+          }
+        }
+      }
+    },
+    "tracking_runs_subtitle_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ total vertical"
+          }
+        }
+      }
+    },
+    "tracking_slide_to_end_day": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slide to End Ski Day"
+          }
+        }
+      }
+    },
+    "tracking_state_paused": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused"
+          }
+        }
+      }
+    },
+    "tracking_state_riding": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riding"
+          }
+        }
+      }
+    },
+    "tracking_tab_ski_day": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ski Day"
+          }
+        }
+      }
+    },
+    "tracking_top_run_label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top Run"
+          }
+        }
+      }
+    },
+    "tracking_vertical_subtitle_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld runs · %2$.0f min"
+          }
+        }
+      }
+    },
+    "units_imperial_short": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imperial (mph, ft)"
+          }
+        }
+      }
+    },
+    "units_metric_short": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metric (km/h, m)"
+          }
+        }
+      }
+    },
+    "cache_region_action": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Area"
+          }
+        }
+      }
+    },
+    "cache_sheet_title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cached Areas"
+          }
+        }
+      }
+    },
+    "cache_tab_nearby": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nearby"
+          }
+        }
+      }
+    },
+    "cache_tab_downloaded": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloaded"
+          }
+        }
+      }
+    },
+    "cache_action_download": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download"
+          }
+        }
+      }
+    },
+    "cache_action_refresh": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        }
+      }
+    },
+    "cache_action_remove": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        }
+      }
+    },
+    "cache_status_fresh": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fresh"
+          }
+        }
+      }
+    },
+    "cache_status_stale": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stale"
+          }
+        }
+      }
+    },
+    "cache_status_downloading": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading"
+          }
+        }
+      }
+    },
+    "cache_status_failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed"
+          }
+        }
+      }
+    },
+    "cache_empty_nearby": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No nearby ski areas"
+          }
+        }
+      }
+    },
+    "cache_empty_downloaded": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cached areas yet"
+          }
+        }
+      }
+    },
+    "cache_distance_format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%.1f km away"
+          }
+        }
+      }
+    },
+    "cache_distance_unknown": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Distance unavailable"
+          }
+        }
+      }
+    },
+    "cache_offline_notice": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Using cached ski area data"
+          }
+        }
+      }
+    },
+    "cache_basemap_offline_hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Map tiles may be unavailable offline"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

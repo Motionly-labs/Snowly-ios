@@ -2,40 +2,146 @@
 //  SnowlyUITests.swift
 //  SnowlyUITests
 //
-//  Created by Roy Kid on 2026-03-02.
-//
 
 import XCTest
 
 final class SnowlyUITests: XCTestCase {
 
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    // MARK: - Onboarding
+
+    @MainActor
+    func testOnboardingFlow_forFreshInstall() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui_testing"]
+        app.launch()
+
+        XCTAssertTrue(app.staticTexts["Welcome to Snowly"].waitForExistence(timeout: 3))
+
+        app.buttons["Plan First Run"].tap()
+        XCTAssertTrue(app.staticTexts["Permissions"].waitForExistence(timeout: 3))
+
+        app.buttons["Continue"].tap()
+        XCTAssertTrue(app.staticTexts["Ready for the Slopes"].waitForExistence(timeout: 3))
+    }
+
+    // MARK: - Tab Navigation
+
+    @MainActor
+    func testMainTabs_whenOnboardingSkipped() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui_testing", "-ui_testing_skip_onboarding"]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["ui_start_tracking_button"].waitForExistence(timeout: 8))
+
+        app.buttons["Tracks"].tap()
+        XCTAssertTrue(app.navigationBars.staticTexts["Tracks"].waitForExistence(timeout: 3))
+
+        app.buttons["Gear"].tap()
+        XCTAssertTrue(app.navigationBars.staticTexts["Gear"].waitForExistence(timeout: 3))
+
+        app.buttons["Ride"].tap()
+        XCTAssertTrue(app.buttons["ui_start_tracking_button"].waitForExistence(timeout: 6))
+    }
+
+    // MARK: - Tracking Lifecycle
+
+    @MainActor
+    func testTrackingStartAndPause() throws {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-ui_testing",
+            "-ui_testing_skip_onboarding",
+            "-ui_testing_fast_start",
+        ]
+        app.launch()
+
+        let startButton = app.buttons["ui_start_tracking_button"]
+        XCTAssertTrue(startButton.waitForExistence(timeout: 8))
+        startButton.tap()
+
+        let pauseButton = app.buttons["pause_tracking_button"]
+        XCTAssertTrue(pauseButton.waitForExistence(timeout: 8))
+        pauseButton.tap()
+
+        XCTAssertTrue(app.buttons["resume_tracking_button"].waitForExistence(timeout: 5))
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testTrackingStartPauseResume() throws {
         let app = XCUIApplication()
+        app.launchArguments = [
+            "-ui_testing",
+            "-ui_testing_skip_onboarding",
+            "-ui_testing_fast_start",
+        ]
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        let startButton = app.buttons["ui_start_tracking_button"]
+        XCTAssertTrue(startButton.waitForExistence(timeout: 8))
+        startButton.tap()
+
+        // Pause
+        let pauseButton = app.buttons["pause_tracking_button"]
+        XCTAssertTrue(pauseButton.waitForExistence(timeout: 8))
+        pauseButton.tap()
+
+        // Resume
+        let resumeButton = app.buttons["resume_tracking_button"]
+        XCTAssertTrue(resumeButton.waitForExistence(timeout: 5))
+        resumeButton.tap()
+
+        // Should be back to recording — pause button visible again
+        XCTAssertTrue(app.buttons["pause_tracking_button"].waitForExistence(timeout: 5))
     }
+
+    // MARK: - Settings Navigation
+
+    @MainActor
+    func testSettingsNavigation() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui_testing", "-ui_testing_skip_onboarding"]
+        app.launch()
+
+        app.buttons["Tracks"].tap()
+
+        let profileButton = app.buttons["profile_button"]
+        XCTAssertTrue(profileButton.waitForExistence(timeout: 5))
+        profileButton.tap()
+
+        XCTAssertTrue(app.navigationBars.staticTexts["Profile"].waitForExistence(timeout: 3))
+
+        let settingsLink = app.buttons["profile_settings_link"]
+        XCTAssertTrue(settingsLink.waitForExistence(timeout: 3))
+        settingsLink.tap()
+
+        XCTAssertTrue(app.navigationBars.staticTexts["Settings"].waitForExistence(timeout: 3))
+    }
+
+    // MARK: - Gear Tab
+
+    @MainActor
+    func testGearTabNavigation() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui_testing", "-ui_testing_skip_onboarding"]
+        app.launch()
+
+        app.buttons["Gear"].tap()
+        XCTAssertTrue(app.navigationBars.staticTexts["Gear"].waitForExistence(timeout: 3))
+    }
+
+    // MARK: - Performance
 
     @MainActor
     func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
+            let app = XCUIApplication()
+            app.launchArguments = ["-ui_testing", "-ui_testing_skip_onboarding"]
+            app.launch()
         }
     }
 }
