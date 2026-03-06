@@ -33,8 +33,12 @@ final class PhoneConnectivityService: NSObject {
     // MARK: - Private
 
     private nonisolated static let logger = Logger(subsystem: "com.Snowly", category: "PhoneConnectivity")
+    private nonisolated static let maxPendingPayloads = 500
 
     private var session: WCSession?
+    private var pendingPayloads: [[String: Any]] = []
+    private var pendingApplicationContext: [String: Any]?
+    private var hasLoggedUnavailableWatchState = false
 
     // MARK: - Init
 
@@ -52,7 +56,12 @@ final class PhoneConnectivityService: NSObject {
     /// Encodes and sends a WatchMessage to the Watch.
     /// Uses live sendMessage when reachable; falls back to transferUserInfo.
     func send(_ message: WatchMessage) {
-        guard let session, session.activationState == .activated else { return }
+        guard let session else { return }
+        guard canCommunicateWithWatch(session) else {
+            clearPendingStateForUnavailableWatch()
+            logUnavailableWatchStateIfNeeded(session)
+            return
+        }
 
         guard let data = try? JSONEncoder().encode(message) else {
             Self.logger.error("Failed to encode WatchMessage")
@@ -60,20 +69,22 @@ final class PhoneConnectivityService: NSObject {
         }
 
         let payload: [String: Any] = [SharedConstants.watchSessionKey: data]
-
-        if session.isReachable {
-            session.sendMessage(payload, replyHandler: nil) { [weak self] error in
-                Self.logger.warning("sendMessage failed, falling back: \(error.localizedDescription)")
-                self?.session?.transferUserInfo(payload)
-            }
-        } else {
-            session.transferUserInfo(payload)
+        if session.activationState != .activated {
+            queuePendingPayload(payload)
+            return
         }
+
+        sendPayload(payload)
     }
 
     /// Pushes lightweight tracking state to the Watch complication / background context.
     func updateApplicationContext(state: TrackingState, liveData: WatchMessage.LiveTrackingData?) {
-        guard let session, session.activationState == .activated else { return }
+        guard let session else { return }
+        guard canCommunicateWithWatch(session) else {
+            clearPendingStateForUnavailableWatch()
+            logUnavailableWatchStateIfNeeded(session)
+            return
+        }
 
         var context: [String: Any] = [
             "trackingState": trackingStateString(state)
@@ -81,6 +92,11 @@ final class PhoneConnectivityService: NSObject {
 
         if let data = liveData, let encoded = try? JSONEncoder().encode(data) {
             context["liveData"] = encoded
+        }
+
+        if session.activationState != .activated {
+            pendingApplicationContext = context
+            return
         }
 
         do {
@@ -97,6 +113,81 @@ final class PhoneConnectivityService: NSObject {
         case .tracking: return "tracking"
         case .paused:   return "paused"
         case .idle:     return "idle"
+        }
+    }
+
+    private func queuePendingPayload(_ payload: [String: Any]) {
+        pendingPayloads.append(payload)
+        if pendingPayloads.count > Self.maxPendingPayloads {
+            let overflow = pendingPayloads.count - Self.maxPendingPayloads
+            pendingPayloads.removeFirst(overflow)
+            Self.logger.warning("Dropped \(overflow) pending WC payloads to cap queue size")
+        }
+    }
+
+    private func canCommunicateWithWatch(_ session: WCSession) -> Bool {
+        session.isPaired && session.isWatchAppInstalled
+    }
+
+    private func clearPendingStateForUnavailableWatch() {
+        pendingPayloads.removeAll()
+        pendingApplicationContext = nil
+    }
+
+    private func logUnavailableWatchStateIfNeeded(_ session: WCSession) {
+        guard !hasLoggedUnavailableWatchState else { return }
+        if !session.isPaired {
+            Self.logger.debug("Skipping WC payload: watch is not paired")
+        } else if !session.isWatchAppInstalled {
+            Self.logger.debug("Skipping WC payload: watch app is not installed")
+        } else {
+            Self.logger.debug("Skipping WC payload: unavailable watch state")
+        }
+        hasLoggedUnavailableWatchState = true
+    }
+
+    private func handleSessionAvailabilityChange(_ session: WCSession) {
+        if canCommunicateWithWatch(session) {
+            hasLoggedUnavailableWatchState = false
+            flushPendingPayloadsIfNeeded()
+            flushPendingApplicationContextIfNeeded()
+        } else {
+            clearPendingStateForUnavailableWatch()
+            logUnavailableWatchStateIfNeeded(session)
+        }
+    }
+
+    private func sendPayload(_ payload: [String: Any]) {
+        guard let session else { return }
+        guard canCommunicateWithWatch(session) else { return }
+        if session.isReachable {
+            session.sendMessage(payload, replyHandler: nil) { [weak self] error in
+                Self.logger.warning("sendMessage failed, falling back: \(error.localizedDescription)")
+                self?.session?.transferUserInfo(payload)
+            }
+        } else {
+            session.transferUserInfo(payload)
+        }
+    }
+
+    private func flushPendingPayloadsIfNeeded() {
+        guard let session, canCommunicateWithWatch(session), session.activationState == .activated, !pendingPayloads.isEmpty else {
+            return
+        }
+        let queued = pendingPayloads
+        pendingPayloads.removeAll()
+        queued.forEach { sendPayload($0) }
+    }
+
+    private func flushPendingApplicationContextIfNeeded() {
+        guard let session, canCommunicateWithWatch(session), session.activationState == .activated, let context = pendingApplicationContext else {
+            return
+        }
+        do {
+            try session.updateApplicationContext(context)
+            pendingApplicationContext = nil
+        } catch {
+            Self.logger.error("flush updateApplicationContext failed: \(error.localizedDescription)")
         }
     }
 
@@ -125,6 +216,7 @@ extension PhoneConnectivityService: WCSessionDelegate {
         Task { @MainActor in
             self.isPaired = session.isPaired
             self.isWatchReachable = session.isReachable
+            self.handleSessionAvailabilityChange(session)
         }
     }
 
@@ -137,7 +229,17 @@ extension PhoneConnectivityService: WCSessionDelegate {
 
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
         Task { @MainActor in
+            self.isPaired = session.isPaired
             self.isWatchReachable = session.isReachable
+            self.handleSessionAvailabilityChange(session)
+        }
+    }
+
+    nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
+        Task { @MainActor in
+            self.isPaired = session.isPaired
+            self.isWatchReachable = session.isReachable
+            self.handleSessionAvailabilityChange(session)
         }
     }
 

@@ -14,7 +14,7 @@ struct WorkoutSummaryView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: WatchSpacing.lg) {
-                Text("Session Complete")
+                Text(String(localized: "watch_session_complete"))
                     .font(.headline)
                     .foregroundStyle(WatchColorTokens.brandGradient)
 
@@ -22,43 +22,47 @@ struct WorkoutSummaryView: View {
 
                 summaryRow(
                     icon: "clock",
-                    label: "Duration",
+                    label: String(localized: "common_duration"),
                     value: Formatters.duration(workoutManager.elapsedTime)
                 )
 
                 summaryRow(
                     icon: "number",
-                    label: "Runs",
+                    label: String(localized: "common_runs"),
                     value: "\(workoutManager.runCount)"
                 )
 
                 summaryRow(
                     icon: "gauge.with.dots.needle.67percent",
-                    label: "Max Speed",
-                    value: Formatters.speed(workoutManager.maxSpeed, unit: .metric)
+                    label: String(localized: "stat_max_speed"),
+                    value: Formatters.speed(workoutManager.maxSpeed, unit: preferredUnitSystem)
                 )
 
                 summaryRow(
                     icon: "mountain.2.fill",
-                    label: "Vertical",
-                    value: Formatters.vertical(workoutManager.totalVertical, unit: .metric)
+                    label: String(localized: "common_vertical"),
+                    value: Formatters.vertical(workoutManager.totalVertical, unit: preferredUnitSystem)
                 )
 
                 summaryRow(
                     icon: "arrow.triangle.swap",
-                    label: "Distance",
-                    value: Formatters.distance(workoutManager.totalDistance, unit: .metric)
+                    label: String(localized: "common_distance"),
+                    value: Formatters.distance(workoutManager.totalDistance, unit: preferredUnitSystem)
                 )
 
                 Divider()
 
-                Button("Done") {
+                Button(String(localized: "common_done")) {
                     workoutManager.dismiss()
                 }
                 .tint(WatchColorTokens.brandWarmAmber)
             }
             .padding(WatchSpacing.md)
         }
+    }
+
+    private var preferredUnitSystem: UnitSystem {
+        Locale.current.measurementSystem == .metric ? .metric : .imperial
     }
 
     private func summaryRow(icon: String, label: String, value: String) -> some View {

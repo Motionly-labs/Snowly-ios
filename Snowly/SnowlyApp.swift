@@ -117,6 +117,15 @@ struct SnowlyApp: App {
             )
             modelContainer = container
         } catch {
+            if let recoveredContainer = SnowlyApp.attemptPersistentStoreRecoveryIfNeeded(
+                after: error,
+                isTesting: isTesting,
+                launchArguments: launchArguments
+            ) {
+                modelContainer = recoveredContainer
+                return
+            }
+
             do {
                 print("Persistent store unavailable. Using in-memory fallback: \(error)")
                 let inMemoryContainer = try SnowlyApp.makeModelContainer(
@@ -194,6 +203,86 @@ struct SnowlyApp: App {
 #else
         FileManager.default.ubiquityIdentityToken != nil
 #endif
+    }
+
+    private static func attemptPersistentStoreRecoveryIfNeeded(
+        after error: Error,
+        isTesting: Bool,
+        launchArguments: Set<String>
+    ) -> ModelContainer? {
+#if targetEnvironment(simulator)
+        guard !isTesting, isMigrationConstraintFailure(error) else { return nil }
+
+        do {
+            try resetPersistentStoreFiles()
+            let recoveredContainer = try makeModelContainer(
+                isStoredInMemoryOnly: false,
+                cloudEnabled: false
+            )
+            seedUITestDataIfNeeded(
+                in: recoveredContainer,
+                launchArguments: launchArguments
+            )
+            print("Recovered persistent store by resetting incompatible simulator files.")
+            return recoveredContainer
+        } catch {
+            print("Persistent store recovery failed: \(error)")
+            return nil
+        }
+#else
+        return nil
+#endif
+    }
+
+    private static func isMigrationConstraintFailure(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        let message = [
+            nsError.localizedDescription,
+            nsError.userInfo["reason"] as? String ?? "",
+            nsError.userInfo[NSLocalizedFailureReasonErrorKey] as? String ?? "",
+        ]
+            .joined(separator: " ")
+            .lowercased()
+
+        if nsError.domain == NSCocoaErrorDomain,
+           (nsError.code == 134110 || nsError.code == 134111),
+           message.contains("constraint violation") {
+            return true
+        }
+
+        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
+            return isMigrationConstraintFailure(underlying)
+        }
+
+        return false
+    }
+
+    private static func resetPersistentStoreFiles() throws {
+        let fileManager = FileManager.default
+        guard let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return
+        }
+
+        try fileManager.createDirectory(
+            at: appSupportURL,
+            withIntermediateDirectories: true,
+            attributes: nil
+        )
+
+        let filenames = [
+            "Synced.store",
+            "Synced.store-shm",
+            "Synced.store-wal",
+            "Local.store",
+            "Local.store-shm",
+            "Local.store-wal",
+        ]
+
+        for filename in filenames {
+            let fileURL = appSupportURL.appendingPathComponent(filename)
+            guard fileManager.fileExists(atPath: fileURL.path) else { continue }
+            try fileManager.removeItem(at: fileURL)
+        }
     }
 
     fileprivate static func makeModelContainer(

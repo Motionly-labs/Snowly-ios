@@ -27,6 +27,7 @@ enum WatchTrackingMode: Sendable, Equatable {
 @Observable
 @MainActor
 final class WatchWorkoutManager: NSObject {
+    private static let trackPointBatchSize = 200
 
     // MARK: - Published State
 
@@ -37,6 +38,8 @@ final class WatchWorkoutManager: NSObject {
     var totalVertical: Double = 0
     var runCount: Int = 0
     var elapsedTime: TimeInterval = 0
+    var currentHeartRate: Double = 0
+    var averageHeartRate: Double = 0
 
     // MARK: - Dependencies
 
@@ -339,7 +342,7 @@ final class WatchWorkoutManager: NSObject {
 
         // Send buffered points to phone
         if !bufferedPoints.isEmpty {
-            connectivityService?.send(.watchTrackPoints(bufferedPoints))
+            sendBufferedTrackPointsInBatches()
         }
         connectivityService?.send(.watchWorkoutEnded)
     }
@@ -369,6 +372,8 @@ final class WatchWorkoutManager: NSObject {
         totalVertical = 0
         runCount = 0
         elapsedTime = 0
+        currentHeartRate = 0
+        averageHeartRate = 0
         sessionId = nil
         startDate = nil
         pauseDate = nil
@@ -379,6 +384,21 @@ final class WatchWorkoutManager: NSObject {
         lastRunActivity = .idle
         lastActivityChangeTime = .now
         isInRun = false
+    }
+
+    private func sendBufferedTrackPointsInBatches() {
+        guard let connectivityService else { return }
+
+        var startIndex = bufferedPoints.startIndex
+        while startIndex < bufferedPoints.endIndex {
+            let endIndex = min(
+                startIndex + Self.trackPointBatchSize,
+                bufferedPoints.endIndex
+            )
+            let batch = Array(bufferedPoints[startIndex..<endIndex])
+            connectivityService.send(.watchTrackPoints(batch))
+            startIndex = endIndex
+        }
     }
 
     /// Haversine distance between two coordinates in meters.
@@ -432,6 +452,24 @@ extension WatchWorkoutManager: HKLiveWorkoutBuilderDelegate {
         _ workoutBuilder: HKLiveWorkoutBuilder,
         didCollectDataOf collectedTypes: Set<HKSampleType>
     ) {
-        // No-op: we track metrics via GPS
+        guard let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate),
+              collectedTypes.contains(heartRateType),
+              let statistics = workoutBuilder.statistics(for: heartRateType)
+        else {
+            return
+        }
+
+        let unit = HKUnit.count().unitDivided(by: .minute())
+        let latest = statistics.mostRecentQuantity()?.doubleValue(for: unit)
+        let average = statistics.averageQuantity()?.doubleValue(for: unit)
+
+        Task { @MainActor [weak self] in
+            if let latest {
+                self?.currentHeartRate = latest
+            }
+            if let average {
+                self?.averageHeartRate = average
+            }
+        }
     }
 }

@@ -10,18 +10,17 @@ import SwiftUI
 struct WorkoutControlsView: View {
 
     @Environment(WatchWorkoutManager.self) private var workoutManager
-    @State private var stopProgress: CGFloat = 0
-    @State private var isHoldingStop = false
 
-    private static let stopHoldDuration: TimeInterval = 1.5
+    private static let stopHoldDuration: TimeInterval = 2.0
 
     var body: some View {
-        VStack(spacing: WatchSpacing.lg) {
+        VStack(spacing: WatchSpacing.xl) {
             Spacer()
 
-            pauseResumeButton
-
-            stopButton
+            HStack(spacing: WatchSpacing.lg) {
+                pauseResumeButton
+                stopButton
+            }
 
             Spacer()
         }
@@ -39,56 +38,40 @@ struct WorkoutControlsView: View {
             }
         } label: {
             let isPaused = workoutManager.trackingState == .paused
-            Label(
-                isPaused ? "Resume" : "Pause",
-                systemImage: isPaused ? "play.fill" : "pause.fill"
-            )
-            .frame(maxWidth: .infinity)
+            VStack(spacing: WatchSpacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(WatchColorTokens.brandWarmAmber.opacity(0.16))
+                        .frame(width: 72, height: 72)
+
+                    Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundStyle(WatchColorTokens.brandWarmAmber)
+                }
+
+                Text(isPaused ? String(localized: "common_resume") : String(localized: "common_pause"))
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+            }
         }
-        .tint(WatchColorTokens.brandWarmAmber)
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Stop (Long Press)
 
     private var stopButton: some View {
-        Button(role: .destructive) {
-            // Tap does nothing; must long-press
-        } label: {
-            ZStack {
-                Label("Hold to Stop", systemImage: "stop.fill")
-                    .frame(maxWidth: .infinity)
-
-                GeometryReader { geo in
-                    Rectangle()
-                        .fill(WatchColorTokens.brandRed.opacity(0.3))
-                        .frame(width: geo.size.width * stopProgress)
-                        .animation(
-                            isHoldingStop
-                                ? .linear(duration: Self.stopHoldDuration)
-                                : .easeOut(duration: 0.2),
-                            value: stopProgress
-                        )
-                }
-                .clipped()
-                .allowsHitTesting(false)
-            }
-        }
-        .simultaneousGesture(
-            LongPressGesture(minimumDuration: Self.stopHoldDuration)
-                .onChanged { _ in
-                    isHoldingStop = true
-                    stopProgress = 1.0
-                }
-                .onEnded { _ in
-                    isHoldingStop = false
-                    stopProgress = 0
-                    workoutManager.stop()
-                }
-        )
-        .onChange(of: isHoldingStop) { _, newValue in
-            if !newValue {
-                stopProgress = 0
-            }
+        HoldProgressCircleButton(
+            systemImage: "stop.fill",
+            title: String(localized: "watch_hold_to_stop"),
+            subtitle: nil,
+            tint: WatchColorTokens.brandRed,
+            holdDuration: Self.stopHoldDuration,
+            diameter: 92,
+            iconSize: 26
+        ) {
+            workoutManager.stop()
         }
     }
 }
