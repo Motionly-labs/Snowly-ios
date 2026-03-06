@@ -72,6 +72,23 @@ final class SnowlyUITests: XCTestCase {
     }
 
     @MainActor
+    func testTrackingStartWithLongPressButton() throws {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-ui_testing",
+            "-ui_testing_skip_onboarding",
+            "-ui_testing_fast_start",
+        ]
+        app.launch()
+
+        let startButton = app.buttons["start_tracking_button"]
+        XCTAssertTrue(startButton.waitForExistence(timeout: 8))
+        startButton.press(forDuration: 0.4)
+
+        XCTAssertTrue(app.buttons["pause_tracking_button"].waitForExistence(timeout: 8))
+    }
+
+    @MainActor
     func testTrackingStartPauseResume() throws {
         let app = XCUIApplication()
         app.launchArguments = [

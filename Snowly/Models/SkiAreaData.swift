@@ -47,7 +47,11 @@ struct BoundingBox: Codable, Sendable, Equatable {
     ) -> BoundingBox {
         // Approximate degrees per meter at this latitude
         let latDelta = radiusMeters / 111_320.0
-        let lonDelta = radiusMeters / (111_320.0 * cos(center.latitude * .pi / 180.0))
+        let metersPerLongitudeDegree = max(
+            1e-6,
+            111_320.0 * abs(cos(center.latitude * .pi / 180.0))
+        )
+        let lonDelta = radiusMeters / metersPerLongitudeDegree
 
         return BoundingBox(
             south: center.latitude - latDelta,
@@ -55,6 +59,21 @@ struct BoundingBox: Codable, Sendable, Equatable {
             north: center.latitude + latDelta,
             east: center.longitude + lonDelta
         )
+    }
+
+    func contains(_ coordinate: CLLocationCoordinate2D) -> Bool {
+        coordinate.latitude >= south &&
+            coordinate.latitude <= north &&
+            coordinate.longitude >= west &&
+            coordinate.longitude <= east
+    }
+
+    /// Approximate 2D area in square meters, used for deterministic tie-breaking.
+    var approximateAreaMetersSquared: Double {
+        let centerLat = (south + north) / 2.0
+        let latMeters = max(0, north - south) * 111_320.0
+        let lonMeters = max(0, east - west) * 111_320.0 * abs(cos(centerLat * .pi / 180.0))
+        return latMeters * lonMeters
     }
 
     /// String for Overpass QL bbox parameter: "south,west,north,east".
@@ -66,6 +85,14 @@ struct BoundingBox: Codable, Sendable, Equatable {
     /// Rounds to ~11m precision (4 decimal places) to avoid cache misses from GPS jitter.
     var cacheKey: String {
         String(format: "%.4f_%.4f_%.4f_%.4f", south, west, north, east)
+    }
+
+    /// Geographic midpoint of the bounding box.
+    var center: Coordinate {
+        Coordinate(
+            latitude: (south + north) / 2.0,
+            longitude: (west + east) / 2.0
+        )
     }
 }
 

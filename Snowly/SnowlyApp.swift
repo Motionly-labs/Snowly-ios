@@ -25,6 +25,9 @@ final class AppServices {
     let musicPlayerService: MusicPlayerService
     let phoneConnectivityService: PhoneConnectivityService
     let watchBridgeService: WatchBridgeService
+    let crewAPIClient: CrewAPIClient
+    let crewService: CrewService
+    let crewPinNotificationService: CrewPinNotificationService
 
     init() {
         let location = LocationTrackingService()
@@ -56,6 +59,16 @@ final class AppServices {
             trackingService: tracking,
             batteryService: battery
         )
+
+        let crewAPI = CrewAPIClient()
+        self.crewAPIClient = crewAPI
+        let crew = CrewService(
+            apiClient: crewAPI,
+            locationService: location
+        )
+        self.crewService = crew
+
+        self.crewPinNotificationService = CrewPinNotificationService()
     }
 }
 
@@ -64,7 +77,7 @@ struct SnowlyApp: App {
 
     let modelContainer: ModelContainer
     @State private var services = AppServices()
-    @Query(sort: \DeviceSettings.createdAt) private var deviceSettings: [DeviceSettings]
+    @Environment(\.scenePhase) private var scenePhase
     private static let cloudContainerIdentifier = "iCloud.Roy-Kid.Snowly"
 
     init() {
@@ -124,7 +137,6 @@ struct SnowlyApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .preferredColorScheme(deviceSettings.first?.colorScheme)
                 .environment(services.locationService)
                 .environment(services.motionService)
                 .environment(services.batteryService)
@@ -135,6 +147,43 @@ struct SnowlyApp: App {
                 .environment(services.musicPlayerService)
                 .environment(services.phoneConnectivityService)
                 .environment(services.watchBridgeService)
+                .environment(services.crewService)
+                .environment(services.crewPinNotificationService)
+                .onChange(of: scenePhase) { _, newPhase in
+                    services.crewPinNotificationService.scenePhase = newPhase
+                }
+                .onChange(of: services.crewService.activeCrew?.id) { _, crewId in
+                    guard crewId != nil else { return }
+                    services.crewPinNotificationService.requestPermissionIfNeeded()
+                }
+                .onChange(of: services.crewService.latestReceivedPin) { _, pin in
+                    guard let pin else { return }
+                    services.crewPinNotificationService.handleNewPin(pin, scenePhase: scenePhase)
+                    services.crewService.consumeLatestReceivedPin()
+                }
+                .onChange(of: services.crewService.latestMembershipEvent) { _, event in
+                    guard let event else { return }
+                    services.crewPinNotificationService.handleMembershipEvent(event, scenePhase: scenePhase)
+                    services.crewService.consumeLatestMembershipEvent()
+                }
+                .onChange(of: services.watchBridgeService.completedIndependentWorkout?.summary.sessionId) { _, _ in
+                    guard let workout = services.watchBridgeService.completedIndependentWorkout else { return }
+                    SnowlyApp.persistImportedWatchWorkout(workout, in: modelContainer.mainContext)
+                    services.watchBridgeService.consumeCompletedIndependentWorkout()
+                }
+                .onOpenURL { url in
+                    guard let deepLink = DeepLinkHandler.parse(url: url) else { return }
+                    switch deepLink {
+                    case .crewJoin(let token):
+                        Task {
+                            do {
+                                try await services.crewService.joinCrew(token: token)
+                            } catch {
+                                print("[DeepLink] Failed to join crew: \(error)")
+                            }
+                        }
+                    }
+                }
         }
         .modelContainer(modelContainer)
     }
@@ -177,6 +226,101 @@ struct SnowlyApp: App {
             migrationPlan: SnowlyMigrationPlan.self,
             configurations: syncedConfig, localConfig
         )
+    }
+
+    @MainActor
+    private static func persistImportedWatchWorkout(
+        _ workout: ImportedWatchWorkout,
+        in context: ModelContext
+    ) {
+        let sessionId = workout.summary.sessionId
+        var descriptor = FetchDescriptor<SkiSession>(
+            predicate: #Predicate<SkiSession> { session in
+                session.id == sessionId
+            }
+        )
+        descriptor.fetchLimit = 1
+
+        if !((try? context.fetch(descriptor)) ?? []).isEmpty {
+            return
+        }
+
+        let completedRuns = buildCompletedRuns(from: workout.trackPoints)
+        let session = SkiSession(
+            id: sessionId,
+            startDate: workout.summary.startDate,
+            endDate: workout.summary.endDate,
+            totalDistance: workout.summary.totalDistance,
+            totalVertical: workout.summary.totalVertical,
+            maxSpeed: workout.summary.maxSpeed,
+            runCount: max(
+                workout.summary.runCount,
+                completedRuns.filter { $0.activityType == .skiing }.count
+            )
+        )
+        context.insert(session)
+
+        for runData in completedRuns {
+            let run = SkiRun(
+                startDate: runData.startDate,
+                endDate: runData.endDate,
+                distance: runData.distance,
+                verticalDrop: runData.verticalDrop,
+                maxSpeed: runData.maxSpeed,
+                averageSpeed: runData.averageSpeed,
+                activityType: runData.activityType,
+                trackData: runData.trackData
+            )
+            run.session = session
+            context.insert(run)
+        }
+
+        var profileDescriptor = FetchDescriptor<UserProfile>(sortBy: [SortDescriptor(\.createdAt)])
+        profileDescriptor.fetchLimit = 1
+        if let profile = (try? context.fetch(profileDescriptor))?.first {
+            let update = StatsService.computePersonalBestUpdates(session: session, profile: profile)
+            if update.hasUpdates {
+                StatsService.applyPersonalBestUpdate(update, to: profile)
+            }
+        }
+
+        try? context.save()
+    }
+
+    @MainActor
+    private static func buildCompletedRuns(from trackPoints: [TrackPoint]) -> [CompletedRunData] {
+        let sortedPoints = trackPoints.sorted { $0.timestamp < $1.timestamp }
+        guard !sortedPoints.isEmpty else { return [] }
+
+        let segmentService = SegmentFinalizationService()
+        var recentPoints = CircularBuffer<TrackPoint>(capacity: SharedConstants.recentPointsBufferSize)
+        var currentActivity: DetectedActivity = .idle
+        var candidateActivity: DetectedActivity?
+        var candidateStartTime: Date?
+
+        for point in sortedPoints {
+            recentPoints.append(point)
+
+            let rawActivity = RunDetectionService.detect(
+                point: point,
+                recentPoints: recentPoints.elements
+            )
+            let dwellResult = SessionTrackingService.applyDwellTime(
+                rawActivity: rawActivity,
+                currentActivity: currentActivity,
+                candidateActivity: candidateActivity,
+                candidateStartTime: candidateStartTime,
+                timestamp: point.timestamp
+            )
+            currentActivity = dwellResult.activity
+            candidateActivity = dwellResult.candidate
+            candidateStartTime = dwellResult.candidateStart
+
+            segmentService.processPoint(point, activity: currentActivity)
+        }
+
+        segmentService.finalizeCurrentSegment()
+        return segmentService.completedRuns
     }
 
     private static func seedUITestDataIfNeeded(
@@ -238,6 +382,8 @@ private struct SnowlyAppPreviewHost: View {
             .environment(services.musicPlayerService)
             .environment(services.phoneConnectivityService)
             .environment(services.watchBridgeService)
+            .environment(services.crewService)
+            .environment(services.crewPinNotificationService)
             .modelContainer(modelContainer)
     }
 }

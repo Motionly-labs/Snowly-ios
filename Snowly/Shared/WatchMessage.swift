@@ -28,6 +28,7 @@ enum WatchMessage: Codable, Sendable {
     case requestStop
     case requestStatus
     case watchWorkoutStarted(sessionId: UUID)
+    case watchWorkoutSummary(IndependentWorkoutSummary)
     case watchWorkoutEnded
     case watchTrackPoints([TrackPoint])
 
@@ -47,5 +48,17 @@ enum WatchMessage: Codable, Sendable {
         let bestVertical: Double
         let totalRuns: Int
         let totalSessions: Int
+    }
+
+    struct IndependentWorkoutSummary: Codable, Sendable, Equatable {
+        let sessionId: UUID
+        let startDate: Date
+        let endDate: Date
+        let totalDistance: Double
+        let totalVertical: Double
+        let maxSpeed: Double
+        let runCount: Int
+        let elapsedTime: TimeInterval
+        let trackPointCount: Int
     }
 }

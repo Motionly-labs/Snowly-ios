@@ -14,8 +14,8 @@ import MapKit
 
 struct HomeView: View {
     private enum HomePage: Hashable {
-        case primary
-        case mapOnly
+        case primary  // Ride page
+        case map      // Unified map page (trails + crew)
     }
 
     @Environment(SessionTrackingService.self) private var trackingService
@@ -26,20 +26,28 @@ struct HomeView: View {
     @Query(sort: \DeviceSettings.createdAt) private var deviceSettings: [DeviceSettings]
 
     @Environment(SkiMapCacheService.self) private var skiMapService
+    @Environment(CrewService.self) private var crewService
+    @Environment(CrewPinNotificationService.self) private var pinNotificationService
 
     @Namespace private var mapScope
 
     @State private var weatherService = WeatherService()
     @State private var showingTracking = false
     @State private var mapPosition: MapCameraPosition = .automatic
-    @State private var hasFetchedWeather = false
-    @State private var hasFetchedSkiMap = false
     @State private var hasInitializedMapCamera = false
+    @State private var lastSkiAreaLoadCoordinate: CLLocationCoordinate2D?
     @State private var currentPage: HomePage = .primary
+    @State private var isPinningMode = false
+    @State private var mapCenterCoordinate: CLLocationCoordinate2D?
     @State private var showCacheOfflineNotice = false
     @State private var cacheOfflineNoticeTask: Task<Void, Never>?
     @State private var cachedTrailLabels: [MapLabel] = []
     @State private var cachedLiftLabels: [MapLabel] = []
+    @State private var showCrewCreateAlert = false
+    @State private var showCrewJoinAlert = false
+    @State private var crewNameInput = ""
+    @State private var crewJoinTokenInput = ""
+    @State private var crewActionError: String?
 
     private var unitSystem: UnitSystem {
         profiles.first?.preferredUnits ?? .metric
@@ -51,6 +59,11 @@ struct HomeView: View {
 
     var body: some View {
         mapBackground
+            .overlay {
+                if isPinningMode {
+                    pinCrosshair
+                }
+            }
             .overlay(alignment: .bottom) {
                 pageSwipePanel
             }
@@ -59,8 +72,17 @@ struct HomeView: View {
                     .padding(.horizontal, Spacing.xl)
                     .padding(.top, 8)
             }
+            .overlay(alignment: .topLeading) {
+                if currentPage == .map && crewService.activeCrew != nil && !isPinningMode {
+                    CrewHeaderOverlay()
+                        .padding(.leading, 16)
+                        .padding(.top, 80)
+                        .frame(maxWidth: 260)
+                        .transition(.opacity.combined(with: .move(edge: .leading)))
+                }
+            }
             .overlay(alignment: .topTrailing) {
-                if currentPage == .mapOnly {
+                if currentPage == .map {
                     mapTopControls
                         .padding(.trailing, 16)
                         .padding(.top, 80)
@@ -68,24 +90,57 @@ struct HomeView: View {
                 }
             }
             .overlay(alignment: .bottomTrailing) {
-                if currentPage == .mapOnly {
-                    mapBottomLocationButton
-                        .padding(.trailing, 16)
-                        .padding(.bottom, 80)
-                        .transition(.opacity.combined(with: .move(edge: .trailing)))
+                if currentPage == .map && !isPinningMode {
+                    VStack(spacing: 10) {
+                        if crewService.activeCrew != nil {
+                            CrewPinButton(action: { isPinningMode = true })
+                        } else {
+                            crewPlusButton
+                        }
+                        mapBottomLocationButton
+                    }
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 80)
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
                 }
             }
+            .overlay(alignment: .top) {
+                if let pin = pinNotificationService.currentBanner {
+                    CrewPinBanner(pin: pin) {
+                        withAnimation { pinNotificationService.dismissBanner() }
+                    }
+                    .padding(.top, 90)
+                }
+            }
+            .overlay(alignment: .top) {
+                if let event = pinNotificationService.currentMembershipBanner {
+                    CrewMembershipBanner(event: event) {
+                        withAnimation { pinNotificationService.dismissMembershipBanner() }
+                    }
+                    .padding(.top, 150)
+                }
+            }
+            .animation(.easeInOut(duration: 0.3), value: pinNotificationService.currentBanner?.id)
+            .animation(.easeInOut(duration: 0.3), value: pinNotificationService.currentMembershipBanner?.id)
             .animation(.easeInOut(duration: 0.3), value: currentPage)
+            .animation(.easeInOut(duration: 0.25), value: isPinningMode)
+            .onChange(of: currentPage) { _, _ in
+                isPinningMode = false
+            }
             .mapScope(mapScope)
             .fullScreenCover(isPresented: $showingTracking) {
                 ActiveTrackingView()
                     .environment(trackingService)
                     .environment(batteryService)
+                    .environment(skiMapService)
             }
             .onChange(of: scenePhase) {
                 if scenePhase == .background {
                     trackingService.persistSnapshotNowIfNeeded()
                 }
+            }
+            .onChange(of: crewService.focusRequestedPin?.id) { _, _ in
+                focusOnRequestedPinIfNeeded()
             }
             .task(id: locationCoordinateKey) {
                 guard let coord = locationService.currentLocation else { return }
@@ -102,24 +157,12 @@ struct HomeView: View {
                     hasInitializedMapCamera = true
                 }
 
-                if !hasFetchedWeather {
-                    await weatherService.fetchWeather(
-                        latitude: coord.latitude,
-                        longitude: coord.longitude
-                    )
-                    hasFetchedWeather = true
-                }
-
-                if !hasFetchedSkiMap {
-                    await skiMapService.loadSkiArea(center: coord)
-                    hasFetchedSkiMap = true
-                }
+                await refreshHomeData(for: coord)
             }
             .onChange(of: locationService.authorizationStatus) { _, status in
                 if status == .denied || status == .restricted {
-                    hasFetchedWeather = false
-                    hasFetchedSkiMap = false
                     hasInitializedMapCamera = false
+                    lastSkiAreaLoadCoordinate = nil
                 }
             }
             .onChange(of: skiMapService.currentSkiArea?.boundingBox) { _, _ in
@@ -143,6 +186,18 @@ struct HomeView: View {
                 cacheOfflineNoticeTask?.cancel()
                 cacheOfflineNoticeTask = nil
             }
+            .alert(String(localized: "crew_create_title"), isPresented: $showCrewCreateAlert) {
+                TextField(String(localized: "crew_name_placeholder"), text: $crewNameInput)
+                Button(String(localized: "common_create")) { createCrew() }
+                    .disabled(crewNameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Button(String(localized: "common_cancel"), role: .cancel) { crewNameInput = "" }
+            }
+            .alert(String(localized: "crew_join_title"), isPresented: $showCrewJoinAlert) {
+                TextField(String(localized: "crew_join_token_placeholder"), text: $crewJoinTokenInput)
+                Button(String(localized: "crew_join_action")) { joinCrew() }
+                    .disabled(crewJoinTokenInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Button(String(localized: "common_cancel"), role: .cancel) { crewJoinTokenInput = "" }
+            }
     }
 
     // MARK: - Page Picker
@@ -150,7 +205,7 @@ struct HomeView: View {
     private var pagePicker: some View {
         HStack(spacing: 0) {
             pagePickerButton(String(localized: "tab_ride"), systemImage: "play.fill", page: .primary)
-            pagePickerButton(String(localized: "home_tab_trail_map"), systemImage: "map.fill", page: .mapOnly)
+            pagePickerButton(String(localized: "home_tab_trail_map"), systemImage: "map.fill", page: .map)
         }
         .padding(0)
         .frame(maxWidth: .infinity)
@@ -204,18 +259,51 @@ struct HomeView: View {
             .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 4)
     }
 
+    private var crewPlusButton: some View {
+        Menu {
+            Button {
+                showCrewCreateAlert = true
+            } label: {
+                Label(String(localized: "crew_create"), systemImage: "plus.circle")
+            }
+            Button {
+                showCrewJoinAlert = true
+            } label: {
+                Label(String(localized: "crew_join"), systemImage: "link")
+            }
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 44, height: 44)
+                .background(.regularMaterial, in: Circle())
+        }
+        .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 4)
+    }
+
     // MARK: - Page Swipe Panel
 
     private var pageSwipePanel: some View {
-        TabView(selection: $currentPage) {
-            homePageContent
-                .tag(HomePage.primary)
+        Group {
+            if isPinningMode && currentPage == .map {
+                CrewPinComposeBar(
+                    coordinate: mapCenterCoordinate,
+                    onDismiss: { isPinningMode = false }
+                )
+                .padding(.horizontal, Spacing.lg)
+                .padding(.bottom, 24)
+            } else {
+                TabView(selection: $currentPage) {
+                    homePageContent
+                        .tag(HomePage.primary)
 
-            mapPageContent
-                .tag(HomePage.mapOnly)
+                    mapPageContent
+                        .tag(HomePage.map)
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(maxHeight: currentPage == .primary ? .infinity : 200)
+            }
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .frame(maxHeight: currentPage == .primary ? .infinity : 200)
     }
 
     private var homePageContent: some View {
@@ -316,8 +404,13 @@ struct HomeView: View {
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
-            if skiMapService.currentSkiArea != nil {
-                trailLegend
+            if let error = crewService.lastError ?? crewActionError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, 6)
+                    .background(.ultraThinMaterial, in: Capsule())
             }
         }
         .padding(.bottom, 24)
@@ -328,8 +421,33 @@ struct HomeView: View {
     // MARK: - Map Background
 
     private var mapBackground: some View {
-        Map(position: $mapPosition, interactionModes: currentPage == .mapOnly ? .all : [], scope: mapScope) {
+        Map(position: $mapPosition, interactionModes: currentPage == .map ? .all : [], scope: mapScope) {
             UserAnnotation()
+
+            // Crew member annotations
+            if crewService.activeCrew != nil {
+                ForEach(crewService.memberLocations) { member in
+                    Annotation(
+                        "",
+                        coordinate: member.coordinate
+                    ) {
+                        CrewMemberAnnotation(member: member)
+                    }
+                }
+
+                ForEach(crewService.activePins) { pin in
+                    Annotation(
+                        "",
+                        coordinate: pin.coordinate
+                    ) {
+                        CrewPinAnnotation(
+                            pin: pin,
+                            onResend: crewService.canManagePin(pin) ? { resendPin(pin) } : nil,
+                            onDelete: crewService.canManagePin(pin) ? { deletePin(pin) } : nil
+                        )
+                    }
+                }
+            }
 
             // Ski trail overlays
             if let skiArea = skiMapService.currentSkiArea {
@@ -379,8 +497,26 @@ struct HomeView: View {
                 }
             }
         }
+        .onMapCameraChange { context in
+            mapCenterCoordinate = context.camera.centerCoordinate
+        }
+        .mapControls { }
         .mapStyle(.imagery(elevation: .realistic))
         .ignoresSafeArea()
+    }
+
+    private var pinCrosshair: some View {
+        VStack(spacing: 2) {
+            Image(systemName: "mappin")
+                .font(.system(size: 44, weight: .medium))
+                .foregroundStyle(.orange)
+            Circle()
+                .fill(.black.opacity(0.25))
+                .frame(width: 8, height: 4)
+        }
+        .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+        .offset(y: -22)
+        .allowsHitTesting(false)
     }
 
     private func presentCacheOfflineNoticeIfNeeded() {
@@ -408,27 +544,68 @@ struct HomeView: View {
         }
     }
 
-    private var trailLegend: some View {
-        HStack(spacing: 12) {
-            legendItem(color: trailGreen, label: String(localized: "trail_difficulty_novice"))
-            legendItem(color: trailBlue, label: String(localized: "trail_difficulty_easy"))
-            legendItem(color: trailRed, label: String(localized: "trail_difficulty_intermediate"))
-            legendItem(color: trailBlack, label: String(localized: "trail_difficulty_advanced"))
-            legendItem(color: trailOrange, label: String(localized: "trail_difficulty_expert"))
+    // MARK: - Crew Actions
+
+    private func focusOnRequestedPinIfNeeded() {
+        guard let pin = crewService.focusRequestedPin else { return }
+        withAnimation(.easeInOut(duration: 0.45)) {
+            mapPosition = .region(
+                MKCoordinateRegion(
+                    center: pin.coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.012, longitudeDelta: 0.012)
+                )
+            )
         }
-        .padding(.horizontal, Spacing.lg)
-        .padding(.vertical, 8)
-        .background(.ultraThinMaterial, in: Capsule())
+        crewService.consumeFocusRequestedPin()
     }
 
-    private func legendItem(color: Color, label: String) -> some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(color)
-                .frame(width: 8, height: 8)
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.white)
+    private func resendPin(_ pin: CrewPin) {
+        Task {
+            do {
+                try await crewService.resendPin(pin)
+                crewActionError = nil
+            } catch {
+                crewActionError = error.localizedDescription
+            }
+        }
+    }
+
+    private func deletePin(_ pin: CrewPin) {
+        Task {
+            do {
+                try await crewService.deletePin(pin)
+                crewActionError = nil
+            } catch {
+                crewActionError = error.localizedDescription
+            }
+        }
+    }
+
+    private func createCrew() {
+        let name = crewNameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        Task {
+            do {
+                _ = try await crewService.createCrew(name: name)
+                crewNameInput = ""
+                crewActionError = nil
+            } catch {
+                crewActionError = error.localizedDescription
+            }
+        }
+    }
+
+    private func joinCrew() {
+        let inviteInput = crewJoinTokenInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !inviteInput.isEmpty else { return }
+        Task {
+            do {
+                try await crewService.joinCrew(token: inviteInput)
+                crewJoinTokenInput = ""
+                crewActionError = nil
+            } catch {
+                crewActionError = error.localizedDescription
+            }
         }
     }
 
@@ -543,6 +720,34 @@ struct HomeView: View {
 
     // MARK: - Helpers
 
+    private func refreshHomeData(for coordinate: CLLocationCoordinate2D) async {
+        await weatherService.fetchWeather(
+            latitude: coordinate.latitude,
+            longitude: coordinate.longitude
+        )
+
+        if shouldReloadSkiArea(for: coordinate) {
+            await skiMapService.loadSkiArea(center: coordinate)
+            lastSkiAreaLoadCoordinate = coordinate
+        }
+
+        await skiMapService.classifyCurrentPlace(at: coordinate)
+    }
+
+    private func shouldReloadSkiArea(for coordinate: CLLocationCoordinate2D) -> Bool {
+        guard skiMapService.currentSkiArea != nil,
+              let lastSkiAreaLoadCoordinate else {
+            return true
+        }
+
+        let last = CLLocation(
+            latitude: lastSkiAreaLoadCoordinate.latitude,
+            longitude: lastSkiAreaLoadCoordinate.longitude
+        )
+        let current = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        return current.distance(from: last) >= SkiMapCacheService.defaultReclassifyDistanceMeters
+    }
+
     @ViewBuilder
     private var resortTitleText: some View {
         Text(resortName)
@@ -553,12 +758,12 @@ struct HomeView: View {
     }
 
     private var resortName: String {
-        guard let resort = skiMapService.currentSkiArea?.name?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-            !resort.isEmpty else {
+        let title = skiMapService.displayTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty,
+              title != SkiMapCacheService.fallbackDisplayTitle else {
             return String(localized: "common_resort")
         }
-        return resort
+        return title
     }
 
     private var locationCoordinateKey: String {
@@ -660,6 +865,8 @@ struct HomeView: View {
     )
     let skiMap = SkiMapCacheService()
     let musicPlayer = MusicPlayerService()
+    let crew = CrewService(apiClient: CrewAPIClient(), locationService: location)
+    let pinNotification = CrewPinNotificationService()
 
     HomeView()
         .environment(location)
@@ -669,6 +876,8 @@ struct HomeView: View {
         .environment(tracking)
         .environment(skiMap)
         .environment(musicPlayer)
+        .environment(crew)
+        .environment(pinNotification)
         .modelContainer(for: UserProfile.self, inMemory: true)
 }
 
@@ -685,6 +894,8 @@ struct HomeView: View {
     )
     let skiMap = SkiMapCacheService()
     let musicPlayer = MusicPlayerService()
+    let crew = CrewService(apiClient: CrewAPIClient(), locationService: location)
+    let pinNotification = CrewPinNotificationService()
 
     HomeView()
         .environment(location)
@@ -694,6 +905,8 @@ struct HomeView: View {
         .environment(tracking)
         .environment(skiMap)
         .environment(musicPlayer)
+        .environment(crew)
+        .environment(pinNotification)
         .modelContainer(for: UserProfile.self, inMemory: true)
         .task {
             skiMap.setPreviewData(SkiMapPreviewData.whistler)

@@ -96,7 +96,13 @@ struct OverpassServiceTests {
             "landuse": "winter_sports",
             "name": "Zermatt"
           },
-          "center": { "lat": 46.0207, "lon": 7.7491 }
+          "center": { "lat": 46.0207, "lon": 7.7491 },
+          "bounds": {
+            "minlat": 45.95,
+            "minlon": 7.55,
+            "maxlat": 46.09,
+            "maxlon": 7.89
+          }
         },
         {
           "type": "relation",
@@ -254,5 +260,19 @@ struct OverpassServiceTests {
         #expect(result.count == 1)
         #expect(result.first?.name == "Zermatt")
         #expect(result.first?.recommendedRadiusMeters == 6000)
+    }
+
+    @Test func parseNearbyAreas_preservesBoundsWhenPresent() throws {
+        let result = try OverpassResponseParser.parseNearbyAreas(
+            data: Self.nearbyAreasResponse,
+            origin: CLLocationCoordinate2D(latitude: 46.0208, longitude: 7.7490),
+            limit: 10,
+            recommendedRadiusMeters: 6000
+        )
+
+        let zermatt = result.first(where: { $0.name == "Zermatt" })
+        #expect(zermatt?.bounds != nil)
+        #expect(zermatt?.bounds?.south == 45.95)
+        #expect(zermatt?.bounds?.north == 46.09)
     }
 }

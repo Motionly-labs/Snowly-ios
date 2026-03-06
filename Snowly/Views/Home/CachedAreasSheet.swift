@@ -97,6 +97,18 @@ struct CachedAreasSheet: View {
         } else if nearbyAreas.isEmpty {
             ContentUnavailableView {
                 Label(String(localized: "cache_empty_nearby"), systemImage: "mappin.slash")
+            } description: {
+                if let error = skiMapService.lastError, !error.isEmpty {
+                    Text(error)
+                } else {
+                    Text(String(localized: "cache_empty_nearby_description"))
+                }
+            } actions: {
+                Button(String(localized: "cache_action_retry")) {
+                    Task {
+                        await refreshNearby()
+                    }
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {

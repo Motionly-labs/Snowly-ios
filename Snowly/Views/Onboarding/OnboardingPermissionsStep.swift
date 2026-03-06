@@ -68,8 +68,8 @@ struct OnboardingPermissionsStep: View {
                     title: String(localized: "onboarding_permissions_weather_title"),
                     subtitle: String(localized: "onboarding_permissions_weather_subtitle"),
                     color: .cyan,
-                    action: locationAction,
-                    onRequest: { locationService.requestAuthorization() }
+                    action: .done,
+                    onRequest: {}
                 )
 
                 permissionRow(

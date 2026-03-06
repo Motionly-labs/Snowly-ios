@@ -123,6 +123,21 @@ struct SkiMapModelsTests {
         #expect(bbox1.cacheKey != bbox2.cacheKey)
     }
 
+    @Test func boundingBox_containsCoordinate() {
+        let bbox = BoundingBox(south: 45.9, west: 6.9, north: 46.1, east: 7.1)
+        #expect(bbox.contains(CLLocationCoordinate2D(latitude: 46.0, longitude: 7.0)))
+        #expect(!bbox.contains(CLLocationCoordinate2D(latitude: 46.2, longitude: 7.0)))
+        #expect(!bbox.contains(CLLocationCoordinate2D(latitude: 46.0, longitude: 7.2)))
+    }
+
+    @Test func boundingBox_approximateArea_positive() {
+        let bbox = BoundingBox.around(
+            center: CLLocationCoordinate2D(latitude: 46.0, longitude: 7.0),
+            radiusMeters: 5000
+        )
+        #expect(bbox.approximateAreaMetersSquared > 0)
+    }
+
     // MARK: - SkiAreaData Expiry
 
     @Test func skiAreaData_notExpired_whenFresh() {

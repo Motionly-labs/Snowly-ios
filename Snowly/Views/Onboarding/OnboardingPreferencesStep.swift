@@ -60,6 +60,7 @@ struct OnboardingPreferencesStep: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            .disabled(displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             .padding(.horizontal, Spacing.xxl)
             .padding(.bottom, Spacing.xxxl)
         }

@@ -177,7 +177,7 @@ final class SessionTrackingService {
     }
 
     /// Saves the session to SwiftData. Call after stopTracking().
-    func saveSession(to context: ModelContext) {
+    func saveSession(to context: ModelContext, resort: Resort? = nil) {
         guard let sessionId = activeSessionId,
               let start = startDate else { return }
 
@@ -194,6 +194,8 @@ final class SessionTrackingService {
         if let workoutId = pendingHealthKitWorkoutId {
             session.healthKitWorkoutId = workoutId
         }
+
+        session.resort = resort
 
         context.insert(session)
 
@@ -213,6 +215,8 @@ final class SessionTrackingService {
         }
 
         resetStats()
+        activeSessionId = nil
+        startDate = nil
     }
 
     // MARK: - Private

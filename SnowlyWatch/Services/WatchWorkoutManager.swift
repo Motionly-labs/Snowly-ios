@@ -49,6 +49,7 @@ final class WatchWorkoutManager: NSObject {
     private var workoutSession: HKWorkoutSession?
     private var workoutBuilder: HKLiveWorkoutBuilder?
     private var timer: Timer?
+    private var sessionId: UUID?
     private var startDate: Date?
     private var pauseDate: Date?
     private var accumulatedPauseTime: TimeInterval = 0
@@ -87,10 +88,13 @@ final class WatchWorkoutManager: NSObject {
 
     func startIndependent() {
         resetStats()
+        let currentSessionId = UUID()
+        sessionId = currentSessionId
         startDate = .now
         trackingState = .active(mode: .independent)
 
         startHealthKitWorkout()
+        connectivityService?.send(.watchWorkoutStarted(sessionId: currentSessionId))
         locationService?.requestAuthorization()
         locationService?.startTracking { [weak self] point in
             Task { @MainActor in
@@ -305,12 +309,28 @@ final class WatchWorkoutManager: NSObject {
         timer = nil
         locationService?.stopTracking()
 
+        let endDate = Date.now
+        if let sessionId, let startDate {
+            connectivityService?.send(.watchWorkoutSummary(.init(
+                sessionId: sessionId,
+                startDate: startDate,
+                endDate: endDate,
+                totalDistance: totalDistance,
+                totalVertical: totalVertical,
+                maxSpeed: maxSpeed,
+                runCount: runCount,
+                elapsedTime: elapsedTime,
+                trackPointCount: bufferedPoints.count
+            )))
+        }
+
         workoutSession?.end()
-        workoutBuilder?.endCollection(withEnd: .now) { [weak self] _, error in
+        let builder = workoutBuilder
+        builder?.endCollection(withEnd: .now) { _, error in
             if let error {
                 print("Workout builder end error: \(error.localizedDescription)")
             }
-            self?.workoutBuilder?.finishWorkout { _, error in
+            builder?.finishWorkout { _, error in
                 if let error {
                     print("Workout finish error: \(error.localizedDescription)")
                 }
@@ -328,8 +348,9 @@ final class WatchWorkoutManager: NSObject {
 
     private func startTimer() {
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            let manager = self
             Task { @MainActor in
-                self?.updateElapsedTime()
+                manager?.updateElapsedTime()
             }
         }
     }
@@ -348,6 +369,7 @@ final class WatchWorkoutManager: NSObject {
         totalVertical = 0
         runCount = 0
         elapsedTime = 0
+        sessionId = nil
         startDate = nil
         pauseDate = nil
         accumulatedPauseTime = 0

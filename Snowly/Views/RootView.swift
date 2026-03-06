@@ -12,6 +12,7 @@ import SwiftData
 
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(CrewService.self) private var crewService
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
     @Query(sort: \DeviceSettings.createdAt) private var deviceSettings: [DeviceSettings]
 
@@ -34,6 +35,13 @@ struct RootView: View {
         .onAppear {
             normalizeProfiles()
             normalizeDeviceSettings()
+            configureCrewService()
+        }
+        .onChange(of: profiles.first?.id) { _, _ in
+            configureCrewService()
+        }
+        .onChange(of: profiles.first?.displayName) { _, _ in
+            configureCrewService()
         }
         .onChange(of: profiles.count) { _, _ in
             normalizeProfiles()
@@ -86,11 +94,16 @@ struct RootView: View {
         for duplicate in deviceSettings where duplicate.id != primary.id {
             primary.hasCompletedOnboarding = primary.hasCompletedOnboarding || duplicate.hasCompletedOnboarding
             primary.healthKitEnabled = primary.healthKitEnabled || duplicate.healthKitEnabled
-            if primary.resolvedAppearance == .system, duplicate.resolvedAppearance != .system {
-                primary.appearanceMode = duplicate.appearanceMode
-            }
             modelContext.delete(duplicate)
         }
+    }
+
+    private func configureCrewService() {
+        guard let profile = profiles.first else { return }
+        crewService.configure(
+            userId: profile.id.uuidString,
+            displayName: profile.displayName
+        )
     }
 
     private func hasExistingAppData() -> Bool {
@@ -131,6 +144,9 @@ struct RootView: View {
     let syncMonitor = SyncMonitorService()
     let musicPlayer = MusicPlayerService()
 
+    let crewAPI = CrewAPIClient()
+    let crew = CrewService(apiClient: crewAPI, locationService: location)
+
     RootView()
         .environment(location)
         .environment(motion)
@@ -140,6 +156,7 @@ struct RootView: View {
         .environment(skiMap)
         .environment(syncMonitor)
         .environment(musicPlayer)
+        .environment(crew)
         .modelContainer(for: [
             SkiSession.self, SkiRun.self, Resort.self,
             GearSetup.self, GearItem.self, UserProfile.self,

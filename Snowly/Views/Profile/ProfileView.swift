@@ -22,9 +22,11 @@ struct ProfileView: View {
             // Avatar + name
             Section {
                 VStack(spacing: 12) {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 64))
-                        .foregroundStyle(.tertiary)
+                    AvatarView(
+                        avatarData: profile?.avatarData,
+                        displayName: displayName,
+                        size: 72
+                    )
 
                     Text(displayName)
                         .font(.title2.bold())

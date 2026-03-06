@@ -13,6 +13,7 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SyncMonitorService.self) private var syncMonitorService
+    @Environment(SkiMapCacheService.self) private var skiMapService
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
     @Query(sort: \DeviceSettings.createdAt) private var deviceSettings: [DeviceSettings]
 
@@ -23,6 +24,7 @@ struct SettingsView: View {
     @State private var exportDocument: JSONExportDocument?
     @State private var exportErrorMessage: String?
     @State private var selectedPhoto: PhotosPickerItem?
+    @State private var isResettingData = false
 
     private var profile: UserProfile? { profiles.first }
     private var defaultUnitSystem: UnitSystem {
@@ -33,19 +35,33 @@ struct SettingsView: View {
         Form {
             profileSection
             unitsSection
-            appearanceSection
             syncSection
             dataSection
             aboutSection
         }
+        .scrollContentBackground(.hidden)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color(uiColor: .systemGroupedBackground),
+                    Color(uiColor: .secondarySystemGroupedBackground)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
         .navigationTitle(String(localized: "settings_nav_title"))
         .onAppear {
+            guard !isResettingData else { return }
             ensureSettingsDataIfNeeded()
         }
         .onChange(of: profiles.count) { _, _ in
+            guard !isResettingData else { return }
             ensureSettingsDataIfNeeded()
         }
         .onChange(of: deviceSettings.count) { _, _ in
+            guard !isResettingData else { return }
             ensureSettingsDataIfNeeded()
         }
         .alert(String(localized: "settings_alert_delete_title"), isPresented: $showingDeleteConfirmation) {
@@ -94,7 +110,7 @@ struct SettingsView: View {
     // MARK: - Sections
 
     private var profileSection: some View {
-        Section(String(localized: "settings_section_profile")) {
+        Section {
             if let profile {
                 HStack {
                     Spacer()
@@ -118,9 +134,7 @@ struct SettingsView: View {
                     Task { await loadAvatar(from: newItem, into: profile) }
                 }
 
-                HStack {
-                    Text(String(localized: "settings_profile_name_label"))
-                    Spacer()
+                LabeledContent(String(localized: "settings_profile_name_label")) {
                     TextField(String(localized: "settings_profile_name_placeholder"), text: Binding(
                         get: { profile.displayName },
                         set: { profile.displayName = $0 }
@@ -128,6 +142,8 @@ struct SettingsView: View {
                     .multilineTextAlignment(.trailing)
                 }
             }
+        } header: {
+            Label(String(localized: "settings_section_profile"), systemImage: "person.crop.circle")
         }
     }
 
@@ -159,7 +175,7 @@ struct SettingsView: View {
     }
 
     private var unitsSection: some View {
-        Section(String(localized: "settings_section_units")) {
+        Section {
             if let profile {
                 Picker(String(localized: "settings_units_picker_title"), selection: Binding(
                     get: { profile.preferredUnits },
@@ -168,22 +184,10 @@ struct SettingsView: View {
                     Text(String(localized: "settings_units_metric")).tag(UnitSystem.metric)
                     Text(String(localized: "settings_units_imperial")).tag(UnitSystem.imperial)
                 }
+                .pickerStyle(.segmented)
             }
-        }
-    }
-
-    private var appearanceSection: some View {
-        Section(String(localized: "settings_section_appearance")) {
-            if let settings = deviceSettings.first {
-                Picker(String(localized: "settings_section_appearance"), selection: Binding(
-                    get: { settings.resolvedAppearance },
-                    set: { settings.appearanceMode = $0.rawValue }
-                )) {
-                    ForEach(AppearanceMode.allCases, id: \.self) { mode in
-                        Text(mode.displayName).tag(mode)
-                    }
-                }
-            }
+        } header: {
+            Label(String(localized: "settings_section_units"), systemImage: "ruler")
         }
     }
 
@@ -228,14 +232,14 @@ struct SettingsView: View {
                 }
             }
         } header: {
-            Text(String(localized: "settings_sync_section_title"))
+            Label(String(localized: "settings_sync_section_title"), systemImage: "icloud")
         } footer: {
             Text(String(localized: "settings_sync_footer"))
         }
     }
 
     private var dataSection: some View {
-        Section(String(localized: "settings_section_data")) {
+        Section {
             Button {
                 showingCacheSheet = true
             } label: {
@@ -253,26 +257,30 @@ struct SettingsView: View {
             } label: {
                 Label(String(localized: "settings_data_delete_all"), systemImage: "trash")
             }
+        } header: {
+            Label(String(localized: "settings_section_data"), systemImage: "externaldrive")
         }
     }
 
     private var aboutSection: some View {
-        Section(String(localized: "settings_section_about")) {
+        Section {
             NavigationLink(destination: PrivacyView()) {
                 Text(String(localized: "settings_about_privacy_policy"))
             }
-            HStack {
-                Text(String(localized: "settings_about_app_version"))
-                Spacer()
+            LabeledContent(String(localized: "settings_about_app_version")) {
                 Text(appVersionDisplay)
                     .foregroundStyle(.secondary)
             }
+        } header: {
+            Label(String(localized: "settings_section_about"), systemImage: "info.circle")
         }
     }
 
     // MARK: - Actions
 
     private func ensureSettingsDataIfNeeded() {
+        guard !isResettingData else { return }
+
         if profiles.isEmpty {
             modelContext.insert(UserProfile(preferredUnits: defaultUnitSystem))
         }
@@ -280,6 +288,10 @@ struct SettingsView: View {
         if deviceSettings.isEmpty {
             // User already reached settings, so keep onboarding as completed.
             modelContext.insert(DeviceSettings(hasCompletedOnboarding: true))
+        } else if let settings = deviceSettings.first,
+                  settings.appearanceMode != AppearanceMode.system.rawValue {
+            // Appearance is now always system-driven.
+            settings.appearanceMode = AppearanceMode.system.rawValue
         }
     }
 
@@ -299,6 +311,7 @@ struct SettingsView: View {
     }
 
     private func deleteAllData() {
+        isResettingData = true
         do {
             try modelContext.delete(model: SkiSession.self)
             try modelContext.delete(model: SkiRun.self)
@@ -308,6 +321,9 @@ struct SettingsView: View {
             try modelContext.delete(model: UserProfile.self)
             try modelContext.delete(model: DeviceSettings.self)
             TrackingStatePersistence.clear()
+            CrewKeychainService.delete()
+            skiMapService.clearCache()
+            try? modelContext.save()
         } catch {
             // Data deletion is best-effort
         }

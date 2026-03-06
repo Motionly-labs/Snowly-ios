@@ -21,6 +21,12 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
     /// Current user location for map display (updated via delegate).
     private(set) var currentLocation: CLLocationCoordinate2D?
 
+    /// Extended location data for crew sharing (updated alongside currentLocation).
+    private(set) var currentAltitude: Double = 0
+    private(set) var currentSpeed: Double = 0
+    private(set) var currentCourse: Double = 0
+    private(set) var currentAccuracy: Double = 0
+
     /// Last GPS error encountered (nil when healthy).
     private(set) var lastError: Error?
 
@@ -94,6 +100,10 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
         guard let location = locations.last else { return }
         Task { @MainActor in
             self.currentLocation = location.coordinate
+            self.currentAltitude = location.altitude
+            self.currentSpeed = max(0, location.speed)
+            self.currentCourse = location.course
+            self.currentAccuracy = location.horizontalAccuracy
             self.lastError = nil
 
             guard self.isTracking else { return }

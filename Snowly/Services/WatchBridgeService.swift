@@ -11,6 +11,11 @@ import Foundation
 import Observation
 import os
 
+struct ImportedWatchWorkout: Sendable, Equatable {
+    let summary: WatchMessage.IndependentWorkoutSummary
+    let trackPoints: [TrackPoint]
+}
+
 @Observable
 @MainActor
 final class WatchBridgeService {
@@ -26,11 +31,14 @@ final class WatchBridgeService {
     /// Track points forwarded from the Watch during an independent Watch workout.
     /// Cleared once merged into a saved session.
     private(set) var pendingWatchTrackPoints: [TrackPoint] = []
+    private(set) var completedIndependentWorkout: ImportedWatchWorkout?
 
     // MARK: - Private
 
     private var liveUpdateTask: Task<Void, Never>?
     private var observationTask: Task<Void, Never>?
+    private var pendingIndependentWorkoutSummary: WatchMessage.IndependentWorkoutSummary?
+    private var pendingIndependentWorkoutDidEnd = false
 
     private static let logger = Logger(subsystem: "com.Snowly", category: "WatchBridge")
 
@@ -52,13 +60,17 @@ final class WatchBridgeService {
         startObservingTrackingState()
     }
 
-    private static let maxPendingTrackPoints = 10_000
+    private static let maxPendingTrackPoints = 100_000
 
     // MARK: - Public API
 
     /// Removes all pending Watch track points (call after merging into a saved session).
     func clearPendingWatchTrackPoints() {
         pendingWatchTrackPoints = []
+    }
+
+    func consumeCompletedIndependentWorkout() {
+        completedIndependentWorkout = nil
     }
 
     /// Cancel all observation and live update tasks.
@@ -89,10 +101,17 @@ final class WatchBridgeService {
             sendCurrentStateToWatch()
 
         case .watchWorkoutStarted(let sessionId):
+            prepareForIncomingWatchWorkout(sessionId: sessionId)
             Self.logger.info("Watch started independent workout: \(sessionId)")
+
+        case .watchWorkoutSummary(let summary):
+            pendingIndependentWorkoutSummary = summary
+            completePendingIndependentWorkoutIfPossible()
 
         case .watchWorkoutEnded:
             Self.logger.info("Watch ended independent workout — \(self.pendingWatchTrackPoints.count) points buffered")
+            pendingIndependentWorkoutDidEnd = true
+            completePendingIndependentWorkoutIfPossible()
 
         case .watchTrackPoints(let points):
             pendingWatchTrackPoints.append(contentsOf: points)
@@ -102,10 +121,34 @@ final class WatchBridgeService {
                 Self.logger.warning("Pending Watch track points exceeded \(Self.maxPendingTrackPoints), dropped \(overflow) oldest points")
             }
             Self.logger.debug("Received \(points.count) track points from Watch (total: \(self.pendingWatchTrackPoints.count))")
+            completePendingIndependentWorkoutIfPossible()
 
         default:
             Self.logger.warning("Unexpected Watch→Phone message: \(String(describing: message))")
         }
+    }
+
+    private func prepareForIncomingWatchWorkout(sessionId: UUID) {
+        if pendingIndependentWorkoutSummary?.sessionId != sessionId {
+            pendingWatchTrackPoints = []
+            pendingIndependentWorkoutSummary = nil
+            pendingIndependentWorkoutDidEnd = false
+        }
+    }
+
+    private func completePendingIndependentWorkoutIfPossible() {
+        guard pendingIndependentWorkoutDidEnd,
+              let summary = pendingIndependentWorkoutSummary,
+              pendingWatchTrackPoints.count >= summary.trackPointCount else { return }
+
+        let sortedPoints = pendingWatchTrackPoints.sorted { $0.timestamp < $1.timestamp }
+        completedIndependentWorkout = ImportedWatchWorkout(
+            summary: summary,
+            trackPoints: sortedPoints
+        )
+        pendingWatchTrackPoints = []
+        pendingIndependentWorkoutSummary = nil
+        pendingIndependentWorkoutDidEnd = false
     }
 
     // MARK: - State observation

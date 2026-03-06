@@ -16,6 +16,7 @@ struct NearbySkiArea: Codable, Sendable, Equatable, Identifiable {
     let center: Coordinate
     let distanceMeters: Double
     let recommendedRadiusMeters: Double
+    let bounds: BoundingBox?
 }
 
 // MARK: - Overpass Error
@@ -121,8 +122,13 @@ final class OverpassService {
         [out:json][timeout:\(Int(Self.requestTimeout))];
         (
           relation["landuse"="winter_sports"]["name"](around:\(radius),\(center.latitude),\(center.longitude));
+          relation["site"="piste"]["name"](around:\(radius),\(center.latitude),\(center.longitude));
+          relation["leisure"="ski_resort"]["name"](around:\(radius),\(center.latitude),\(center.longitude));
+          way["landuse"="winter_sports"]["name"](around:\(radius),\(center.latitude),\(center.longitude));
+          way["site"="piste"]["name"](around:\(radius),\(center.latitude),\(center.longitude));
+          way["leisure"="ski_resort"]["name"](around:\(radius),\(center.latitude),\(center.longitude));
         );
-        out tags center;
+        out tags center bb;
         """
     }
 
@@ -249,10 +255,14 @@ enum OverpassResponseParser {
         var areas: [NearbySkiArea] = []
         areas.reserveCapacity(json.elements.count)
 
-        for element in json.elements where element.type == "relation" {
+        for element in json.elements {
+            guard element.type == "relation" || element.type == "way" else {
+                continue
+            }
+
             guard
                 let tags = element.tags,
-                tags["landuse"] == "winter_sports",
+                isSkiArea(tags: tags),
                 let name = tags["name"]?.trimmingCharacters(in: .whitespacesAndNewlines),
                 !name.isEmpty,
                 let center = element.center
@@ -264,20 +274,48 @@ enum OverpassResponseParser {
             let distance = originLocation.distance(from: areaCenter)
 
             areas.append(NearbySkiArea(
-                id: "relation-\(element.id)",
+                id: "\(element.type)-\(element.id)",
                 name: name,
                 center: Coordinate(latitude: center.lat, longitude: center.lon),
                 distanceMeters: distance,
-                recommendedRadiusMeters: recommendedRadiusMeters
+                recommendedRadiusMeters: recommendedRadiusMeters,
+                bounds: element.bounds?.boundingBox
             ))
         }
 
-        let uniqueSorted = Dictionary(grouping: areas, by: \.id)
+        let uniqueSorted = Dictionary(grouping: areas, by: { normalizedAreaName($0.name) })
             .values
-            .compactMap { $0.min(by: { $0.distanceMeters < $1.distanceMeters }) }
+            .compactMap { group -> NearbySkiArea? in
+                guard var best = group.min(by: { $0.distanceMeters < $1.distanceMeters }) else {
+                    return nil
+                }
+
+                if best.bounds == nil, let fallbackBounds = group.compactMap(\.bounds).first {
+                    best = NearbySkiArea(
+                        id: best.id,
+                        name: best.name,
+                        center: best.center,
+                        distanceMeters: best.distanceMeters,
+                        recommendedRadiusMeters: best.recommendedRadiusMeters,
+                        bounds: fallbackBounds
+                    )
+                }
+
+                return best
+            }
             .sorted(by: { $0.distanceMeters < $1.distanceMeters })
 
         return Array(uniqueSorted.prefix(max(0, limit)))
+    }
+
+    private static func isSkiArea(tags: [String: String]) -> Bool {
+        tags["landuse"] == "winter_sports"
+            || tags["site"] == "piste"
+            || tags["leisure"] == "ski_resort"
+    }
+
+    private static func normalizedAreaName(_ name: String) -> String {
+        name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 }
 
@@ -295,10 +333,23 @@ struct OverpassElement: Decodable {
     let tags: [String: String]?
     let geometry: [OverpassGeomPoint]?
     let center: OverpassGeomPoint?
+    let bounds: OverpassBounds?
 }
 
 /// A lat/lon point in Overpass `out geom` output.
 struct OverpassGeomPoint: Decodable {
     let lat: Double
     let lon: Double
+}
+
+/// Overpass relation bounds (`out bb`) in WGS84 degrees.
+struct OverpassBounds: Decodable {
+    let minlat: Double
+    let minlon: Double
+    let maxlat: Double
+    let maxlon: Double
+
+    var boundingBox: BoundingBox {
+        BoundingBox(south: minlat, west: minlon, north: maxlat, east: maxlon)
+    }
 }

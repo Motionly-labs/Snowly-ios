@@ -37,6 +37,7 @@ private struct TrackedRunSnapshot: Identifiable {
 
 struct ActiveTrackingView: View {
     @Environment(SessionTrackingService.self) private var trackingService
+    @Environment(SkiMapCacheService.self) private var skiMapService
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
@@ -741,7 +742,11 @@ struct ActiveTrackingView: View {
         trackingService.stopTracking()
         Task {
             await trackingService.finalizeHealthKitWorkout()
-            trackingService.saveSession(to: modelContext)
+            let resort = ResortResolver.resolveCurrentResort(
+                from: skiMapService,
+                in: modelContext
+            )
+            trackingService.saveSession(to: modelContext, resort: resort)
             showingSummary = true
         }
     }
