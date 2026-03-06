@@ -211,9 +211,10 @@ struct SnowlyApp: App {
         launchArguments: Set<String>
     ) -> ModelContainer? {
 #if targetEnvironment(simulator)
-        guard !isTesting, isMigrationConstraintFailure(error) else { return nil }
+        guard !isTesting else { return nil }
 
         do {
+            print("Simulator persistent store load failed. Attempting store reset recovery: \(error)")
             try resetPersistentStoreFiles()
             let recoveredContainer = try makeModelContainer(
                 isStoredInMemoryOnly: false,
@@ -232,29 +233,6 @@ struct SnowlyApp: App {
 #else
         return nil
 #endif
-    }
-
-    private static func isMigrationConstraintFailure(_ error: Error) -> Bool {
-        let nsError = error as NSError
-        let message = [
-            nsError.localizedDescription,
-            nsError.userInfo["reason"] as? String ?? "",
-            nsError.userInfo[NSLocalizedFailureReasonErrorKey] as? String ?? "",
-        ]
-            .joined(separator: " ")
-            .lowercased()
-
-        if nsError.domain == NSCocoaErrorDomain,
-           (nsError.code == 134110 || nsError.code == 134111),
-           message.contains("constraint violation") {
-            return true
-        }
-
-        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
-            return isMigrationConstraintFailure(underlying)
-        }
-
-        return false
     }
 
     private static func resetPersistentStoreFiles() throws {

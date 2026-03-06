@@ -87,6 +87,7 @@
       }
     },
     "accessibility_weather_loading" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1680,6 +1681,7 @@
       }
     },
     "home_weather_status_allow_location_access" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1690,6 +1692,7 @@
       }
     },
     "home_weather_status_location_required" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1700,6 +1703,7 @@
       }
     },
     "home_weather_status_updating" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

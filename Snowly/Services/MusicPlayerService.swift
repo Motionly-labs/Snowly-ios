@@ -31,7 +31,7 @@ final class MusicPlayerService {
     // MARK: - Private
 
     private let isPlaybackSupported: Bool
-    private lazy var player = SystemMusicPlayer.shared
+    private let player: SystemMusicPlayer?
     private var stateObservation: AnyCancellable?
     private var queueObservation: AnyCancellable?
     private var progressTask: Task<Void, Never>?
@@ -53,6 +53,7 @@ final class MusicPlayerService {
     init() {
         isPlaybackSupported = Self.isPlaybackSupportedOnCurrentRuntime
         authorizationStatus = isPlaybackSupported ? MusicAuthorization.currentStatus : .restricted
+        player = isPlaybackSupported ? SystemMusicPlayer.shared : nil
         guard isPlaybackSupported else { return }
         startObservingPlayer()
     }
@@ -70,7 +71,7 @@ final class MusicPlayerService {
     // MARK: - Playback Controls
 
     func togglePlayback() async {
-        guard isPlaybackSupported else { return }
+        guard isPlaybackSupported, let player else { return }
         if isPlaying {
             player.pause()
         } else {
@@ -83,7 +84,7 @@ final class MusicPlayerService {
     }
 
     func skipToNext() async {
-        guard isPlaybackSupported else { return }
+        guard isPlaybackSupported, let player else { return }
         do {
             try await player.skipToNextEntry()
         } catch {
@@ -92,7 +93,7 @@ final class MusicPlayerService {
     }
 
     func skipToPrevious() async {
-        guard isPlaybackSupported else { return }
+        guard isPlaybackSupported, let player else { return }
         do {
             try await player.skipToPreviousEntry()
         } catch {
@@ -101,7 +102,7 @@ final class MusicPlayerService {
     }
 
     func seekTo(_ time: TimeInterval) {
-        guard isPlaybackSupported else { return }
+        guard isPlaybackSupported, let player else { return }
         player.playbackTime = time
         playbackTime = time
     }
@@ -130,7 +131,7 @@ final class MusicPlayerService {
     }
 
     func playPlaylist(_ playlist: Playlist) async {
-        guard isPlaybackSupported else { return }
+        guard isPlaybackSupported, let player else { return }
         player.queue = [playlist]
         do {
             try await player.play()
@@ -142,7 +143,7 @@ final class MusicPlayerService {
     // MARK: - Player Observation
 
     private func startObservingPlayer() {
-        guard isPlaybackSupported else { return }
+        guard isPlaybackSupported, let player else { return }
         // Observe player state changes via Combine → update @Observable properties
         stateObservation = player.state.objectWillChange.receive(on: DispatchQueue.main).sink { [weak self] _ in
             Task { @MainActor [weak self] in
@@ -163,7 +164,7 @@ final class MusicPlayerService {
     }
 
     private func syncState() {
-        guard isPlaybackSupported else { return }
+        guard isPlaybackSupported, let player else { return }
         let playing = player.state.playbackStatus == .playing
         isPlaying = playing
 
@@ -177,7 +178,7 @@ final class MusicPlayerService {
     }
 
     private func syncQueue() {
-        guard isPlaybackSupported else { return }
+        guard isPlaybackSupported, let player else { return }
         let entry = player.queue.currentEntry
         currentTitle = entry?.title
         currentArtist = entry?.subtitle
@@ -201,12 +202,12 @@ final class MusicPlayerService {
     // MARK: - Progress Polling
 
     private func startProgressPolling() {
-        guard isPlaybackSupported else { return }
+        guard isPlaybackSupported, let player else { return }
         guard progressTask == nil else { return }
         let task = Task { [weak self] in
             while !Task.isCancelled {
                 guard let self else { return }
-                self.playbackTime = self.player.playbackTime
+                self.playbackTime = player.playbackTime
                 try? await Task.sleep(for: .milliseconds(500))
             }
         }

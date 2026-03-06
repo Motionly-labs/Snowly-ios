@@ -336,8 +336,10 @@ struct HomeView: View {
 
             Spacer()
 
-            temperatureDisplay
-                .allowsHitTesting(false)
+            if shouldShowWeatherModule {
+                temperatureDisplay
+                    .allowsHitTesting(false)
+            }
 
             Spacer()
 
@@ -670,52 +672,48 @@ struct HomeView: View {
     // MARK: - Weather Display
 
     private var temperatureDisplay: some View {
-        VStack(spacing: 12) {
+        Group {
             if let weather = weatherService.currentWeather {
-                Text(temperatureString(weather.temperature))
-                    .font(Typography.temperatureHero)
-                    .monospacedDigit()
-                    .foregroundStyle(.primary)
+                VStack(spacing: 12) {
+                    Text(temperatureString(weather.temperature))
+                        .font(Typography.temperatureHero)
+                        .monospacedDigit()
+                        .foregroundStyle(.primary)
 
-                Label(weather.condition, systemImage: weather.symbolName)
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    Label(weather.condition, systemImage: weather.symbolName)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.secondary)
 
-                HStack(spacing: 20) {
-                    weatherMetricText(
-                        text: windSpeedShort(weather.windSpeed),
-                        systemImage: "wind"
-                    )
-                    weatherMetricText(
-                        text: "UV \(weather.uvIndex)",
-                        systemImage: "sun.max"
-                    )
+                    HStack(spacing: 20) {
+                        weatherMetricText(
+                            text: windSpeedShort(weather.windSpeed),
+                            systemImage: "wind"
+                        )
+                        weatherMetricText(
+                            text: "UV \(weather.uvIndex)",
+                            systemImage: "sun.max"
+                        )
+                    }
                 }
-            } else {
-                if shouldShowWeatherSpinner {
-                    ProgressView()
-                        .tint(.accentColor)
-                        .scaleEffect(0.92)
-                }
-
-                Text(weatherStatusText)
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, Spacing.content)
+                .padding(.vertical, Spacing.lg)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.xLarge, style: .continuous))
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(weatherAccessibilityLabel)
             }
         }
-        .multilineTextAlignment(.center)
-        .padding(.horizontal, Spacing.content)
-        .padding(.vertical, Spacing.lg)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.xLarge, style: .continuous))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(weatherAccessibilityLabel)
     }
 
     private var weatherAccessibilityLabel: String {
         guard let weather = weatherService.currentWeather else {
-            return String(localized: "accessibility_weather_loading")
+            return ""
         }
         return "\(temperatureString(weather.temperature)), \(weather.condition)"
+    }
+
+    private var shouldShowWeatherModule: Bool {
+        weatherService.currentWeather != nil
     }
 
     // MARK: - Helpers
@@ -810,32 +808,6 @@ struct HomeView: View {
             return "\(Int(round(kmh))) km/h"
         case .imperial:
             return "\(Int(round(kmh * 0.621371))) mph"
-        }
-    }
-
-    private var weatherStatusText: String {
-        switch locationService.authorizationStatus {
-        case .denied, .restricted:
-            return String(localized: "home_weather_status_location_required")
-        case .notDetermined:
-            return String(localized: "home_weather_status_allow_location_access")
-        default:
-            if weatherService.isLoading {
-                return String(localized: "home_weather_status_updating")
-            }
-            if let error = weatherService.lastError, !error.isEmpty {
-                return error
-            }
-            return String(localized: "home_weather_status_waiting_for_gps")
-        }
-    }
-
-    private var shouldShowWeatherSpinner: Bool {
-        switch locationService.authorizationStatus {
-        case .authorizedAlways, .authorizedWhenInUse:
-            return weatherService.isLoading || weatherService.lastError == nil
-        default:
-            return false
         }
     }
 
