@@ -16,7 +16,7 @@ struct GearSetupRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Spacing.md) {
             // Progress circle
             ZStack {
                 Circle()
@@ -26,7 +26,7 @@ struct GearSetupRow: View {
                 Circle()
                     .trim(from: 0, to: setup.progress)
                     .stroke(
-                        setup.isComplete ? Color.green : Color.accentColor,
+                        setup.isComplete ? ColorTokens.success : Color.accentColor,
                         style: StrokeStyle(lineWidth: 3, lineCap: .round)
                     )
                     .frame(width: 44, height: 44)
@@ -34,8 +34,8 @@ struct GearSetupRow: View {
 
                 if setup.isComplete {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.green)
+                        .font(Typography.iconBold)
+                        .foregroundStyle(ColorTokens.success)
                 } else {
                     Text("\(Int(setup.progress * 100))%")
                         .font(.caption2)
@@ -44,11 +44,11 @@ struct GearSetupRow: View {
             }
 
             // Info
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text(setup.name)
                     .font(.headline)
 
-                HStack(spacing: 8) {
+                HStack(spacing: Spacing.sm) {
                     if !setup.brand.isEmpty {
                         Text(setup.brand)
                             .font(.caption)
@@ -68,12 +68,12 @@ struct GearSetupRow: View {
                     .font(.caption)
                     .fontWeight(.medium)
                     .foregroundStyle(Color.accentColor)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.accentColor.opacity(0.15))
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, Spacing.xs)
+                    .background(Color.accentColor.opacity(Opacity.gentle))
                     .clipShape(Capsule())
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, Spacing.xs)
     }
 }

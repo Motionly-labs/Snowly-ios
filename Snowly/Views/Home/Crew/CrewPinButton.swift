@@ -14,12 +14,12 @@ struct CrewPinButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "mappin.and.ellipse")
-                .font(.system(size: 17, weight: .medium))
+                .font(Typography.bodyMedium)
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 44, height: 44)
                 .background(.regularMaterial, in: Circle())
         }
-        .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 4)
+        .shadowStyle(.medium)
         .accessibilityLabel(String(localized: "crew_pin_drop_button"))
     }
 }

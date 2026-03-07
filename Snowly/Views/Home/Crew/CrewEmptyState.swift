@@ -15,13 +15,13 @@ struct CrewEmptyState: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        VStack(spacing: 6) {
-            HStack(spacing: 12) {
+        VStack(spacing: Spacing.gap) {
+            HStack(spacing: Spacing.md) {
                 Image(systemName: "person.2.fill")
                     .font(.title3)
                     .foregroundStyle(.secondary)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
                     Text(String(localized: "crew_empty_title"))
                         .font(.subheadline.weight(.semibold))
                     Text(String(localized: "crew_empty_subtitle"))
@@ -44,11 +44,11 @@ struct CrewEmptyState: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.caption2)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(ColorTokens.error)
             }
         }
         .padding(.horizontal, Spacing.md)
-        .padding(.vertical, 10)
+        .padding(.vertical, Spacing.gutter)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         .alert(String(localized: "crew_create_title"), isPresented: $showCreateAlert) {
             TextField(String(localized: "crew_name_placeholder"), text: $crewName)

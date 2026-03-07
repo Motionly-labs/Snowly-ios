@@ -43,7 +43,7 @@ struct ActivityRingView: View {
                     try? await Task.sleep(for: .seconds(delay))
                 }
                 guard !Task.isCancelled else { return }
-                withAnimation(.timingCurve(0.22, 1, 0.36, 1, duration: 1.5)) {
+                withAnimation(AnimationTokens.smoothEntrance) {
                     progress = targetProgress
                 }
             }

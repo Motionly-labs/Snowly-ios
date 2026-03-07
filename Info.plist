@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>UIApplicationShortcutItems</key>
+	<array>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.snowly.start-tracking</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>quick_action_start_tracking</string>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>figure.skiing.downhill</string>
+		</dict>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Roy-Kid.Snowly</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>snowly</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

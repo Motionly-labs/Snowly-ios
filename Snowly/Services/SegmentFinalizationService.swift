@@ -10,7 +10,7 @@ import Foundation
 import Observation
 
 /// Immutable snapshot of a completed run or chairlift segment.
-struct CompletedRunData: Sendable {
+struct CompletedRunData: Sendable, Equatable {
     let startDate: Date
     let endDate: Date
     let distance: Double
@@ -84,12 +84,10 @@ final class SegmentFinalizationService {
         let duration = last.timestamp.timeIntervalSince(first.timestamp)
         let avgSpeed = duration > 0 ? runDistance / duration : 0
 
-        // Encode track data synchronously (runs on @MainActor)
+        // Capture points for background encoding
         let points = currentSegmentPoints
-        let trackData: Data? = {
-            try? JSONEncoder().encode(points)
-        }()
 
+        // Create run with nil trackData first to avoid blocking MainActor
         let run = CompletedRunData(
             startDate: first.timestamp,
             endDate: last.timestamp,
@@ -98,10 +96,11 @@ final class SegmentFinalizationService {
             maxSpeed: runMaxSpeed,
             averageSpeed: avgSpeed,
             activityType: segmentType,
-            trackData: trackData
+            trackData: nil
         )
 
         completedRuns.append(run)
+        let runIndex = completedRuns.count - 1
 
         if segmentType == .skiing {
             runCount += 1
@@ -110,6 +109,28 @@ final class SegmentFinalizationService {
         currentSegmentPoints = []
         currentSegmentType = nil
         lastActiveTime = nil
+
+        // Encode track data off MainActor, then patch the completed run
+        Task.detached { [weak self] in
+            let trackData = try? JSONEncoder().encode(points)
+            await self?.patchTrackData(trackData, at: runIndex)
+        }
+    }
+
+    /// Patches encoded track data back into a completed run after background encoding.
+    private func patchTrackData(_ data: Data?, at index: Int) {
+        guard index < completedRuns.count, let data else { return }
+        let existing = completedRuns[index]
+        completedRuns[index] = CompletedRunData(
+            startDate: existing.startDate,
+            endDate: existing.endDate,
+            distance: existing.distance,
+            verticalDrop: existing.verticalDrop,
+            maxSpeed: existing.maxSpeed,
+            averageSpeed: existing.averageSpeed,
+            activityType: existing.activityType,
+            trackData: data
+        )
     }
 
     /// Reset all state for a new session.

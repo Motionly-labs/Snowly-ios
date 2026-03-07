@@ -61,14 +61,14 @@ struct SkierFigureView: View {
                 let active = zone.resolvedColor(from: setup)
 
                 Rectangle()
-                    .fill(isSelected ? active.opacity(0.24) : colors.fill)
+                    .fill(isSelected ? active.opacity(Opacity.soft) : colors.fill)
                     .mask(
                         Image(uiImage: maskImage)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                     )
                     .shadow(
-                        color: isSelected ? active.opacity(0.42) : .clear,
+                        color: isSelected ? active.opacity(Opacity.prominent) : .clear,
                         radius: isSelected ? glowRadius : 0
                     )
             }

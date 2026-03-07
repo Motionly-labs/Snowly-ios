@@ -13,7 +13,7 @@ struct SessionCard: View {
     let unitSystem: UnitSystem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             // Date label
             Text(session.startDate.shortDisplay.uppercased())
                 .font(.caption2.weight(.bold))
@@ -54,7 +54,7 @@ struct SessionCard: View {
     }
 
     private func statColumn(value: String, label: String) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: Spacing.xs) {
             Text(value)
                 .font(.caption.bold())
             Text(label)

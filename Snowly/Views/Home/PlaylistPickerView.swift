@@ -47,7 +47,7 @@ struct PlaylistPickerView: View {
     // MARK: - Subviews
 
     private var loadingView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Spacing.lg) {
             Spacer()
             ProgressView()
                 .controlSize(.large)
@@ -59,10 +59,10 @@ struct PlaylistPickerView: View {
     }
 
     private var emptyView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Spacing.md) {
             Spacer()
             Image(systemName: "music.note.list")
-                .font(.system(size: 48))
+                .font(Typography.musicIcon)
                 .foregroundStyle(.tertiary)
             Text(String(localized: "music_playlists_empty_title"))
                 .font(.title3.weight(.semibold))
@@ -72,7 +72,7 @@ struct PlaylistPickerView: View {
                 .multilineTextAlignment(.center)
             Spacer()
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, Spacing.xl)
     }
 
     private var playlistList: some View {
@@ -91,12 +91,12 @@ struct PlaylistPickerView: View {
     }
 
     private func playlistRow(_ playlist: Playlist) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Spacing.md) {
             if let artwork = playlist.artwork {
                 ArtworkImage(artwork, width: 56, height: 56)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
             } else {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: CornerRadius.small)
                     .fill(.quinary)
                     .frame(width: 56, height: 56)
                     .overlay {
@@ -105,7 +105,7 @@ struct PlaylistPickerView: View {
                     }
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text(playlist.name)
                     .font(.body)
                     .lineLimit(1)

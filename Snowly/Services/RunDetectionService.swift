@@ -16,6 +16,16 @@ enum DetectedActivity: Sendable, Equatable {
     case skiing
 }
 
+extension DetectedActivity {
+    var activityName: String {
+        switch self {
+        case .skiing: "skiing"
+        case .chairlift: "chairlift"
+        case .idle: "idle"
+        }
+    }
+}
+
 enum RunDetectionService {
 
     /// Determines activity type from a new track point plus recent history.
@@ -32,10 +42,41 @@ enum RunDetectionService {
     ///   - recentPoints: Last 5-10 points for altitude trend analysis.
     ///   - motion: Current CoreMotion activity (optional enhancement).
     /// - Returns: The detected activity type.
-    static func detect(
+    nonisolated static func detect(
         point: TrackPoint,
         recentPoints: [TrackPoint],
         motion: DetectedMotion = .unknown
+    ) -> DetectedActivity {
+        classifyActivity(point: point, motion: motion) {
+            calculateAltitudeTrend(current: point, recent: recentPoints)
+        }
+    }
+
+    /// Overload that takes pre-extracted timestamps and altitudes to avoid
+    /// intermediate array allocations when the caller already has raw data.
+    nonisolated static func detect(
+        point: TrackPoint,
+        recentTimestamps: [Double],
+        recentAltitudes: [Double],
+        motion: DetectedMotion = .unknown
+    ) -> DetectedActivity {
+        classifyActivity(point: point, motion: motion) {
+            calculateAltitudeTrendFromRaw(
+                currentTimestamp: point.timestamp.timeIntervalSinceReferenceDate,
+                currentAltitude: point.altitude,
+                recentTimestamps: recentTimestamps,
+                recentAltitudes: recentAltitudes
+            )
+        }
+    }
+
+    /// Core classification logic shared by all detect overloads.
+    /// The altitudeTrendProvider closure is only called when the speed is in
+    /// the ambiguous range, avoiding unnecessary computation for clear-cut cases.
+    nonisolated private static func classifyActivity(
+        point: TrackPoint,
+        motion: DetectedMotion,
+        altitudeTrendProvider: () -> Double
     ) -> DetectedActivity {
         let speed = point.speed
 
@@ -54,12 +95,12 @@ enum RunDetectionService {
             return .skiing
         }
 
-        // Analyze altitude trend from recent points
-        let altitudeTrend = calculateAltitudeTrend(current: point, recent: recentPoints)
-
         // Medium speed range: use altitude trend to distinguish
         if speed >= SharedConstants.idleSpeedThreshold
             && speed <= SharedConstants.chairliftMaxSpeed {
+
+            // Only compute altitude trend when actually needed
+            let altitudeTrend = altitudeTrendProvider()
 
             if altitudeTrend > SharedConstants.altitudeTrendUpThreshold {
                 // Altitude is rising consistently → chairlift
@@ -72,7 +113,7 @@ enum RunDetectionService {
             }
 
             // Flat altitude at medium speed: use CoreMotion hint
-            if motion == .automotive {
+            if case .automotive = motion {
                 return .chairlift
             }
         }
@@ -87,22 +128,31 @@ enum RunDetectionService {
 
     /// Applies a median filter to smooth altitude values and remove GPS spikes.
     /// Window size must be odd; values at edges use a smaller window.
-    static func medianFilter(
+    /// Uses a single reusable scratch buffer to avoid per-element allocations.
+    nonisolated static func medianFilter(
         values: [Double],
         windowSize: Int = SharedConstants.medianFilterWindowSize
     ) -> [Double] {
         guard values.count >= windowSize, windowSize >= 3 else { return values }
         let halfWindow = windowSize / 2
-        return values.indices.map { i in
+        var result = [Double](repeating: 0, count: values.count)
+        var scratch = [Double]()
+        scratch.reserveCapacity(windowSize)
+        for i in values.indices {
             let start = max(0, i - halfWindow)
             let end = min(values.count - 1, i + halfWindow)
-            let window = values[start...end].sorted()
-            return window[window.startIndex + window.count / 2]
+            scratch.removeAll(keepingCapacity: true)
+            for j in start...end {
+                scratch.append(values[j])
+            }
+            scratch.sort()
+            result[i] = scratch[scratch.count / 2]
         }
+        return result
     }
 
     /// Whether the current idle period has lasted long enough to end a run.
-    static func shouldEndRun(
+    nonisolated static func shouldEndRun(
         lastActivityTime: Date,
         now: Date = Date()
     ) -> Bool {
@@ -115,7 +165,7 @@ enum RunDetectionService {
     /// Returns slope in meters per second (positive = ascending, negative = descending).
     /// Regression is far more robust to single-point GPS altitude spikes than
     /// simple endpoint subtraction.
-    private static func calculateAltitudeTrend(
+    nonisolated private static func calculateAltitudeTrend(
         current: TrackPoint,
         recent: [TrackPoint]
     ) -> Double {
@@ -131,6 +181,52 @@ enum RunDetectionService {
         let sumY = ys.reduce(0, +)
         let sumXY = zip(xs, ys).reduce(0.0) { $0 + $1.0 * $1.1 }
         let sumX2 = xs.reduce(0.0) { $0 + $1 * $1 }
+
+        let denominator = n * sumX2 - sumX * sumX
+        guard denominator > 0 else { return 0 }
+
+        return (n * sumXY - sumX * sumY) / denominator
+    }
+
+    /// Altitude trend from pre-extracted timestamp/altitude arrays.
+    /// Avoids allocating intermediate arrays when called from CircularBuffer paths.
+    nonisolated private static func calculateAltitudeTrendFromRaw(
+        currentTimestamp: Double,
+        currentAltitude: Double,
+        recentTimestamps: [Double],
+        recentAltitudes: [Double]
+    ) -> Double {
+        let totalCount = recentTimestamps.count + 1
+        guard totalCount >= SharedConstants.minPointsForAltitudeTrend else { return 0 }
+
+        var allAltitudes = recentAltitudes
+        allAltitudes.append(currentAltitude)
+        let ys = medianFilter(values: allAltitudes)
+
+        let baseTime = recentTimestamps[0]
+
+        let n = Double(totalCount)
+        var sumX = 0.0
+        var sumY = 0.0
+        var sumXY = 0.0
+        var sumX2 = 0.0
+
+        for i in 0..<recentTimestamps.count {
+            let x = recentTimestamps[i] - baseTime
+            let y = ys[i]
+            sumX += x
+            sumY += y
+            sumXY += x * y
+            sumX2 += x * x
+        }
+
+        // Add current point
+        let xCurrent = currentTimestamp - baseTime
+        let yCurrent = ys[totalCount - 1]
+        sumX += xCurrent
+        sumY += yCurrent
+        sumXY += xCurrent * yCurrent
+        sumX2 += xCurrent * xCurrent
 
         let denominator = n * sumX2 - sumX * sumX
         guard denominator > 0 else { return 0 }

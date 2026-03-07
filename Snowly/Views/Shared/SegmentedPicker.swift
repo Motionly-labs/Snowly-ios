@@ -17,7 +17,7 @@ struct SegmentedPicker<T: Hashable, Label: View>: View {
             ForEach(items, id: \.self) { item in
                 let isSelected = selection == item
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    withAnimation(AnimationTokens.standardEaseInOut) {
                         selection = item
                     }
                 } label: {
@@ -30,7 +30,7 @@ struct SegmentedPicker<T: Hashable, Label: View>: View {
                                 Capsule().fill(.quaternary)
                             }
                         }
-                        .animation(.easeInOut(duration: 0.2), value: isSelected)
+                        .animation(AnimationTokens.standardEaseInOut, value: isSelected)
                 }
                 .buttonStyle(.plain)
             }

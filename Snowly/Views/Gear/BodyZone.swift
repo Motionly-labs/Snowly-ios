@@ -43,6 +43,8 @@ enum BodyZone: Int, CaseIterable, Identifiable {
         }
     }
 
+    /// Zone identification accent colors. These are NOT semantic status colors —
+    /// they visually distinguish body zones on the skier figure.
     var accentColor: Color {
         switch self {
         case .head: return .red
@@ -89,7 +91,7 @@ enum BodyZone: Int, CaseIterable, Identifiable {
     }
 
     func resolvedColor(from setup: GearSetup) -> Color {
-        isComplete(from: setup) ? .green : accentColor
+        isComplete(from: setup) ? ColorTokens.success : accentColor
     }
 
     // MARK: - Zone color calculation
@@ -103,17 +105,17 @@ enum BodyZone: Int, CaseIterable, Identifiable {
         let complete = isComplete(from: setup)
 
         if complete {
-            let fillOpacity = isSelected ? 0.35 : 0.25
-            let strokeOpacity = isSelected ? 0.6 : 0.4
+            let fillOpacity = isSelected ? Opacity.medium : Opacity.soft
+            let strokeOpacity = isSelected ? Opacity.strong : Opacity.prominent
             return (
-                fill: Color.green.opacity(fillOpacity),
-                stroke: Color.green.opacity(strokeOpacity)
+                fill: ColorTokens.success.opacity(fillOpacity),
+                stroke: ColorTokens.success.opacity(strokeOpacity)
             )
         }
 
         if prog > 0 {
-            let fillOpacity = isSelected ? 0.25 : (0.1 + prog * 0.2)
-            let strokeOpacity = isSelected ? 0.5 : 0.3
+            let fillOpacity = isSelected ? Opacity.soft : (Opacity.subtle + prog * Opacity.muted)
+            let strokeOpacity = isSelected ? Opacity.half : Opacity.moderate
             return (
                 fill: accentColor.opacity(fillOpacity),
                 stroke: accentColor.opacity(strokeOpacity)
@@ -121,8 +123,8 @@ enum BodyZone: Int, CaseIterable, Identifiable {
         }
 
         // Not started — show zone accent color as a dim wireframe
-        let fillOpacity = isSelected ? 0.12 : 0.06
-        let strokeOpacity = isSelected ? 0.4 : 0.25
+        let fillOpacity = isSelected ? Opacity.light : Opacity.faint
+        let strokeOpacity = isSelected ? Opacity.prominent : Opacity.soft
         return (
             fill: accentColor.opacity(fillOpacity),
             stroke: accentColor.opacity(strokeOpacity)

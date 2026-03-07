@@ -45,10 +45,10 @@ struct GearListView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: Spacing.content) {
                     // Header: preset picker + status
                     header
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, Spacing.xl)
 
                     // Skier figure
                     if let setup = activeSetup {
@@ -56,19 +56,19 @@ struct GearListView: View {
                             setup: setup,
                             selectedZone: selectedZone,
                             onZoneTap: { zone in
-                                withAnimation(.easeInOut(duration: 0.3)) {
+                                withAnimation(AnimationTokens.moderateEaseInOut) {
                                     selectedZone = (selectedZone == zone) ? nil : zone
                                 }
                             }
                         )
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, Spacing.xl)
 
                         // Zone status dots
                         ZoneStatusBar(
                             setup: setup,
                             selectedZone: selectedZone,
                             onZoneTap: { zone in
-                                withAnimation(.easeInOut(duration: 0.3)) {
+                                withAnimation(AnimationTokens.moderateEaseInOut) {
                                     selectedZone = (selectedZone == zone) ? nil : zone
                                 }
                             }
@@ -88,27 +88,27 @@ struct GearListView: View {
                                     showingAddItem = true
                                 } : nil
                             )
-                            .padding(.horizontal, 24)
+                            .padding(.horizontal, Spacing.xl)
                             .transition(.opacity.combined(with: .move(edge: .top)))
                         }
 
                         // Ready message when complete
                         if overallProgress >= 1.0 {
                             readyBanner
-                                .padding(.horizontal, 24)
+                                .padding(.horizontal, Spacing.xl)
                                 .transition(.opacity)
                         }
                     }
                 }
-                .padding(.top, 16)
-                .padding(.bottom, 48)
+                .padding(.top, Spacing.lg)
+                .padding(.bottom, Spacing.section)
             }
             .navigationTitle(String(localized: "gear_nav_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        withAnimation(.easeInOut(duration: 0.25)) {
+                        withAnimation(AnimationTokens.standardEaseInOut) {
                             isEditing.toggle()
                         }
                     } label: {
@@ -152,7 +152,7 @@ struct GearListView: View {
 
             Text(statusText)
                 .font(.caption.bold())
-                .foregroundStyle(overallProgress >= 1.0 ? Color.green : Color.secondary)
+                .foregroundStyle(overallProgress >= 1.0 ? ColorTokens.success : Color.secondary)
         }
     }
 
@@ -186,7 +186,7 @@ struct GearListView: View {
             }
             .disabled(overallProgress == 0)
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: Spacing.sm) {
                 Text(activeSetup?.name ?? String(localized: "gear_nav_title"))
                     .font(.title2.bold())
 
@@ -206,11 +206,11 @@ struct GearListView: View {
             Spacer()
             Label(String(localized: "gear_banner_ready_to_ride"), systemImage: "checkmark.circle.fill")
                 .font(.subheadline.bold())
-                .foregroundStyle(.green)
+                .foregroundStyle(ColorTokens.success)
             Spacer()
         }
-        .padding(16)
-        .background(.green.opacity(0.1), in: RoundedRectangle(cornerRadius: 16))
+        .padding(Spacing.lg)
+        .background(ColorTokens.success.opacity(Opacity.subtle), in: RoundedRectangle(cornerRadius: CornerRadius.large))
     }
 
     // MARK: - Actions
@@ -296,7 +296,7 @@ struct GearListView: View {
             .filter { $0 != zone }
             .first { !$0.isComplete(from: setup) }
 
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(AnimationTokens.moderateEaseInOut) {
             selectedZone = nextIncomplete
         }
     }
@@ -306,7 +306,7 @@ struct GearListView: View {
         hasAutoSelected = true
 
         let firstIncomplete = activeZones.first { !$0.isComplete(from: setup) }
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(AnimationTokens.moderateEaseInOut) {
             selectedZone = firstIncomplete ?? activeZones.first
         }
     }

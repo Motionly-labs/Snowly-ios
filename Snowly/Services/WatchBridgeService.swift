@@ -89,13 +89,22 @@ final class WatchBridgeService {
             trackingService.startTracking()
 
         case .requestPause:
-            trackingService.pauseTracking()
+            Task { [weak self] in
+                guard let self else { return }
+                await self.trackingService.pauseTracking()
+            }
 
         case .requestResume:
-            trackingService.resumeTracking()
+            Task { [weak self] in
+                guard let self else { return }
+                await self.trackingService.resumeTracking()
+            }
 
         case .requestStop:
-            trackingService.stopTracking()
+            Task { [weak self] in
+                guard let self else { return }
+                await self.trackingService.stopTracking()
+            }
 
         case .requestStatus:
             sendCurrentStateToWatch()
@@ -235,7 +244,7 @@ final class WatchBridgeService {
             totalDistance: trackingService.totalDistance,
             totalVertical: trackingService.totalVertical,
             runCount: trackingService.runCount,
-            elapsedTime: trackingService.elapsedTime,
+            elapsedTime: trackingService.computeElapsedTime(),
             batteryLevel: batteryService.batteryLevel
         )
     }

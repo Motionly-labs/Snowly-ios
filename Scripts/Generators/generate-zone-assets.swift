@@ -7,7 +7,7 @@
 //  from the SkierMask SVG. Run this once after changing the source mask.
 //
 //  Usage:
-//    swift Scripts/generate-zone-assets.swift
+//    swift Scripts/Generators/generate-zone-assets.swift
 //
 //  Output (into asset catalog):
 //    - 5 zone mask PNGs:  ZoneMask-head.png, ZoneMask-body.png, etc.

@@ -26,7 +26,7 @@ struct CrewManageSheet: View {
                     Section {
                         Text(displayedErrorMessage)
                             .font(.callout)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(ColorTokens.error)
                     }
                 }
                 syncSection
@@ -114,9 +114,9 @@ struct CrewManageSheet: View {
     private var membersSection: some View {
         Section {
             ForEach(crewService.activeCrew?.members ?? []) { member in
-                HStack(spacing: 10) {
+                HStack(spacing: Spacing.gutter) {
                     Circle()
-                        .fill(member.isOnline ? Color.green : Color.gray)
+                        .fill(member.isOnline ? ColorTokens.success : Color.gray)
                         .frame(width: 8, height: 8)
 
                     Text(member.displayName)
@@ -126,8 +126,8 @@ struct CrewManageSheet: View {
                         Text(String(localized: "crew_host"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, Spacing.gap)
+                            .padding(.vertical, Spacing.xxs)
                             .background(.quaternary, in: Capsule())
                     }
 
@@ -138,7 +138,7 @@ struct CrewManageSheet: View {
                             .controlSize(.small)
                     }
                 }
-                .opacity(removingMemberIds.contains(member.id) ? 0.6 : 1)
+                .opacity(removingMemberIds.contains(member.id) ? Opacity.strong : 1)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     if crewService.canKick(member) {
                         Button(role: .destructive) {

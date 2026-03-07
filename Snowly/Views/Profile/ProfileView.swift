@@ -21,7 +21,7 @@ struct ProfileView: View {
         List {
             // Avatar + name
             Section {
-                VStack(spacing: 12) {
+                VStack(spacing: Spacing.md) {
                     AvatarView(
                         avatarData: profile?.avatarData,
                         displayName: displayName,
@@ -36,7 +36,7 @@ struct ProfileView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
+                .padding(.vertical, Spacing.sm)
             }
 
             // Season bests
@@ -86,7 +86,7 @@ struct ProfileView: View {
         HStack {
             Image(systemName: icon)
                 .foregroundStyle(Color.accentColor)
-                .frame(width: 24)
+                .frame(width: Spacing.xl)
             Text(label)
             Spacer()
             Text(value)

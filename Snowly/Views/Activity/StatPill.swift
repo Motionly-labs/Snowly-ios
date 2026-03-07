@@ -13,7 +13,7 @@ struct StatPill: View {
     var isAccented: Bool = false
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: Spacing.xs) {
             Text(value)
                 .font(.title2.bold())
                 .foregroundStyle(isAccented ? Color.accentColor : .primary)
@@ -24,7 +24,7 @@ struct StatPill: View {
                 .textCase(.uppercase)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .background(.quinary, in: RoundedRectangle(cornerRadius: 16))
+        .padding(.vertical, Spacing.lg)
+        .background(.quinary, in: RoundedRectangle(cornerRadius: CornerRadius.large))
     }
 }

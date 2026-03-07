@@ -19,7 +19,7 @@ struct ZoneStatusBar: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Spacing.md) {
             ForEach(activeZones) { zone in
                 dotView(for: zone)
                     .onTapGesture { onZoneTap(zone) }
@@ -32,7 +32,7 @@ struct ZoneStatusBar: View {
         let isSelected = selectedZone == zone
 
         let color: Color = if isComplete {
-            .green
+            ColorTokens.success
         } else if isSelected {
             zone.accentColor
         } else {
@@ -43,7 +43,7 @@ struct ZoneStatusBar: View {
             .fill(color)
             .frame(width: 8, height: 8)
             .scaleEffect(isSelected ? 1.4 : 1.0)
-            .animation(.easeInOut(duration: 0.2), value: isSelected)
+            .animation(AnimationTokens.quickEaseInOut, value: isSelected)
     }
 }
 

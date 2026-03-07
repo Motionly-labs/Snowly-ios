@@ -11,28 +11,28 @@ struct CrewMemberAnnotation: View {
     let member: MemberLocation
 
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: Spacing.xxs) {
             Circle()
                 .fill(CrewMarkerColor.color(for: member.userId))
                 .frame(width: 32, height: 32)
                 .overlay {
                     Text(initial)
-                        .font(.system(size: 13, weight: .bold))
+                        .font(Typography.smallBold)
                         .foregroundStyle(.white)
                 }
                 .overlay(Circle().stroke(.white, lineWidth: 2))
-                .shadow(color: .black.opacity(0.3), radius: 4)
-                .opacity(member.isStale ? 0.6 : 1.0)
+                .shadowStyle(.subtle)
+                .opacity(member.isStale ? Opacity.strong : 1.0)
 
             Image(systemName: activityIcon)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
 
             Text(member.displayName)
-                .font(.caption2.weight(.semibold))
+                .font(Typography.caption2Semibold)
                 .foregroundStyle(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
+                .padding(.horizontal, Spacing.gap)
+                .padding(.vertical, Spacing.xxs)
                 .background(.ultraThinMaterial, in: Capsule())
         }
     }

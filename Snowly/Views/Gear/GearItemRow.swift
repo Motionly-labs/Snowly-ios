@@ -13,10 +13,10 @@ struct GearItemRow: View {
 
     var body: some View {
         Button(action: onToggle) {
-            HStack(spacing: 12) {
+            HStack(spacing: Spacing.md) {
                 Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
-                    .foregroundStyle(item.isChecked ? Color.green : Color.secondary)
+                    .foregroundStyle(item.isChecked ? ColorTokens.success : Color.secondary)
                     .symbolEffect(.bounce, value: item.isChecked)
 
                 Text(item.name)

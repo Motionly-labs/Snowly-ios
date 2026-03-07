@@ -15,7 +15,7 @@ struct RunBarsView: View {
         let maxValue = max(values.max() ?? 1, 1)
         let maxIndex = values.firstIndex(of: values.max() ?? 0) ?? 0
 
-        HStack(alignment: .bottom, spacing: 6) {
+        HStack(alignment: .bottom, spacing: Spacing.gap) {
             ForEach(Array(values.enumerated()), id: \.offset) { index, value in
                 let rawHeight = CGFloat(value / maxValue) * 48
                 let animatedHeight = max(2, rawHeight * progress)
@@ -24,7 +24,7 @@ struct RunBarsView: View {
                 VStack {
                     Spacer(minLength: 0)
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(isMax ? Color.accentColor : Color.secondary.opacity(0.3))
+                        .fill(isMax ? Color.accentColor : Color.secondary.opacity(Opacity.moderate))
                         .frame(maxWidth: 32)
                         .frame(height: animatedHeight)
                 }
@@ -32,7 +32,7 @@ struct RunBarsView: View {
             }
         }
         .onAppear {
-            withAnimation(.timingCurve(0.2, 0.9, 0.25, 1, duration: 1.2)) {
+            withAnimation(AnimationTokens.smoothEntranceMedium) {
                 progress = 1
             }
         }

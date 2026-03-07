@@ -2,7 +2,7 @@
 //  NowPlayingSheet.swift
 //  Snowly
 //
-//  Apple Music–style Now Playing sheet with artwork, track info,
+//  Apple Music-style Now Playing sheet with artwork, track info,
 //  seekable progress bar, playback controls, volume, AirPlay,
 //  and playlist browsing.
 //
@@ -21,7 +21,7 @@ struct NowPlayingSheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 dragIndicator
-                    .padding(.top, 8)
+                    .padding(.top, Spacing.sm)
 
                 if musicService.authorizationStatus == .authorized {
                     authorizedContent
@@ -29,7 +29,7 @@ struct NowPlayingSheet: View {
                     unauthorizedContent
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, Spacing.xl)
             .task {
                 if musicService.authorizationStatus == .notDetermined {
                     await musicService.requestAuthorization()
@@ -45,7 +45,7 @@ struct NowPlayingSheet: View {
             Spacer()
 
             artworkView
-                .padding(.horizontal, 40)
+                .padding(.horizontal, Spacing.xxxl)
 
             Spacer()
                 .frame(height: 28)
@@ -53,7 +53,7 @@ struct NowPlayingSheet: View {
             trackInfoView
 
             Spacer()
-                .frame(height: 24)
+                .frame(height: Spacing.xl)
 
             progressBar
 
@@ -63,29 +63,29 @@ struct NowPlayingSheet: View {
             playbackControls
 
             Spacer()
-                .frame(height: 24)
+                .frame(height: Spacing.xl)
 
             VolumeSliderView()
                 .frame(height: 32)
 
             Spacer()
-                .frame(height: 20)
+                .frame(height: Spacing.content)
 
             bottomActions
 
             Spacer()
-                .frame(height: 16)
+                .frame(height: Spacing.lg)
         }
     }
 
     // MARK: - Unauthorized Content
 
     private var unauthorizedContent: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Spacing.lg) {
             Spacer()
 
             Image(systemName: "music.note.house")
-                .font(.system(size: 48))
+                .font(Typography.musicIcon)
                 .foregroundStyle(.tertiary)
 
             Text(String(localized: "music_access_required_title"))
@@ -105,7 +105,7 @@ struct NowPlayingSheet: View {
                     }
                 }
                 .buttonStyle(.bordered)
-                .padding(.top, 8)
+                .padding(.top, Spacing.sm)
             }
 
             Spacer()
@@ -124,27 +124,27 @@ struct NowPlayingSheet: View {
     private var artworkView: some View {
         if let artwork = musicService.currentArtwork {
             ArtworkImage(artwork, width: 280, height: 280)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .shadow(color: .black.opacity(0.25), radius: 20, x: 0, y: 10)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+                .shadowStyle(.large)
         } else {
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: CornerRadius.large)
                 .fill(.quinary)
                 .frame(width: 280, height: 280)
                 .overlay {
                     Image(systemName: "music.note")
-                        .font(.system(size: 60))
+                        .font(Typography.onboardingIcon)
                         .foregroundStyle(.tertiary)
                 }
         }
     }
 
     private var trackInfoView: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: Spacing.gap) {
             Text(musicService.currentTitle ?? String(localized: "music_now_playing_not_playing"))
                 .font(.title3.weight(.semibold))
                 .lineLimit(1)
 
-            Text(musicService.currentArtist ?? "—")
+            Text(musicService.currentArtist ?? "\u{2014}")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -158,7 +158,7 @@ struct NowPlayingSheet: View {
         let total = max(musicService.duration, 1)
         let progress = min(max(current / total, 0), 1)
 
-        return VStack(spacing: 6) {
+        return VStack(spacing: Spacing.gap) {
             GeometryReader { geo in
                 let width = geo.size.width
 

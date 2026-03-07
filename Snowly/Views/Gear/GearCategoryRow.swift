@@ -29,7 +29,7 @@ struct GearCategoryRow: View {
     }
 
     private var barColor: Color {
-        isComplete ? .green : zone.accentColor
+        isComplete ? ColorTokens.success : zone.accentColor
     }
 
     private var readyCountText: String {
@@ -40,11 +40,11 @@ struct GearCategoryRow: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header
-            HStack(spacing: 16) {
+            HStack(spacing: Spacing.lg) {
                 // Icon circle
                 ZStack {
                     Circle()
-                        .fill(barColor.opacity(0.15))
+                        .fill(barColor.opacity(Opacity.gentle))
                         .frame(width: 48, height: 48)
 
                     Image(systemName: zone.iconName)
@@ -53,7 +53,7 @@ struct GearCategoryRow: View {
                 }
 
                 // Zone name + count
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text(zone.displayName)
                         .font(.headline)
 
@@ -77,13 +77,13 @@ struct GearCategoryRow: View {
                         .foregroundStyle(barColor)
                 }
             }
-            .padding(16)
+            .padding(Spacing.lg)
 
             // Progress bar
             if !items.isEmpty {
                 ProgressView(value: progress)
                     .tint(barColor)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Spacing.lg)
             }
 
             // Item list
@@ -92,21 +92,21 @@ struct GearCategoryRow: View {
                     let sortedItems = items.sorted { $0.sortOrder < $1.sortOrder }
                     ForEach(sortedItems) { item in
                         if isEditing {
-                            HStack(spacing: 12) {
+                            HStack(spacing: Spacing.md) {
                                 Text(item.name)
                                 Spacer()
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
+                            .padding(.horizontal, Spacing.lg)
+                            .padding(.vertical, Spacing.sm)
                         } else {
                             GearItemRow(item: item, onToggle: { onToggleItem(item) })
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
+                                .padding(.horizontal, Spacing.lg)
+                                .padding(.vertical, Spacing.sm)
                         }
 
                         if item.id != sortedItems.last?.id {
                             Divider()
-                                .padding(.horizontal, 16)
+                                .padding(.horizontal, Spacing.lg)
                         }
                     }
                 }
@@ -115,24 +115,24 @@ struct GearCategoryRow: View {
             // Add item button
             if let onAddItem {
                 Divider()
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, Spacing.lg)
 
                 Button(action: onAddItem) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: Spacing.md) {
                         Image(systemName: "plus.circle")
                             .font(.title3)
-                            .foregroundStyle(zone.accentColor.opacity(0.6))
+                            .foregroundStyle(zone.accentColor.opacity(Opacity.strong))
                         Text(String(localized: "gear_category_add_item"))
                             .foregroundStyle(.secondary)
                         Spacer()
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.sm)
                 }
             }
 
             Spacer().frame(height: 8)
         }
-        .background(.quinary, in: RoundedRectangle(cornerRadius: 16))
+        .background(.quinary, in: RoundedRectangle(cornerRadius: CornerRadius.large))
     }
 }

@@ -41,13 +41,16 @@ struct HomeView: View {
     @State private var mapCenterCoordinate: CLLocationCoordinate2D?
     @State private var showCacheOfflineNotice = false
     @State private var cacheOfflineNoticeTask: Task<Void, Never>?
+    @State private var mapOverlayActivationTask: Task<Void, Never>?
     @State private var cachedTrailLabels: [MapLabel] = []
     @State private var cachedLiftLabels: [MapLabel] = []
+    @State private var showMapOverlays = false
     @State private var showCrewCreateAlert = false
     @State private var showCrewJoinAlert = false
     @State private var crewNameInput = ""
     @State private var crewJoinTokenInput = ""
     @State private var crewActionError: String?
+    @State private var lastHomeDataRefreshAt: Date?
 
     private var unitSystem: UnitSystem {
         profiles.first?.preferredUnits ?? .metric
@@ -67,42 +70,51 @@ struct HomeView: View {
             .overlay(alignment: .bottom) {
                 pageSwipePanel
             }
-            .safeAreaInset(edge: .top, spacing: 12) {
+            .safeAreaInset(edge: .top, spacing: Spacing.md) {
                 topBar
                     .padding(.horizontal, Spacing.xl)
-                    .padding(.top, 8)
+                    .padding(.top, Spacing.sm)
             }
             .overlay(alignment: .topLeading) {
-                if currentPage == .map && crewService.activeCrew != nil && !isPinningMode {
-                    CrewHeaderOverlay()
-                        .padding(.leading, 16)
-                        .padding(.top, 80)
-                        .frame(maxWidth: 260)
-                        .transition(.opacity.combined(with: .move(edge: .leading)))
+                Group {
+                    if currentPage == .map && crewService.activeCrew != nil && !isPinningMode {
+                        CrewHeaderOverlay()
+                            .padding(.leading, Spacing.lg)
+                            .padding(.top, 80)
+                            .frame(maxWidth: 260)
+                            .transition(.opacity.combined(with: .move(edge: .leading)))
+                    }
                 }
+                .animation(AnimationTokens.moderateEaseInOut, value: currentPage)
             }
             .overlay(alignment: .topTrailing) {
-                if currentPage == .map {
-                    mapTopControls
-                        .padding(.trailing, 16)
-                        .padding(.top, 80)
-                        .transition(.opacity.combined(with: .move(edge: .trailing)))
+                Group {
+                    if currentPage == .map {
+                        mapTopControls
+                            .padding(.trailing, Spacing.lg)
+                            .padding(.top, 80)
+                            .transition(.opacity.combined(with: .move(edge: .trailing)))
+                    }
                 }
+                .animation(AnimationTokens.moderateEaseInOut, value: currentPage)
             }
             .overlay(alignment: .bottomTrailing) {
-                if currentPage == .map && !isPinningMode {
-                    VStack(spacing: 10) {
-                        if crewService.activeCrew != nil {
-                            CrewPinButton(action: { isPinningMode = true })
-                        } else {
-                            crewPlusButton
+                Group {
+                    if currentPage == .map && !isPinningMode {
+                        VStack(spacing: Spacing.gutter) {
+                            if crewService.activeCrew != nil {
+                                CrewPinButton(action: { isPinningMode = true })
+                            } else {
+                                crewPlusButton
+                            }
+                            mapBottomLocationButton
                         }
-                        mapBottomLocationButton
+                        .padding(.trailing, Spacing.lg)
+                        .padding(.bottom, 80)
+                        .transition(.opacity.combined(with: .move(edge: .trailing)))
                     }
-                    .padding(.trailing, 16)
-                    .padding(.bottom, 80)
-                    .transition(.opacity.combined(with: .move(edge: .trailing)))
                 }
+                .animation(AnimationTokens.moderateEaseInOut, value: currentPage)
             }
             .overlay(alignment: .top) {
                 if let pin = pinNotificationService.currentBanner {
@@ -120,12 +132,23 @@ struct HomeView: View {
                     .padding(.top, 150)
                 }
             }
-            .animation(.easeInOut(duration: 0.3), value: pinNotificationService.currentBanner?.id)
-            .animation(.easeInOut(duration: 0.3), value: pinNotificationService.currentMembershipBanner?.id)
-            .animation(.easeInOut(duration: 0.3), value: currentPage)
-            .animation(.easeInOut(duration: 0.25), value: isPinningMode)
-            .onChange(of: currentPage) { _, _ in
+            .animation(AnimationTokens.moderateEaseInOut, value: pinNotificationService.currentBanner?.id)
+            .animation(AnimationTokens.moderateEaseInOut, value: pinNotificationService.currentMembershipBanner?.id)
+            .animation(AnimationTokens.standardEaseInOut, value: isPinningMode)
+            .onChange(of: currentPage) { _, newPage in
                 isPinningMode = false
+                mapOverlayActivationTask?.cancel()
+                mapOverlayActivationTask = nil
+                if newPage == .map {
+                    // Defer overlay insertion until after page transition settles
+                    mapOverlayActivationTask = Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(350))
+                        guard !Task.isCancelled, currentPage == .map else { return }
+                        showMapOverlays = true
+                    }
+                } else {
+                    showMapOverlays = false
+                }
             }
             .mapScope(mapScope)
             .fullScreenCover(isPresented: $showingTracking) {
@@ -138,12 +161,22 @@ struct HomeView: View {
                 if scenePhase == .background {
                     trackingService.persistSnapshotNowIfNeeded()
                 }
+                trackingService.updateAppActiveState(scenePhase == .active)
+            }
+            .onAppear {
+                trackingService.updateAppActiveState(scenePhase == .active)
+                handleQuickStartIfPending()
+            }
+            .onChange(of: trackingService.quickStartPending) {
+                handleQuickStartIfPending()
             }
             .onChange(of: crewService.focusRequestedPin?.id) { _, _ in
                 focusOnRequestedPinIfNeeded()
             }
             .task(id: locationCoordinateKey) {
                 guard let coord = locationService.currentLocation else { return }
+                guard !showingTracking else { return }
+                guard shouldRefreshHomeDataNow() else { return }
 
                 // Only auto-center once to avoid resetting user camera interactions
                 // (pitch / heading / rotation) on every location update.
@@ -185,6 +218,8 @@ struct HomeView: View {
             .onDisappear {
                 cacheOfflineNoticeTask?.cancel()
                 cacheOfflineNoticeTask = nil
+                mapOverlayActivationTask?.cancel()
+                mapOverlayActivationTask = nil
             }
             .alert(String(localized: "crew_create_title"), isPresented: $showCrewCreateAlert) {
                 TextField(String(localized: "crew_name_placeholder"), text: $crewNameInput)
@@ -225,13 +260,22 @@ struct HomeView: View {
         } label: {
             Label(title, systemImage: systemImage)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(isSelected ? .accent : .secondary)
+                .foregroundStyle(isSelected ? ColorTokens.brandWarmAmber : .secondary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 7)
                 .background {
                     if isSelected {
-                        Capsule().fill(.background)
-                            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                            .overlay {
+                                Capsule()
+                                    .fill(ColorTokens.brandWarmAmber.opacity(Opacity.gentle))
+                            }
+                            .overlay {
+                                Capsule()
+                                    .stroke(ColorTokens.brandWarmAmber.opacity(Opacity.medium), lineWidth: 1)
+                            }
+                            .shadowStyle(.small)
                     }
                 }
         }
@@ -243,20 +287,20 @@ struct HomeView: View {
     }
 
     private var mapTopControls: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Spacing.sm) {
             MapPitchToggle(scope: mapScope)
             MapCompass(scope: mapScope)
         }
         .mapControlVisibility(.visible)
         .buttonBorderShape(.circle)
-        .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 4)
+        .shadowStyle(.medium)
     }
 
     private var mapBottomLocationButton: some View {
         MapUserLocationButton(scope: mapScope)
             .mapControlVisibility(.visible)
             .buttonBorderShape(.circle)
-            .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 4)
+            .shadowStyle(.medium)
     }
 
     private var crewPlusButton: some View {
@@ -273,12 +317,12 @@ struct HomeView: View {
             }
         } label: {
             Image(systemName: "plus")
-                .font(.system(size: 17, weight: .medium))
+                .font(Typography.bodyMedium)
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 44, height: 44)
                 .background(.regularMaterial, in: Circle())
         }
-        .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 4)
+        .shadowStyle(.medium)
     }
 
     // MARK: - Page Swipe Panel
@@ -291,7 +335,7 @@ struct HomeView: View {
                     onDismiss: { isPinningMode = false }
                 )
                 .padding(.horizontal, Spacing.lg)
-                .padding(.bottom, 24)
+                .padding(.bottom, Spacing.xl)
             } else {
                 TabView(selection: $currentPage) {
                     homePageContent
@@ -310,13 +354,13 @@ struct HomeView: View {
         VStack(spacing: 0) {
             // Resort name + GPS + Music (swipes away with Home page)
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: Spacing.gap) {
                     resortTitleText
 
-                    HStack(spacing: 8) {
+                    HStack(spacing: Spacing.sm) {
                         Circle()
                             .fill(gpsStatusColor)
-                            .frame(width: 10, height: 10)
+                            .frame(width: Spacing.gutter, height: Spacing.gutter)
 
                         Text(gpsStatusText)
                             .font(.subheadline.weight(.semibold))
@@ -329,9 +373,9 @@ struct HomeView: View {
                 MusicPillButton()
             }
             .padding(.horizontal, Spacing.lg)
-            .padding(.vertical, 10)
+            .padding(.vertical, Spacing.gutter)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
-            .padding(.top, 24)
+            .padding(.top, Spacing.xl)
             .padding(.horizontal, Spacing.xl)
 
             Spacer()
@@ -347,17 +391,17 @@ struct HomeView: View {
 
             if ProcessInfo.processInfo.arguments.contains("-ui_testing") {
                 Button {
-                    trackingService.startTracking()
+                    trackingService.startTracking(unitSystem: unitSystem)
                     showingTracking = true
                 } label: {
                     Text(String(localized: "home_ui_test_start"))
                 }
                 .accessibilityIdentifier("ui_start_tracking_button")
                 .frame(width: 1, height: 1)
-                .opacity(0.01)
+                .opacity(Opacity.invisible)
             }
         }
-        .padding(.bottom, 48)
+        .padding(.bottom, Spacing.section)
     }
 
     private var primaryTrackingButton: some View {
@@ -369,7 +413,8 @@ struct HomeView: View {
             } else {
                 LongPressStartButton {
                     trackingService.startTracking(
-                        healthKitEnabled: deviceSettings.first?.healthKitEnabled ?? false
+                        healthKitEnabled: deviceSettings.first?.healthKitEnabled ?? false,
+                        unitSystem: unitSystem
                     )
                     showingTracking = true
                 }
@@ -382,15 +427,15 @@ struct HomeView: View {
             Spacer()
 
             if showCacheOfflineNotice {
-                HStack(alignment: .top, spacing: 10) {
-                    VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .top, spacing: Spacing.gutter) {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
                         Text(String(localized: "cache_offline_notice"))
                             .font(.caption.weight(.semibold))
                         Text(String(localized: "cache_basemap_offline_hint"))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
-                    Spacer(minLength: 8)
+                    Spacer(minLength: Spacing.sm)
                     Button {
                         dismissCacheOfflineNotice()
                     } label: {
@@ -401,7 +446,7 @@ struct HomeView: View {
                     .buttonStyle(.plain)
                 }
                 .padding(.horizontal, Spacing.md)
-                .padding(.vertical, 8)
+                .padding(.vertical, Spacing.sm)
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
@@ -409,15 +454,15 @@ struct HomeView: View {
             if let error = crewService.lastError ?? crewActionError {
                 Text(error)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(ColorTokens.error)
                     .padding(.horizontal, Spacing.lg)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, Spacing.gap)
                     .background(.ultraThinMaterial, in: Capsule())
             }
         }
-        .padding(.bottom, 24)
+        .padding(.bottom, Spacing.xl)
         .padding(.horizontal, Spacing.lg)
-        .animation(.easeInOut(duration: 0.22), value: showCacheOfflineNotice)
+        .animation(AnimationTokens.fastEaseInOut, value: showCacheOfflineNotice)
     }
 
     // MARK: - Map Background
@@ -451,8 +496,8 @@ struct HomeView: View {
                 }
             }
 
-            // Ski trail overlays
-            if let skiArea = skiMapService.currentSkiArea {
+            // Ski trail & lift overlays — only rendered on map page
+            if showMapOverlays, let skiArea = skiMapService.currentSkiArea {
                 // Draw all trail segments (polylines)
                 ForEach(skiArea.trails) { trail in
                     MapPolyline(coordinates: trail.coordinates.map(\.clLocationCoordinate2D))
@@ -466,12 +511,12 @@ struct HomeView: View {
                 ForEach(cachedTrailLabels) { label in
                     Annotation("", coordinate: label.coordinate.clLocationCoordinate2D, anchor: .bottom) {
                         Text(label.name)
-                            .font(.caption2.weight(.semibold))
+                            .font(Typography.caption2Semibold)
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, Spacing.xs)
+                            .padding(.vertical, Spacing.xxs)
                             .background(
-                                colorForDifficulty(label.difficulty).opacity(0.8),
+                                colorForDifficulty(label.difficulty).opacity(Opacity.heavy),
                                 in: Capsule()
                             )
                     }
@@ -481,7 +526,7 @@ struct HomeView: View {
                 ForEach(skiArea.lifts) { lift in
                     MapPolyline(coordinates: lift.coordinates.map(\.clLocationCoordinate2D))
                         .stroke(
-                            Color.white.opacity(0.85),
+                            Color.white.opacity(Opacity.heavy),
                             style: StrokeStyle(lineWidth: 1.5, lineCap: .round, dash: [6, 4])
                         )
                 }
@@ -491,15 +536,16 @@ struct HomeView: View {
                     Annotation("", coordinate: label.coordinate.clLocationCoordinate2D, anchor: .bottom) {
                         Text(label.name)
                             .font(.caption2)
-                            .foregroundStyle(.white.opacity(0.9))
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 2)
+                            .foregroundStyle(.white.opacity(Opacity.nearFull))
+                            .padding(.horizontal, Spacing.xs)
+                            .padding(.vertical, Spacing.xxs)
                             .background(.ultraThinMaterial, in: Capsule())
                     }
                 }
             }
         }
         .onMapCameraChange { context in
+            guard currentPage == .map else { return }
             mapCenterCoordinate = context.camera.centerCoordinate
         }
         .mapControls { }
@@ -508,31 +554,42 @@ struct HomeView: View {
     }
 
     private var pinCrosshair: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: Spacing.xxs) {
             Image(systemName: "mappin")
-                .font(.system(size: 44, weight: .medium))
-                .foregroundStyle(.orange)
+                .font(Typography.speedDisplay)
+                .foregroundStyle(ColorTokens.warning)
             Circle()
-                .fill(.black.opacity(0.25))
-                .frame(width: 8, height: 4)
+                .fill(.black.opacity(Opacity.soft))
+                .frame(width: Spacing.sm, height: Spacing.xs)
         }
-        .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+        .shadowStyle(.subtle)
         .offset(y: -22)
         .allowsHitTesting(false)
+    }
+
+    private func handleQuickStartIfPending() {
+        guard trackingService.quickStartPending,
+              trackingService.state == .idle else { return }
+        trackingService.quickStartPending = false
+        trackingService.startTracking(
+            healthKitEnabled: deviceSettings.first?.healthKitEnabled ?? false,
+            unitSystem: unitSystem
+        )
+        showingTracking = true
     }
 
     private func presentCacheOfflineNoticeIfNeeded() {
         guard skiMapService.currentSkiArea != nil else { return }
 
         cacheOfflineNoticeTask?.cancel()
-        withAnimation(.easeInOut(duration: 0.22)) {
+        withAnimation(AnimationTokens.fastEaseInOut) {
             showCacheOfflineNotice = true
         }
 
         cacheOfflineNoticeTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 4_000_000_000)
             guard !Task.isCancelled else { return }
-            withAnimation(.easeInOut(duration: 0.22)) {
+            withAnimation(AnimationTokens.fastEaseInOut) {
                 showCacheOfflineNotice = false
             }
         }
@@ -541,7 +598,7 @@ struct HomeView: View {
     private func dismissCacheOfflineNotice() {
         cacheOfflineNoticeTask?.cancel()
         cacheOfflineNoticeTask = nil
-        withAnimation(.easeInOut(duration: 0.22)) {
+        withAnimation(AnimationTokens.fastEaseInOut) {
             showCacheOfflineNotice = false
         }
     }
@@ -550,7 +607,7 @@ struct HomeView: View {
 
     private func focusOnRequestedPinIfNeeded() {
         guard let pin = crewService.focusRequestedPin else { return }
-        withAnimation(.easeInOut(duration: 0.45)) {
+        withAnimation(AnimationTokens.slowEaseInOut) {
             mapPosition = .region(
                 MKCoordinateRegion(
                     center: pin.coordinate,
@@ -613,23 +670,15 @@ struct HomeView: View {
 
     // MARK: - Trail Colors
 
-    private let trailGreen = Color(red: 0.2, green: 0.78, blue: 0.35)
-    private let trailBlue = Color(red: 0.25, green: 0.52, blue: 0.96)
-    private let trailRed = Color(red: 0.92, green: 0.26, blue: 0.24)
-    private let trailBlack = Color(red: 0.35, green: 0.35, blue: 0.40)
-    private let trailOrange = Color(red: 1.0, green: 0.6, blue: 0.15)
-    private let trailYellow = Color(red: 0.95, green: 0.85, blue: 0.25)
-    private let trailUnknown = Color.white.opacity(0.35)
-
     private func colorForDifficulty(_ difficulty: PisteDifficulty) -> Color {
         switch difficulty {
-        case .novice:       trailGreen
-        case .easy:         trailBlue
-        case .intermediate: trailRed
-        case .advanced:     trailBlack
-        case .expert:       trailOrange
-        case .freeride:     trailYellow
-        case .unknown:      trailUnknown
+        case .novice:       ColorTokens.trailGreen
+        case .easy:         ColorTokens.trailBlue
+        case .intermediate: ColorTokens.trailRed
+        case .advanced:     ColorTokens.trailBlack
+        case .expert:       ColorTokens.trailOrange
+        case .freeride:     ColorTokens.trailYellow
+        case .unknown:      ColorTokens.trailUnknown
         }
     }
 
@@ -674,7 +723,7 @@ struct HomeView: View {
     private var temperatureDisplay: some View {
         Group {
             if let weather = weatherService.currentWeather {
-                VStack(spacing: 12) {
+                VStack(spacing: Spacing.md) {
                     Text(temperatureString(weather.temperature))
                         .font(Typography.temperatureHero)
                         .monospacedDigit()
@@ -684,7 +733,7 @@ struct HomeView: View {
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.secondary)
 
-                    HStack(spacing: 20) {
+                    HStack(spacing: Spacing.content) {
                         weatherMetricText(
                             text: windSpeedShort(weather.windSpeed),
                             systemImage: "wind"
@@ -730,6 +779,16 @@ struct HomeView: View {
         }
 
         await skiMapService.classifyCurrentPlace(at: coordinate)
+        lastHomeDataRefreshAt = Date()
+    }
+
+    private func shouldRefreshHomeDataNow() -> Bool {
+        if trackingService.state == .idle {
+            return true
+        }
+
+        guard let lastRefresh = lastHomeDataRefreshAt else { return true }
+        return Date().timeIntervalSince(lastRefresh) >= 15 * 60
     }
 
     private func shouldReloadSkiArea(for coordinate: CLLocationCoordinate2D) -> Bool {
@@ -764,18 +823,23 @@ struct HomeView: View {
         return title
     }
 
+    /// Quantized to ~100m grid to avoid re-triggering .task on every GPS update.
+    /// Each 0.001° of latitude ≈ 111m, so rounding to 3 decimal places
+    /// prevents the task from restarting unless the user moves ~100m.
     private var locationCoordinateKey: String {
         guard let coord = locationService.currentLocation else { return "none" }
-        return "\(coord.latitude),\(coord.longitude)"
+        let lat = (coord.latitude * 1000).rounded() / 1000
+        let lon = (coord.longitude * 1000).rounded() / 1000
+        return "\(lat),\(lon)"
     }
 
     private var gpsStatusColor: Color {
         if locationService.currentLocation != nil &&
             (locationService.authorizationStatus == .authorizedWhenInUse ||
              locationService.authorizationStatus == .authorizedAlways) {
-            return sensorGreen
+            return ColorTokens.sensorGreen
         }
-        return sensorRed
+        return ColorTokens.sensorRed
     }
 
     private var gpsStatusText: String {
@@ -816,12 +880,9 @@ struct HomeView: View {
         systemImage: String
     ) -> some View {
         Label(text, systemImage: systemImage)
-            .font(.subheadline.weight(.medium))
+            .font(Typography.subheadlineMedium)
             .foregroundStyle(.secondary)
     }
-
-    private var sensorRed: Color { ColorTokens.sensorRed }
-    private var sensorGreen: Color { ColorTokens.sensorGreen }
 }
 
 #Preview("Default") {
@@ -880,7 +941,4 @@ struct HomeView: View {
         .environment(crew)
         .environment(pinNotification)
         .modelContainer(for: UserProfile.self, inMemory: true)
-        .task {
-            skiMap.setPreviewData(SkiMapPreviewData.whistler)
-        }
 }

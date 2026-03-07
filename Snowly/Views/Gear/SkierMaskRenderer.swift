@@ -4,7 +4,7 @@
 //
 //  Loads pre-baked zone mask PNGs and a compact lookup table from the asset
 //  catalog. All heavy pixel processing happens at build time via
-//  Scripts/generate-zone-assets.swift.
+//  Scripts/Generators/generate-zone-assets.swift.
 //
 
 import UIKit

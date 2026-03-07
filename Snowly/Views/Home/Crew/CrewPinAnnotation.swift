@@ -14,11 +14,11 @@ struct CrewPinAnnotation: View {
     var onDelete: (() -> Void)? = nil
 
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: Spacing.xxs) {
             Image(systemName: "flag.fill")
                 .font(.title3)
                 .foregroundStyle(CrewMarkerColor.color(for: pin.senderId))
-                .shadow(color: .black.opacity(0.3), radius: 4)
+                .shadowStyle(.subtle)
 
             VStack(spacing: 1) {
                 Text(pin.senderDisplayName)
@@ -29,7 +29,7 @@ struct CrewPinAnnotation: View {
                     .lineLimit(2)
             }
             .foregroundStyle(.white)
-            .padding(.horizontal, 6)
+            .padding(.horizontal, Spacing.gap)
             .padding(.vertical, 3)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
         }

@@ -75,7 +75,7 @@
          </BuildableReference>
       </BuildableProductRunnable>
       <LocationScenarioReference
-         identifier = "../../Snowly/Debug/Zermatt.gpx"
+         identifier = "../../../Snowly/Debug/Locations/ZermattRothornSunneggaLoop.gpx"
          referenceType = "0">
       </LocationScenarioReference>
    </LaunchAction>

@@ -36,11 +36,11 @@ struct CrewHeaderOverlay: View {
             .ultraThinMaterial,
             in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous)
         )
-        .animation(.easeInOut(duration: 0.25), value: isMemberListExpanded)
+        .animation(AnimationTokens.standardEaseInOut, value: isMemberListExpanded)
     }
 
     private var headerRow: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Spacing.sm) {
             Circle()
                 .fill(statusColor)
                 .frame(width: 8, height: 8)
@@ -56,23 +56,23 @@ struct CrewHeaderOverlay: View {
 
             if crewService.syncPreferences.mode == .manual {
                 Text(String(localized: "crew_sync_badge_manual"))
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.orange)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.orange.opacity(0.15), in: Capsule())
+                    .font(Typography.caption2Semibold)
+                    .foregroundStyle(ColorTokens.warning)
+                    .padding(.horizontal, Spacing.gap)
+                    .padding(.vertical, Spacing.xxs)
+                    .background(ColorTokens.warning.opacity(Opacity.gentle), in: Capsule())
             }
 
-            Spacer(minLength: 4)
+            Spacer(minLength: Spacing.xs)
 
             Button {
                 isMemberListExpanded.toggle()
             } label: {
                 Image(systemName: "chevron.down")
-                    .font(.caption.weight(.semibold))
+                    .font(Typography.captionSemibold)
                     .foregroundStyle(.secondary)
                     .rotationEffect(.degrees(isMemberListExpanded ? -180 : 0))
-                    .animation(.easeInOut(duration: 0.25), value: isMemberListExpanded)
+                    .animation(AnimationTokens.standardEaseInOut, value: isMemberListExpanded)
             }
 
             if crewService.unreadPinCount > 0 {
@@ -82,10 +82,10 @@ struct CrewHeaderOverlay: View {
                     ZStack(alignment: .topTrailing) {
                         Image(systemName: "flag.fill")
                             .font(.subheadline)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ColorTokens.warning)
 
                         Circle()
-                            .fill(.red)
+                            .fill(ColorTokens.error)
                             .frame(width: 9, height: 9)
                             .offset(x: 4, y: -4)
                     }
@@ -103,7 +103,7 @@ struct CrewHeaderOverlay: View {
             }
         }
         .padding(.horizontal, Spacing.md)
-        .padding(.vertical, 8)
+        .padding(.vertical, Spacing.sm)
         .contentShape(Rectangle())
         .onTapGesture {
             isMemberListExpanded.toggle()
@@ -123,17 +123,17 @@ struct CrewHeaderOverlay: View {
                 }
             }
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, Spacing.gap)
     }
 
     private func memberRow(_ member: CrewMember) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Spacing.gutter) {
             Circle()
                 .fill(member.isOnline ? Color.accentColor : .gray)
                 .frame(width: 28, height: 28)
                 .overlay {
                     Text(String(member.displayName.prefix(1)).uppercased())
-                        .font(.system(size: 12, weight: .bold))
+                        .font(Typography.badgeLabel)
                         .foregroundStyle(.white)
                 }
 
@@ -158,7 +158,7 @@ struct CrewHeaderOverlay: View {
                 .frame(width: 8, height: 8)
         }
         .padding(.horizontal, Spacing.lg)
-        .padding(.vertical, 6)
+        .padding(.vertical, Spacing.gap)
     }
 
     // MARK: - Helpers
@@ -175,7 +175,7 @@ struct CrewHeaderOverlay: View {
             return ColorTokens.sensorRed
         }
         if crewService.syncPreferences.mode == .manual {
-            return .orange
+            return ColorTokens.warning
         }
         return crewService.isActive ? ColorTokens.sensorGreen : ColorTokens.sensorRed
     }

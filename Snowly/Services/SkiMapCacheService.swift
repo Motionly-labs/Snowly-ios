@@ -352,7 +352,7 @@ final class SkiMapCacheService {
     }
 
     #if DEBUG
-    /// Inject ski area data directly for previews and testing.
+    /// Inject ski area data directly for previews and tests.
     func setPreviewData(_ data: SkiAreaData) {
         currentSkiArea = data
         applySkiAreaNameIfNeeded(data, fallbackBBox: data.boundingBox)

@@ -66,7 +66,7 @@ struct SessionDetailView: View {
                     ForEach(chairliftRuns) { ride in
                         HStack {
                             Image(systemName: "cablecar.fill")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(ColorTokens.info)
                             Text(Formatters.duration(ride.duration))
                             Spacer()
                             Text("+\(Formatters.vertical(ride.verticalDrop, unit: unitSystem))")
@@ -96,7 +96,7 @@ struct SessionDetailView: View {
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: Spacing.xxs) {
                 Text(Formatters.speed(run.maxSpeed, unit: unitSystem))
                     .font(.subheadline)
                 Text(Formatters.vertical(run.verticalDrop, unit: unitSystem))

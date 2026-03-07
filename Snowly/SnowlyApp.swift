@@ -8,6 +8,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 /// Holds all app-level services with stable identity.
 /// Using a class (not @State in App struct) ensures services
@@ -27,6 +28,7 @@ final class AppServices {
     let watchBridgeService: WatchBridgeService
     let crewAPIClient: CrewAPIClient
     let crewService: CrewService
+    let liveActivityService: LiveActivityService
     let crewPinNotificationService: CrewPinNotificationService
 
     init() {
@@ -34,17 +36,20 @@ final class AppServices {
         let motion = MotionDetectionService()
         let battery = BatteryMonitorService()
         let healthKit = HealthKitService()
+        let liveActivity = LiveActivityService()
 
         self.locationService = location
         self.motionService = motion
         self.batteryService = battery
         self.healthKitService = healthKit
+        self.liveActivityService = liveActivity
 
         let tracking = SessionTrackingService(
             locationService: location,
             motionService: motion,
             batteryService: battery,
-            healthKitService: healthKit
+            healthKitService: healthKit,
+            liveActivityService: liveActivity
         )
         self.trackingService = tracking
 
@@ -74,6 +79,8 @@ final class AppServices {
 
 @main
 struct SnowlyApp: App {
+
+    @UIApplicationDelegateAdaptor(QuickActionDelegate.self) var appDelegate
 
     let modelContainer: ModelContainer
     @State private var services = AppServices()
@@ -180,6 +187,11 @@ struct SnowlyApp: App {
                     SnowlyApp.persistImportedWatchWorkout(workout, in: modelContainer.mainContext)
                     services.watchBridgeService.consumeCompletedIndependentWorkout()
                 }
+                .onChange(of: QuickActionState.shared.pending) { _, pending in
+                    guard pending else { return }
+                    QuickActionState.shared.pending = false
+                    services.trackingService.quickStartPending = true
+                }
                 .onOpenURL { url in
                     guard let deepLink = DeepLinkHandler.parse(url: url) else { return }
                     switch deepLink {
@@ -191,6 +203,8 @@ struct SnowlyApp: App {
                                 print("[DeepLink] Failed to join crew: \(error)")
                             }
                         }
+                    case .startTracking:
+                        services.trackingService.quickStartPending = true
                     }
                 }
         }

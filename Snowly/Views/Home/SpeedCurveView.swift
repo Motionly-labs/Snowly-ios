@@ -13,23 +13,28 @@ struct SpeedCurveView: View {
 
     @State private var progress: CGFloat = 0
 
+    private var hasData: Bool {
+        data.contains(where: { $0 > 0 })
+    }
+
     var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
             let graphHeight = max(44, geo.size.height - 18)
-            let points = normalizedPoints(width: width, height: graphHeight)
-            let visibleCount = max(2, Int(CGFloat(points.count) * progress))
-            let visible = Array(points.prefix(visibleCount))
-            let maxIndex = indexOfMax(in: data)
-            let showMax = visibleCount > maxIndex
 
-            ZStack(alignment: .topLeading) {
-                if visible.count >= 2 {
+            if hasData {
+                let points = normalizedPoints(width: width, height: graphHeight)
+                let visibleCount = max(2, Int(CGFloat(points.count) * progress))
+                let visible = Array(points.prefix(visibleCount))
+                let maxIndex = indexOfMax(in: data)
+                let showMax = visibleCount > maxIndex
+
+                ZStack(alignment: .topLeading) {
                     curveFillPath(points: visible, baseline: graphHeight)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color.accentColor.opacity(0.15),
+                                    Color.accentColor.opacity(Opacity.light),
                                     Color.accentColor.opacity(0.0),
                                 ],
                                 startPoint: .top,
@@ -37,35 +42,51 @@ struct SpeedCurveView: View {
                             )
                         )
 
-                    curveLinePath(points: visible)
+                    catmullRomPath(points: visible)
                         .stroke(
                             Color.accentColor,
-                            style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
+                            style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round)
                         )
-                }
 
-                if showMax, maxIndex < points.count {
-                    let point = points[maxIndex]
-                    VStack(spacing: 4) {
-                        Text(String(format: "%.1f", maxSpeedLabel))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        Circle()
-                            .fill(Color.accentColor)
-                            .frame(width: 6, height: 6)
+                    if showMax, maxIndex < points.count {
+                        let point = points[maxIndex]
+                        VStack(spacing: Spacing.xs) {
+                            Text(String(format: "%.1f", maxSpeedLabel))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Circle()
+                                .fill(Color.accentColor)
+                                .frame(width: 6, height: 6)
+                        }
+                        .position(x: point.x, y: point.y - 12)
+                        .opacity(
+                            progress > 0.5
+                                ? Double((progress - CGFloat(0.5)) * CGFloat(2.0))
+                                : 0
+                        )
                     }
-                    .position(x: point.x, y: point.y - 12)
-                    .opacity(
-                        progress > 0.5
-                            ? Double((progress - CGFloat(0.5)) * CGFloat(2.0))
-                            : 0
-                    )
+                }
+            } else {
+                // Empty state: flat baseline
+                Path { path in
+                    path.move(to: CGPoint(x: 0, y: graphHeight))
+                    path.addLine(to: CGPoint(x: width, y: graphHeight))
+                }
+                .stroke(Color.accentColor.opacity(Opacity.muted), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+            }
+        }
+        .onChange(of: hasData) { _, newValue in
+            if newValue && progress == 0 {
+                withAnimation(AnimationTokens.smoothEntrance) {
+                    progress = 1
                 }
             }
         }
         .onAppear {
-            withAnimation(.timingCurve(0.22, 1, 0.36, 1, duration: 1.5)) {
-                progress = 1
+            if hasData {
+                withAnimation(AnimationTokens.smoothEntrance) {
+                    progress = 1
+                }
             }
         }
     }
@@ -83,28 +104,59 @@ struct SpeedCurveView: View {
         let maxValue = max(data.max() ?? 1, 1)
         return data.enumerated().map { index, value in
             let x = CGFloat(index) / CGFloat(data.count - 1) * width
-            let y = height - CGFloat(value / maxValue) * height * 0.9 - 4
+            let y = height - CGFloat(value / maxValue) * height * 0.85 - 4
             return CGPoint(x: x, y: y)
         }
     }
 
-    private func curveLinePath(points: [CGPoint]) -> Path {
+    /// Catmull-Rom spline for smooth, natural-looking curves through all data points.
+    private func catmullRomPath(points: [CGPoint], alpha: CGFloat = 0.5) -> Path {
         var path = Path()
-        guard let first = points.first else { return path }
-        path.move(to: first)
+        guard points.count >= 2 else { return path }
 
-        for index in 1..<points.count {
-            let prev = points[index - 1]
-            let curr = points[index]
-            let cp1 = CGPoint(x: prev.x + (curr.x - prev.x) * 0.4, y: prev.y)
-            let cp2 = CGPoint(x: prev.x + (curr.x - prev.x) * 0.6, y: curr.y)
-            path.addCurve(to: curr, control1: cp1, control2: cp2)
+        path.move(to: points[0])
+
+        if points.count == 2 {
+            path.addLine(to: points[1])
+            return path
+        }
+
+        for i in 0..<points.count - 1 {
+            let p0 = i > 0 ? points[i - 1] : points[i]
+            let p1 = points[i]
+            let p2 = points[i + 1]
+            let p3 = i + 2 < points.count ? points[i + 2] : points[i + 1]
+
+            let d1 = distance(p0, p1)
+            let d2 = distance(p1, p2)
+            let d3 = distance(p2, p3)
+
+            let d1a = pow(d1, alpha)
+            let d2a = pow(d2, alpha)
+            let d3a = pow(d3, alpha)
+
+            let b1x = (d1a * d1a * p2.x - d2a * d2a * p0.x + (2 * d1a * d1a + 3 * d1a * d2a + d2a * d2a) * p1.x) / (3 * d1a * (d1a + d2a))
+            let b1y = (d1a * d1a * p2.y - d2a * d2a * p0.y + (2 * d1a * d1a + 3 * d1a * d2a + d2a * d2a) * p1.y) / (3 * d1a * (d1a + d2a))
+
+            let b2x = (d3a * d3a * p1.x - d2a * d2a * p3.x + (2 * d3a * d3a + 3 * d3a * d2a + d2a * d2a) * p2.x) / (3 * d3a * (d3a + d2a))
+            let b2y = (d3a * d3a * p1.y - d2a * d2a * p3.y + (2 * d3a * d3a + 3 * d3a * d2a + d2a * d2a) * p2.y) / (3 * d3a * (d3a + d2a))
+
+            let cp1 = CGPoint(x: b1x.isNaN ? p1.x : b1x, y: b1y.isNaN ? p1.y : b1y)
+            let cp2 = CGPoint(x: b2x.isNaN ? p2.x : b2x, y: b2y.isNaN ? p2.y : b2y)
+
+            path.addCurve(to: p2, control1: cp1, control2: cp2)
         }
         return path
     }
 
+    private func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
+        let dx = a.x - b.x
+        let dy = a.y - b.y
+        return sqrt(dx * dx + dy * dy)
+    }
+
     private func curveFillPath(points: [CGPoint], baseline: CGFloat) -> Path {
-        var path = curveLinePath(points: points)
+        var path = catmullRomPath(points: points)
         guard let first = points.first, let last = points.last else { return path }
         path.addLine(to: CGPoint(x: last.x, y: baseline))
         path.addLine(to: CGPoint(x: first.x, y: baseline))

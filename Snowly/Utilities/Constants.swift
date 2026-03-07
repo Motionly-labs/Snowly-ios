@@ -20,9 +20,6 @@ enum AppConstants {
     // MARK: - Long Press
     static let longPressDuration: TimeInterval = 2.0
 
-    // MARK: - Animation
-    static let defaultAnimation: Animation = .easeInOut(duration: 0.3)
-
     // MARK: - Share Card
     static let shareCardWidth: CGFloat = 1080
     static let shareCardHeight: CGFloat = 1920

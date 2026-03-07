@@ -113,7 +113,7 @@ struct OnboardingPermissionsStep: View {
                 .foregroundStyle(color)
                 .frame(width: Spacing.xxl)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text(title)
                     .font(.subheadline)
                     .fontWeight(.medium)
@@ -126,7 +126,7 @@ struct OnboardingPermissionsStep: View {
 
             if action == .done {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(ColorTokens.success)
                     .font(.title3)
             } else {
                 if action == .openSettings {

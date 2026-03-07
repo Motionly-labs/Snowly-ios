@@ -25,7 +25,7 @@ struct CrewPinSheet: View {
     ]
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Spacing.lg) {
             TextField(
                 String(localized: "crew_pin_message_placeholder"),
                 text: $message
@@ -39,17 +39,17 @@ struct CrewPinSheet: View {
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: Spacing.sm) {
                     ForEach(Self.quickMessages, id: \.self) { text in
                         Button {
                             message = text
                         } label: {
                             Text(text)
-                                .font(.subheadline.weight(.medium))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
+                                .font(Typography.subheadlineMedium)
+                                .padding(.horizontal, Spacing.md)
+                                .padding(.vertical, Spacing.gap)
                                 .background(
-                                    message == text ? Color.accentColor.opacity(0.2) : Color.secondary.opacity(0.12),
+                                    message == text ? Color.accentColor.opacity(Opacity.muted) : Color.secondary.opacity(Opacity.light),
                                     in: Capsule()
                                 )
                         }
@@ -61,7 +61,7 @@ struct CrewPinSheet: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(ColorTokens.error)
             }
 
             Button {
@@ -76,7 +76,7 @@ struct CrewPinSheet: View {
                         .font(.headline)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+                .padding(.vertical, Spacing.md)
                 .background(
                     message.trimmingCharacters(in: .whitespaces).isEmpty ? Color.gray : Color.accentColor,
                     in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)

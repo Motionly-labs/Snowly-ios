@@ -12,6 +12,7 @@ enum DeepLinkHandler {
 
     enum DeepLink {
         case crewJoin(token: String)
+        case startTracking
     }
 
     /// Parse a URL into a typed deep link, or nil if unrecognized.
@@ -20,6 +21,12 @@ enum DeepLinkHandler {
     ///   - Custom scheme:  snowly://crew/join/{token}
     static func parse(url: URL) -> DeepLink? {
         let pathComponents = normalizedRouteComponents(for: url)
+
+        // snowly://start-tracking
+        if pathComponents.last == "start-tracking" {
+            return .startTracking
+        }
+
         let route = Array(pathComponents.suffix(3))
 
         guard route.count == 3,

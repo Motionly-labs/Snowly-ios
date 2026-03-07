@@ -83,7 +83,7 @@ struct SessionSummaryView: View {
 
     private func portraitSummaryLayout(session: SkiSession) -> some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: Spacing.content) {
                 // Route map (always visible)
                 RouteMapView(session: session, height: 280)
                     .padding(.horizontal)
@@ -94,7 +94,7 @@ struct SessionSummaryView: View {
                 // Hero duration
                 heroDurationSection(session: session)
 
-                // 2×2 stats grid
+                // 2x2 stats grid
                 statsGridSection(session: session)
                     .padding(.horizontal)
 
@@ -115,21 +115,21 @@ struct SessionSummaryView: View {
                 // Share button
                 shareButton(session: session)
                     .padding(.horizontal)
-                    .padding(.bottom, 32)
+                    .padding(.bottom, Spacing.xxl)
             }
-            .padding(.top, 8)
+            .padding(.top, Spacing.sm)
         }
     }
 
     // MARK: - Landscape Layout
 
     private func landscapeSummaryLayout(session: SkiSession, size: CGSize) -> some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .top, spacing: Spacing.lg) {
             landscapeMapColumn(session: session, size: size)
                 .frame(width: max(280, size.width * 0.42))
 
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: Spacing.content) {
                     userInfoSection(session: session)
                     heroDurationSection(session: session)
                     statsGridSection(session: session)
@@ -142,26 +142,26 @@ struct SessionSummaryView: View {
                     runBreakdownSection(session)
 
                     shareButton(session: session)
-                        .padding(.bottom, 32)
+                        .padding(.bottom, Spacing.xxl)
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.md)
     }
 
     private func landscapeMapColumn(session: SkiSession, size: CGSize) -> some View {
-        RouteMapView(session: session, height: max(240, size.height - 24))
+        RouteMapView(session: session, height: max(240, size.height - Spacing.xl))
     }
 
     // MARK: - User Info
 
     private func userInfoSection(session: SkiSession) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Spacing.sm) {
             AvatarView(
                 avatarData: profile?.avatarData,
                 displayName: profile?.displayName ?? "",
-                size: 48
+                size: Spacing.section
             )
 
             if let name = profile?.displayName, !name.isEmpty {
@@ -169,10 +169,10 @@ struct SessionSummaryView: View {
                     .font(.headline)
             }
 
-            HStack(spacing: 6) {
+            HStack(spacing: Spacing.gap) {
                 if let resort = session.resort {
                     Text(resort.name)
-                    Text("·")
+                    Text("\u{00B7}")
                 }
                 Text(session.startDate.longDisplay)
             }
@@ -184,20 +184,20 @@ struct SessionSummaryView: View {
     // MARK: - Hero Duration
 
     private func heroDurationSection(session: SkiSession) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: Spacing.xs) {
             HStack {
                 Rectangle()
-                    .fill(.secondary.opacity(0.3))
+                    .fill(.secondary.opacity(Opacity.moderate))
                     .frame(height: 1)
                 Text(Formatters.duration(session.duration))
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .font(Typography.metricSmall)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 Rectangle()
-                    .fill(.secondary.opacity(0.3))
+                    .fill(.secondary.opacity(Opacity.moderate))
                     .frame(height: 1)
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, Spacing.xl)
         }
     }
 
@@ -205,11 +205,11 @@ struct SessionSummaryView: View {
 
     private func statsGridSection(session: SkiSession) -> some View {
         let columns = [
-            GridItem(.flexible(), spacing: 12),
-            GridItem(.flexible(), spacing: 12),
+            GridItem(.flexible(), spacing: Spacing.md),
+            GridItem(.flexible(), spacing: Spacing.md),
         ]
 
-        return LazyVGrid(columns: columns, spacing: 12) {
+        return LazyVGrid(columns: columns, spacing: Spacing.md) {
             statCard(
                 value: Formatters.speedValue(session.maxSpeed, unit: unitSystem),
                 unit: Formatters.speedUnit(unitSystem),
@@ -234,13 +234,13 @@ struct SessionSummaryView: View {
     }
 
     private func statCard(value: String, unit: String, label: String) -> some View {
-        VStack(spacing: 4) {
-            HStack(alignment: .lastTextBaseline, spacing: 2) {
+        VStack(spacing: Spacing.xs) {
+            HStack(alignment: .lastTextBaseline, spacing: Spacing.xxs) {
                 Text(value)
                     .font(.system(size: 24, weight: .bold, design: .rounded))
                 if !unit.isEmpty {
                     Text(unit)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(Typography.smallLabel)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -249,14 +249,14 @@ struct SessionSummaryView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
+        .padding(.vertical, Spacing.lg)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
     }
 
     // MARK: - Personal Bests
 
     private func personalBestsBanner(_ records: [String]) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Spacing.sm) {
             HStack {
                 Image(systemName: "trophy.fill")
                     .foregroundStyle(.yellow)
@@ -269,8 +269,8 @@ struct SessionSummaryView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(.yellow.opacity(0.1), in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .padding(.vertical, Spacing.md)
+        .background(.yellow.opacity(Opacity.subtle), in: RoundedRectangle(cornerRadius: CornerRadius.medium))
     }
 
     // MARK: - Speed Curve
@@ -289,7 +289,7 @@ struct SessionSummaryView: View {
 
         return Group {
             if speedData.count >= 2 {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
                     Text(String(localized: "tracking_chart_speed_by_run"))
                         .font(.subheadline)
                         .fontWeight(.medium)
@@ -316,11 +316,11 @@ struct SessionSummaryView: View {
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .foregroundStyle(.secondary)
-                .padding(.bottom, 8)
+                .padding(.bottom, Spacing.sm)
 
             ForEach(Array(skiRuns.enumerated()), id: \.element.id) { index, run in
                 HStack {
-                    RoundedRectangle(cornerRadius: 2)
+                    RoundedRectangle(cornerRadius: Spacing.xxs)
                         .fill(ColorTokens.brandGradient)
                         .frame(width: 3, height: 28)
 
@@ -340,7 +340,7 @@ struct SessionSummaryView: View {
                         .foregroundStyle(.secondary)
                         .frame(width: 80, alignment: .trailing)
                 }
-                .padding(.vertical, 6)
+                .padding(.vertical, Spacing.gap)
 
                 if index < skiRuns.count - 1 {
                     Divider()

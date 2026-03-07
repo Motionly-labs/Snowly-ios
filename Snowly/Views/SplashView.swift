@@ -17,23 +17,23 @@ struct SplashView: View {
     let onFinished: () -> Void
 
     var body: some View {
-        VStack(spacing: 40) {
+        VStack(spacing: Spacing.xxxl) {
             Spacer()
 
             // App icon / snowflake
             Image(systemName: "snowflake")
-                .font(.system(size: 64, weight: .thin))
+                .font(Typography.splashIcon)
                 .foregroundStyle(Color.accentColor)
 
             // App name
             Text("SNOWLY")
-                .font(.system(size: 48, weight: .black).italic())
+                .font(Typography.splashTitle.italic())
                 .tracking(4)
 
             // Slogan — fades in
-            VStack(spacing: 4) {
+            VStack(spacing: Spacing.xs) {
                 Text(String(localized: "splash_tagline_primary"))
-                    .font(.system(size: 18, weight: .light))
+                    .font(Typography.splashSubtitle)
                     .foregroundStyle(.secondary)
             }
             .opacity(showSlogan ? 1 : 0)

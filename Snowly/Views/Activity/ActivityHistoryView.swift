@@ -48,7 +48,7 @@ struct ActivityHistoryView: View {
     private var activityContent: some View {
         List {
             Section {
-                HStack(spacing: 12) {
+                HStack(spacing: Spacing.md) {
                     StatPill(
                         value: "\(seasonStats.totalSessions)",
                         label: String(localized: "activity_stat_ski_days"),

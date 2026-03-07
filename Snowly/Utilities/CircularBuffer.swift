@@ -50,6 +50,22 @@ struct CircularBuffer<Element>: Sendable where Element: Sendable {
         return result
     }
 
+    /// Iterates elements in insertion order without allocating an Array.
+    func forEach(_ body: (Element) -> Void) {
+        for i in 0..<count {
+            let index = (head + i) % capacity
+            if let element = storage[index] {
+                body(element)
+            }
+        }
+    }
+
+    /// Access element at logical position (0 = oldest).
+    subscript(position: Int) -> Element? {
+        guard position >= 0 && position < count else { return nil }
+        return storage[(head + position) % capacity]
+    }
+
     mutating func removeAll() {
         storage = Array(repeating: nil, count: capacity)
         head = 0

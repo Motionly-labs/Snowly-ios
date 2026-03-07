@@ -10,7 +10,7 @@ import SwiftUI
 import SwiftData
 
 private enum HeroStatPage: Int, CaseIterable, Identifiable {
-    case peakSpeed, avgSpeed, runs, vertical
+    case currentSpeed, peakSpeed, avgSpeed, vertical
     var id: Int { rawValue }
 }
 
@@ -35,6 +35,128 @@ private struct TrackedRunSnapshot: Identifiable {
     let avgSpeed: Double
 }
 
+/// Self-contained speed curve that reads time-stamped samples from the
+/// tracking service and resamples them to uniform intervals.
+///
+/// Uses `TimelineView` for periodic refresh (tied to view lifecycle — no
+/// Timer leak). Reads `speedSamples` only inside the timeline closure so
+/// the outer view doesn't subscribe to sample mutations via `@Observable`.
+private struct LiveSpeedCurveView: View {
+    @Environment(SessionTrackingService.self) private var trackingService
+    let unitSystem: UnitSystem
+    let cachedMaxRunSpeed: Double
+
+    private static let windowDuration: TimeInterval = 600 // 10 minutes
+    private static let resampleInterval: TimeInterval = 5  // seconds between points
+    private static let refreshInterval: TimeInterval = 2   // timeline tick
+
+    private var bestSpeed: Double {
+        max(cachedMaxRunSpeed, trackingService.maxSpeed)
+    }
+
+    private func speedValue(_ metersPerSecond: Double) -> Double {
+        switch unitSystem {
+        case .metric: return UnitConversion.metersPerSecondToKmh(metersPerSecond)
+        case .imperial: return UnitConversion.metersPerSecondToMph(metersPerSecond)
+        }
+    }
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: Self.refreshInterval)) { context in
+            // Reading speedSamples inside TimelineView's content closure
+            // avoids subscribing the parent view to observation changes.
+            let samples = trackingService.speedSamples
+            let resampled = resample(samples, now: context.date)
+            SpeedCurveView(
+                data: resampled,
+                maxSpeedLabel: speedValue(bestSpeed)
+            )
+        }
+    }
+
+    // MARK: - Resampling
+
+    /// Linearly interpolates `samples` onto a uniform grid covering the
+    /// available time span (up to 10 minutes) with one point every
+    /// `resampleInterval` seconds, then applies bidirectional EMA smoothing.
+    private func resample(_ samples: [SpeedSample], now: Date) -> [Double] {
+        guard let first = samples.first else { return [] }
+
+        let windowStart = max(
+            first.time,
+            now.addingTimeInterval(-Self.windowDuration)
+        )
+        let span = now.timeIntervalSince(windowStart)
+        guard span > 0 else {
+            return [speedValue(samples.last?.speed ?? 0)]
+        }
+
+        let pointCount = max(Int(span / Self.resampleInterval), 1)
+        var result: [Double] = []
+        result.reserveCapacity(pointCount + 1)
+
+        var sampleIndex = 0
+        for i in 0...pointCount {
+            let targetTime = windowStart.addingTimeInterval(
+                Double(i) / Double(pointCount) * span
+            )
+
+            while sampleIndex < samples.count - 1
+                    && samples[sampleIndex + 1].time <= targetTime {
+                sampleIndex += 1
+            }
+
+            let s0 = samples[sampleIndex]
+            if sampleIndex < samples.count - 1 {
+                let s1 = samples[sampleIndex + 1]
+                let gap = s1.time.timeIntervalSince(s0.time)
+                if gap > 0 {
+                    let t = targetTime.timeIntervalSince(s0.time) / gap
+                    let interpolated = s0.speed + (s1.speed - s0.speed) * t
+                    result.append(speedValue(max(interpolated, 0)))
+                } else {
+                    result.append(speedValue(max(s0.speed, 0)))
+                }
+            } else {
+                result.append(speedValue(max(s0.speed, 0)))
+            }
+        }
+
+        return Self.smoothBidirectionalEMA(result, alpha: 0.25)
+    }
+
+    /// Zero-phase EMA: forward pass + backward pass averaged.
+    /// Removes GPS jitter while preserving peak timing (no lag).
+    private static func smoothBidirectionalEMA(_ data: [Double], alpha: Double) -> [Double] {
+        guard data.count >= 3 else { return data }
+
+        let count = data.count
+
+        // Forward EMA
+        var forward = [Double]()
+        forward.reserveCapacity(count)
+        forward.append(data[0])
+        for i in 1..<count {
+            forward.append(alpha * data[i] + (1 - alpha) * forward[i - 1])
+        }
+
+        // Backward EMA
+        var backward = [Double](repeating: 0, count: count)
+        backward[count - 1] = data[count - 1]
+        for i in stride(from: count - 2, through: 0, by: -1) {
+            backward[i] = alpha * data[i] + (1 - alpha) * backward[i + 1]
+        }
+
+        // Average both passes
+        var result = [Double]()
+        result.reserveCapacity(count)
+        for i in 0..<count {
+            result.append((forward[i] + backward[i]) / 2)
+        }
+        return result
+    }
+}
+
 struct ActiveTrackingView: View {
     @Environment(SessionTrackingService.self) private var trackingService
     @Environment(SkiMapCacheService.self) private var skiMapService
@@ -44,11 +166,12 @@ struct ActiveTrackingView: View {
 
     @State private var showingSummary = false
     @State private var activeTab: TrackingDashboardTab = .session
-    @State private var speedHistory: [Double] = [0, 8, 16, 28, 35, 22, 0]
     @State private var selectedHeroPage: HeroStatPage = .peakSpeed
     @State private var pulseRecording = false
     @State private var cardsAppeared = false
     @State private var cachedSkiRuns: [TrackedRunSnapshot] = []
+    @State private var cachedMaxRunSpeed: Double = 0
+    @State private var elapsedTime: TimeInterval = 0
 
     private var activityGoalMinutes: Double {
         profiles.first?.dailyGoalMinutes ?? 240
@@ -91,9 +214,20 @@ struct ActiveTrackingView: View {
             return speedValue(run.avgSpeed)
         }
         let totalDist = trackingService.totalDistance
-        let totalTime = trackingService.elapsedTime
-        guard totalTime > 0 else { return 0 }
-        return speedValue(totalDist / totalTime)
+        guard elapsedTime > 0 else { return 0 }
+        return speedValue(totalDist / elapsedTime)
+    }
+
+    private var displayedCurrentSpeed: Double {
+        speedValue(trackingService.currentSpeed)
+    }
+
+    private var currentSpeedSubtitle: String {
+        switch trackingService.currentActivity {
+        case .skiing: return String(localized: "tracking_activity_skiing")
+        case .chairlift: return String(localized: "tracking_activity_lift")
+        case .idle: return String(localized: "tracking_activity_idle")
+        }
     }
 
     private var runCountValue: Double {
@@ -126,19 +260,13 @@ struct ActiveTrackingView: View {
         return String(localized: "tracking_avg_label_session")
     }
 
-    private var runsSubtitle: String {
-        let format = String(localized: "tracking_runs_subtitle_format")
-        return String(format: format, locale: Locale.current, formatVertical(trackingService.totalVertical))
-    }
-
     private var verticalSubtitle: String {
         let format = String(localized: "tracking_vertical_subtitle_format")
         return String(format: format, locale: Locale.current, Int64(runCountValue), elapsedMinutes)
     }
 
     private var bestSpeed: Double {
-        let runBest = cachedSkiRuns.map(\.maxSpeed).max() ?? 0
-        return max(runBest, trackingService.maxSpeed)
+        max(cachedMaxRunSpeed, trackingService.maxSpeed)
     }
 
     private var totalVerticalValue: Double {
@@ -167,7 +295,7 @@ struct ActiveTrackingView: View {
     }
 
     private var elapsedMinutes: Double {
-        trackingService.elapsedTime / 60
+        elapsedTime / 60
     }
 
     private var activityProgress: Double {
@@ -192,16 +320,13 @@ struct ActiveTrackingView: View {
         ZStack {
             Color(.systemBackground).ignoresSafeArea()
 
-            SnowParticlesView()
-                .allowsHitTesting(false)
-
             VStack(spacing: 0) {
                 topStatusBar
                     .padding(.horizontal, Spacing.xl)
-                    .padding(.top, 8)
+                    .padding(.top, Spacing.sm)
 
                 ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: Spacing.lg) {
                         heroSection
                         speedCurveSection
                         tabSwitcher
@@ -210,40 +335,46 @@ struct ActiveTrackingView: View {
                             if activeTab == .session {
                                 sessionContent
                                     .transition(.asymmetric(
-                                        insertion: .opacity.combined(with: .offset(y: 8)),
-                                        removal: .opacity.combined(with: .offset(y: -8))
+                                        insertion: .opacity.combined(with: .offset(y: Spacing.sm)),
+                                        removal: .opacity.combined(with: .offset(y: -Spacing.sm))
                                     ))
                             } else {
                                 runsContent
                                     .transition(.asymmetric(
-                                        insertion: .opacity.combined(with: .offset(y: 8)),
-                                        removal: .opacity.combined(with: .offset(y: -8))
+                                        insertion: .opacity.combined(with: .offset(y: Spacing.sm)),
+                                        removal: .opacity.combined(with: .offset(y: -Spacing.sm))
                                     ))
                             }
                         }
                     }
                     .padding(.horizontal, Spacing.xl)
                     .padding(.top, 26)
-                    .padding(.bottom, 150)
+                    .padding(.bottom, Spacing.xxl)
                 }
             }
-
-            bottomStopControl
         }
         .onAppear {
             pulseRecording = true
-            cachedSkiRuns = Self.buildSkiRuns(from: trackingService.completedRuns)
-            appendSpeedSample(trackingService.currentSpeed)
+            trackingService.setTrackingDashboardVisible(true)
+            rebuildCachedRuns()
+            updateElapsedTime()
             Task {
                 try? await Task.sleep(for: .milliseconds(100))
                 cardsAppeared = true
             }
         }
-        .onChange(of: trackingService.runCount) { _, _ in
-            cachedSkiRuns = Self.buildSkiRuns(from: trackingService.completedRuns)
+        .onDisappear {
+            trackingService.setTrackingDashboardVisible(false)
         }
-        .onChange(of: trackingService.currentSpeed) { _, newSpeed in
-            appendSpeedSample(newSpeed)
+        .onChange(of: trackingService.runCount) { _, _ in
+            rebuildCachedRuns()
+        }
+        .task(id: trackingService.state) {
+            guard trackingService.state != .idle else { return }
+            while !Task.isCancelled {
+                updateElapsedTime()
+                try? await Task.sleep(for: .seconds(1))
+            }
         }
         .fullScreenCover(isPresented: $showingSummary) {
             SessionSummaryView(onDismiss: {
@@ -256,24 +387,24 @@ struct ActiveTrackingView: View {
 
     private var topStatusBar: some View {
         HStack {
-            HStack(spacing: 6) {
+            HStack(spacing: Spacing.gap) {
                 Circle()
-                    .fill(trackingService.state == .paused ? Color.orange : Color.green)
-                    .frame(width: 6, height: 6)
+                    .fill(trackingService.state == .paused ? ColorTokens.warning : ColorTokens.success)
+                    .frame(width: Spacing.gap, height: Spacing.gap)
                     .scaleEffect(trackingService.state == .paused ? 1.0 : (pulseRecording ? 1 : 0.85))
-                    .opacity(trackingService.state == .paused ? 0.7 : (pulseRecording ? 1 : 0.35))
+                    .opacity(trackingService.state == .paused ? 0.7 : (pulseRecording ? 1 : Opacity.medium))
                     .animation(
                         trackingService.state == .paused
-                            ? .easeInOut(duration: 0.3)
+                            ? AnimationTokens.moderateEaseInOut
                             : .easeInOut(duration: 1.1).repeatForever(autoreverses: true),
                         value: pulseRecording
                     )
-                    .animation(.easeInOut(duration: 0.3), value: trackingService.state)
+                    .animation(AnimationTokens.moderateEaseInOut, value: trackingService.state)
 
                 Text(trackingService.state == .paused
                     ? String(localized: "tracking_state_paused")
                     : String(localized: "tracking_state_riding"))
-                    .font(.caption2.weight(.semibold))
+                    .font(Typography.caption2Semibold)
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
             }
@@ -281,47 +412,53 @@ struct ActiveTrackingView: View {
             Spacer()
 
             Button {
-                if trackingService.state == .paused {
-                    trackingService.resumeTracking()
-                } else {
-                    trackingService.pauseTracking()
+                Task {
+                    if trackingService.state == .paused {
+                        await trackingService.resumeTracking()
+                    } else {
+                        await trackingService.pauseTracking()
+                    }
                 }
             } label: {
                 Image(systemName: trackingService.state == .paused ? "play.fill" : "pause.fill")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(trackingService.state == .paused ? Color.orange : .secondary)
-                    .frame(width: 28, height: 28)
-                    .background(
-                        trackingService.state == .paused
-                            ? Color.orange.opacity(0.15)
-                            : Color(.quaternarySystemFill)
-                    )
-                    .clipShape(Circle())
-                    .animation(.easeInOut(duration: 0.3), value: trackingService.state)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(trackingService.state == .paused ? ColorTokens.warning : .secondary)
+                    .frame(width: 36, height: 36)
+                    .background { Circle().fill(.clear).glassEffect(.regular, in: .circle) }
+                    .contentTransition(.symbolEffect(.replace))
             }
             .accessibilityIdentifier(
                 trackingService.state == .paused ? "resume_tracking_button" : "pause_tracking_button"
             )
-            .padding(.leading, 8)
+
+            LongPressStopButton(onStop: endSession)
+                .accessibilityIdentifier("stop_tracking_button")
 
             Button(action: minimizeTrackingDashboard) {
                 Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.bold))
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(.secondary)
-                    .frame(width: 28, height: 28)
-                    .background(Color(.quaternarySystemFill))
-                    .clipShape(Circle())
+                    .frame(width: 36, height: 36)
+                    .background { Circle().fill(.clear).glassEffect(.regular, in: .circle) }
             }
             .accessibilityIdentifier("minimize_tracking_button")
-            .padding(.leading, 8)
         }
     }
 
     // MARK: - Hero
 
     private var heroSection: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: Spacing.xs) {
             TabView(selection: $selectedHeroPage) {
+                heroPage(
+                    label: String(localized: "stat_current_speed"),
+                    value: displayedCurrentSpeed,
+                    decimals: 1,
+                    suffix: speedUnitLabel,
+                    subtitle: currentSpeedSubtitle
+                )
+                .tag(HeroStatPage.currentSpeed)
+
                 heroPage(
                     label: String(localized: "stat_peak_speed"),
                     value: displayedPeakSpeed,
@@ -341,15 +478,6 @@ struct ActiveTrackingView: View {
                 .tag(HeroStatPage.avgSpeed)
 
                 heroPage(
-                    label: String(localized: "common_runs"),
-                    value: runCountValue,
-                    decimals: 0,
-                    suffix: "",
-                    subtitle: runsSubtitle
-                )
-                .tag(HeroStatPage.runs)
-
-                heroPage(
                     label: String(localized: "common_vertical"),
                     value: totalVerticalValue,
                     decimals: 0,
@@ -361,11 +489,11 @@ struct ActiveTrackingView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             .frame(height: 130)
 
-            HStack(spacing: 6) {
+            HStack(spacing: Spacing.gap) {
                 ForEach(HeroStatPage.allCases) { page in
                     Circle()
-                        .fill(page == selectedHeroPage ? Color.primary : Color.primary.opacity(0.2))
-                        .frame(width: 6, height: 6)
+                        .fill(page == selectedHeroPage ? Color.primary : Color.primary.opacity(Opacity.muted))
+                        .frame(width: Spacing.gap, height: Spacing.gap)
                 }
             }
         }
@@ -378,7 +506,7 @@ struct ActiveTrackingView: View {
         suffix: String,
         subtitle: String
     ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Spacing.gap) {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.tertiary)
@@ -387,7 +515,6 @@ struct ActiveTrackingView: View {
             AnimatedNumberText(
                 value: value,
                 decimals: decimals,
-                duration: 1.2,
                 suffix: suffix
             )
             .font(Typography.metricHero)
@@ -403,11 +530,8 @@ struct ActiveTrackingView: View {
     // MARK: - Curve
 
     private var speedCurveSection: some View {
-        SpeedCurveView(
-            data: speedHistory,
-            maxSpeedLabel: speedValue(bestSpeed)
-        )
-        .frame(height: 94)
+        LiveSpeedCurveView(unitSystem: unitSystem, cachedMaxRunSpeed: cachedMaxRunSpeed)
+            .frame(height: 94)
     }
 
     // MARK: - Tabs
@@ -418,7 +542,7 @@ struct ActiveTrackingView: View {
             selection: Binding(
                 get: { activeTab },
                 set: { newTab in
-                    withAnimation(.easeInOut(duration: 0.25)) {
+                    withAnimation(AnimationTokens.standardEaseInOut) {
                         activeTab = newTab
                     }
                 }
@@ -427,16 +551,16 @@ struct ActiveTrackingView: View {
             Text(tab.title)
                 .font(.subheadline.weight(.semibold))
         }
-        .padding(.top, 2)
+        .padding(.top, Spacing.xxs)
     }
 
     // MARK: - Session Tab
 
     private var sessionContent: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Spacing.gutter) {
             LazyVGrid(
                 columns: [GridItem(.flexible()), GridItem(.flexible())],
-                spacing: 10
+                spacing: Spacing.gutter
             ) {
                 statCard(
                     label: String(localized: "common_vertical"),
@@ -484,10 +608,10 @@ struct ActiveTrackingView: View {
         suffix: String,
         delay: Double
     ) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 4) {
+        VStack(alignment: .leading, spacing: Spacing.gutter) {
+            HStack(spacing: Spacing.xs) {
                 Image(systemName: icon)
-                    .font(.caption2.weight(.semibold))
+                    .font(Typography.caption2Semibold)
                 Text(label)
                     .font(.caption2)
             }
@@ -496,7 +620,6 @@ struct ActiveTrackingView: View {
             AnimatedNumberText(
                 value: value,
                 decimals: decimals,
-                duration: 1.2,
                 suffix: suffix,
                 delay: delay
             )
@@ -512,13 +635,13 @@ struct ActiveTrackingView: View {
         .opacity(cardsAppeared ? 1 : 0)
         .scaleEffect(cardsAppeared ? 1 : 0.92)
         .animation(
-            .timingCurve(0.22, 1, 0.36, 1, duration: 0.8).delay(delay),
+            AnimationTokens.smoothEntranceFast.delay(delay),
             value: cardsAppeared
         )
     }
 
     private var activeTimeCard: some View {
-        HStack(spacing: 18) {
+        HStack(spacing: Spacing.card) {
             ActivityRingView(
                 targetProgress: activityProgress,
                 size: 52,
@@ -532,11 +655,10 @@ struct ActiveTrackingView: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
 
-                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: Spacing.xxs) {
                     AnimatedNumberText(
                         value: elapsedMinutes,
                         decimals: 0,
-                        duration: 1.2,
                         delay: 0.6
                     )
                     .font(.title3.bold())
@@ -560,7 +682,7 @@ struct ActiveTrackingView: View {
         .opacity(cardsAppeared ? 1 : 0)
         .scaleEffect(cardsAppeared ? 1 : 0.92)
         .animation(
-            .timingCurve(0.22, 1, 0.36, 1, duration: 0.8).delay(0.6),
+            AnimationTokens.smoothEntranceFast.delay(0.6),
             value: cardsAppeared
         )
     }
@@ -568,10 +690,10 @@ struct ActiveTrackingView: View {
     // MARK: - Runs Tab
 
     private var runsContent: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Spacing.gutter) {
             VStack(alignment: .leading, spacing: 14) {
                 Text(String(localized: "tracking_chart_speed_by_run"))
-                    .font(.caption2.weight(.semibold))
+                    .font(Typography.caption2Semibold)
                     .foregroundStyle(.tertiary)
                     .textCase(.uppercase)
 
@@ -597,7 +719,7 @@ struct ActiveTrackingView: View {
     }
 
     private func runCard(_ run: TrackedRunSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
                 Text(runTitleText(run.id))
                     .font(.subheadline.weight(.semibold))
@@ -605,18 +727,18 @@ struct ActiveTrackingView: View {
 
                 Spacer()
 
-                if run.maxSpeed == (cachedSkiRuns.map(\.maxSpeed).max() ?? 0) && cachedSkiRuns.count > 1 {
+                if run.maxSpeed == cachedMaxRunSpeed && cachedSkiRuns.count > 1 {
                     Text(String(localized: "tracking_top_run_label"))
-                        .font(.caption2.weight(.semibold))
+                        .font(Typography.caption2Semibold)
                         .foregroundStyle(.secondary)
                         .textCase(.uppercase)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, Spacing.sm)
+                        .padding(.vertical, Spacing.xs)
                         .background(.quaternary, in: RoundedRectangle(cornerRadius: CornerRadius.small))
                 }
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: Spacing.sm) {
                 runMetricColumn(
                     label: String(localized: "tracking_metric_peak"),
                     value: String(format: "%.1f", speedValue(run.maxSpeed)),
@@ -640,7 +762,7 @@ struct ActiveTrackingView: View {
     }
 
     private func runMetricColumn(label: String, value: String, unit: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
             Text(label)
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
@@ -654,48 +776,6 @@ struct ActiveTrackingView: View {
                 .foregroundStyle(.quaternary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // MARK: - Bottom Stop
-
-    private var bottomStopControl: some View {
-        VStack {
-            Spacer()
-
-            VStack(spacing: 16) {
-                if trackingService.state == .paused {
-                    Button {
-                        trackingService.resumeTracking()
-                    } label: {
-                        Label(String(localized: "tracking_resume_cta"), systemImage: "play.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: 280)
-                            .padding(.vertical, 14)
-                            .background(.green, in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("resume_tracking_button")
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-                }
-
-                SlideToStopButton(onStop: endSession)
-                    .accessibilityIdentifier("stop_tracking_button")
-            }
-            .animation(.easeInOut(duration: 0.3), value: trackingService.state)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 20)
-            .padding(.bottom, 44)
-            .background(
-                LinearGradient(
-                    colors: [Color(.systemBackground), Color(.systemBackground).opacity(0)],
-                    startPoint: .bottom,
-                    endPoint: .top
-                )
-                .ignoresSafeArea(edges: .bottom)
-            )
-        }
-        .ignoresSafeArea(edges: .bottom)
     }
 
     // MARK: - Helpers
@@ -730,28 +810,36 @@ struct ActiveTrackingView: View {
         String(format: "%.0f%@", verticalValue(meters), totalVerticalUnit)
     }
 
-    private func appendSpeedSample(_ metersPerSecond: Double) {
-        let sample = max(speedValue(metersPerSecond), 0)
-        speedHistory.append(sample)
-        if speedHistory.count > 28 {
-            speedHistory.removeFirst(speedHistory.count - 28)
+    private func rebuildCachedRuns() {
+        let runs = Self.buildSkiRuns(from: trackingService.completedRuns)
+        cachedSkiRuns = runs
+        cachedMaxRunSpeed = runs.map(\.maxSpeed).max() ?? 0
+    }
+
+    private func updateElapsedTime() {
+        guard let start = trackingService.startDate else {
+            elapsedTime = 0
+            return
         }
+        let pausedNow = trackingService.pauseStartTime.map { Date().timeIntervalSince($0) } ?? 0
+        elapsedTime = max(0, Date().timeIntervalSince(start) - trackingService.totalPausedTime - pausedNow)
     }
 
     private func endSession() {
-        trackingService.stopTracking()
         Task {
+            await trackingService.stopTracking()
             await trackingService.finalizeHealthKitWorkout()
             let resort = ResortResolver.resolveCurrentResort(
                 from: skiMapService,
                 in: modelContext
             )
-            trackingService.saveSession(to: modelContext, resort: resort)
+            await trackingService.saveSession(to: modelContext, resort: resort)
             showingSummary = true
         }
     }
 
     private func minimizeTrackingDashboard() {
+        trackingService.setTrackingDashboardVisible(false)
         trackingService.persistSnapshotNowIfNeeded()
         dismiss()
     }

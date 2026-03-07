@@ -13,10 +13,10 @@ struct BatteryIndicator: View {
     let estimatedTime: TimeInterval?
 
     private var color: Color {
-        if isCharging { return .green }
-        if level <= SharedConstants.lowBatteryThreshold { return .red }
+        if isCharging { return ColorTokens.success }
+        if level <= SharedConstants.lowBatteryThreshold { return ColorTokens.error }
         if level <= SharedConstants.lowBatteryWarningThreshold { return .yellow }
-        return .green
+        return ColorTokens.success
     }
 
     private var iconName: String {
@@ -34,7 +34,7 @@ struct BatteryIndicator: View {
     }
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Spacing.sm) {
             Image(systemName: iconName)
                 .foregroundStyle(color)
 

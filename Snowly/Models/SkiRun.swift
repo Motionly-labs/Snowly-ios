@@ -43,9 +43,46 @@ final class SkiRun {
         do {
             return try JSONDecoder().decode([TrackPoint].self, from: data)
         } catch {
+            if let fallback = decodeNDJSONTrackPoints(from: data) {
+                return fallback
+            }
             Self.logger.error("Failed to decode track points: \(error.localizedDescription, privacy: .public)")
             return []
         }
+    }
+
+    private func decodeNDJSONTrackPoints(from data: Data) -> [TrackPoint]? {
+        let lines = data.split(separator: 0x0A)
+        guard !lines.isEmpty else { return [] }
+
+        var points: [TrackPoint] = []
+        points.reserveCapacity(lines.count)
+
+        for line in lines where !line.isEmpty {
+            guard
+                let object = try? JSONSerialization.jsonObject(with: Data(line)),
+                let dict = object as? [String: Any],
+                let timestamp = dict["timestamp"] as? Double,
+                let latitude = dict["latitude"] as? Double,
+                let longitude = dict["longitude"] as? Double,
+                let altitude = dict["altitude"] as? Double,
+                let speed = dict["speed"] as? Double,
+                let accuracy = dict["accuracy"] as? Double,
+                let course = dict["course"] as? Double
+            else {
+                return nil
+            }
+            points.append(TrackPoint(
+                timestamp: Date(timeIntervalSinceReferenceDate: timestamp),
+                latitude: latitude,
+                longitude: longitude,
+                altitude: altitude,
+                speed: speed,
+                accuracy: accuracy,
+                course: course
+            ))
+        }
+        return points
     }
 
     init(

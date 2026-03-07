@@ -76,6 +76,16 @@
         }
       }
     },
+    "accessibility_long_press_to_stop_hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Long press to end ski day"
+          }
+        }
+      }
+    },
     "accessibility_slide_to_stop_hint" : {
       "localizations" : {
         "en" : {
@@ -585,6 +595,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vertical"
+          }
+        }
+      }
+    },
+    "control_widget_description" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start a ski tracking session"
+          }
+        }
+      }
+    },
+    "control_widget_display_name" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start Skiing"
+          }
+        }
+      }
+    },
+    "control_widget_start" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start Skiing"
           }
         }
       }
@@ -1723,6 +1766,116 @@
         }
       }
     },
+    "live_activity_chairlift" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chairlift"
+          }
+        }
+      }
+    },
+    "live_activity_ft" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ft"
+          }
+        }
+      }
+    },
+    "live_activity_idle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idle"
+          }
+        }
+      }
+    },
+    "live_activity_kmh" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "km/h"
+          }
+        }
+      }
+    },
+    "live_activity_m" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "m"
+          }
+        }
+      }
+    },
+    "live_activity_max" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "max"
+          }
+        }
+      }
+    },
+    "live_activity_mph" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mph"
+          }
+        }
+      }
+    },
+    "live_activity_paused" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paused"
+          }
+        }
+      }
+    },
+    "live_activity_runs" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "runs"
+          }
+        }
+      }
+    },
+    "live_activity_skiing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skiing"
+          }
+        }
+      }
+    },
     "music_access_required_description" : {
       "localizations" : {
         "en" : {
@@ -2239,6 +2392,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Version"
+          }
+        }
+      }
+    },
+    "quick_action_start_tracking" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start Skiing"
           }
         }
       }
@@ -2771,12 +2935,31 @@
         }
       }
     },
+    "Start a ski tracking session in Snowly." : {
+
+    },
+    "Start Ski Tracking" : {
+
+    },
+    "Start Skiing" : {
+
+    },
     "stat_avg_speed" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Avg Speed"
+          }
+        }
+      }
+    },
+    "stat_current_speed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current Speed"
           }
         }
       }
@@ -2922,6 +3105,36 @@
         }
       }
     },
+    "tracking_activity_idle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idle"
+          }
+        }
+      }
+    },
+    "tracking_activity_lift" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On lift"
+          }
+        }
+      }
+    },
+    "tracking_activity_skiing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skiing"
+          }
+        }
+      }
+    },
     "tracking_avg_label_last_run" : {
       "localizations" : {
         "en" : {
@@ -3003,6 +3216,7 @@
       }
     },
     "tracking_resume_cta" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3013,6 +3227,7 @@
       }
     },
     "tracking_runs_subtitle_format" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3048,6 +3263,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Riding"
+          }
+        }
+      }
+    },
+    "tracking_stop_confirm_action" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End Ski Day"
+          }
+        }
+      }
+    },
+    "tracking_stop_confirmation_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End your ski day?"
           }
         }
       }

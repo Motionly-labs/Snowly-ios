@@ -29,26 +29,26 @@ struct ShareCardView: View {
             background
 
             VStack(spacing: 0) {
-                Spacer().frame(height: 48)
+                Spacer().frame(height: Spacing.section)
 
                 headerSection
-                    .padding(.bottom, 32)
+                    .padding(.bottom, Spacing.xxl)
 
                 mapSection
-                    .padding(.horizontal, 48)
-                    .padding(.bottom, 40)
+                    .padding(.horizontal, Spacing.section)
+                    .padding(.bottom, Spacing.xxxl)
 
                 statsGrid
-                    .padding(.horizontal, 48)
-                    .padding(.bottom, 32)
+                    .padding(.horizontal, Spacing.section)
+                    .padding(.bottom, Spacing.xxl)
 
                 durationSection
-                    .padding(.bottom, 40)
+                    .padding(.bottom, Spacing.xxxl)
 
                 Spacer()
 
                 footerSection
-                    .padding(.bottom, 48)
+                    .padding(.bottom, Spacing.section)
             }
         }
         .frame(width: AppConstants.shareCardWidth, height: AppConstants.shareCardHeight)
@@ -71,24 +71,24 @@ struct ShareCardView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Spacing.md) {
             AvatarView(avatarData: avatarData, displayName: displayName, size: 72)
 
             if !displayName.isEmpty {
                 Text(displayName)
-                    .font(.system(size: 28, weight: .semibold))
+                    .font(Typography.headingLarge)
                     .foregroundStyle(.white)
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: Spacing.sm) {
                 if let name = resortName {
                     Text(name)
                     Text("\u{00B7}")
                 }
                 Text(startDate.longDisplay)
             }
-            .font(.system(size: 22))
-            .foregroundStyle(.white.opacity(0.5))
+            .font(Typography.headingMedium)
+            .foregroundStyle(.white.opacity(Opacity.half))
         }
     }
 
@@ -117,8 +117,8 @@ struct ShareCardView: View {
                     .frame(height: 500)
                     .overlay {
                         Image(systemName: "mountain.2.fill")
-                            .font(.system(size: 60))
-                            .foregroundStyle(.white.opacity(0.15))
+                            .font(Typography.onboardingIcon)
+                            .foregroundStyle(.white.opacity(Opacity.gentle))
                     }
             }
         }
@@ -127,8 +127,8 @@ struct ShareCardView: View {
     // MARK: - Stats
 
     private var statsGrid: some View {
-        VStack(spacing: 24) {
-            HStack(spacing: 24) {
+        VStack(spacing: Spacing.xl) {
+            HStack(spacing: Spacing.xl) {
                 statCard(
                     value: Formatters.speedValue(maxSpeed, unit: unitSystem),
                     unit: Formatters.speedUnit(unitSystem),
@@ -140,7 +140,7 @@ struct ShareCardView: View {
                     label: String(localized: "common_runs")
                 )
             }
-            HStack(spacing: 24) {
+            HStack(spacing: Spacing.xl) {
                 statCard(
                     value: Formatters.distance(totalDistance, unit: unitSystem),
                     unit: "",
@@ -156,51 +156,51 @@ struct ShareCardView: View {
     }
 
     private func statCard(value: String, unit: String, label: String) -> some View {
-        VStack(spacing: 6) {
-            HStack(alignment: .lastTextBaseline, spacing: 4) {
+        VStack(spacing: Spacing.gap) {
+            HStack(alignment: .lastTextBaseline, spacing: Spacing.xs) {
                 Text(value)
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
+                    .font(Typography.metricMedium)
                     .foregroundStyle(ColorTokens.brandGradient)
                 if !unit.isEmpty {
                     Text(unit)
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .font(Typography.bodyLabel)
+                        .foregroundStyle(.white.opacity(Opacity.half))
                 }
             }
             Text(label)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(.white.opacity(0.5))
+                .font(Typography.captionMedium)
+                .foregroundStyle(.white.opacity(Opacity.half))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
-        .background(AppConstants.surfaceElevated, in: RoundedRectangle(cornerRadius: 16))
+        .padding(.vertical, Spacing.content)
+        .background(AppConstants.surfaceElevated, in: RoundedRectangle(cornerRadius: CornerRadius.large))
     }
 
     // MARK: - Duration
 
     private var durationSection: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: Spacing.gap) {
             Text(Formatters.duration(duration))
-                .font(.system(size: 48, weight: .bold, design: .rounded))
+                .font(Typography.metricLarge)
                 .foregroundStyle(ColorTokens.brandGradient)
             Text(String(localized: "common_ski_time"))
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(.white.opacity(0.5))
+                .font(Typography.captionMedium)
+                .foregroundStyle(.white.opacity(Opacity.half))
         }
     }
 
     // MARK: - Footer
 
     private var footerSection: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Spacing.md) {
             Rectangle()
-                .fill(.white.opacity(0.15))
+                .fill(ColorTokens.surfaceDivider)
                 .frame(width: 80, height: 1)
             Text(String(localized: "share_card_logged_with"))
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(.white.opacity(0.4))
+                .font(Typography.bodyLabel)
+                .foregroundStyle(.white.opacity(Opacity.prominent))
             Rectangle()
-                .fill(.white.opacity(0.15))
+                .fill(ColorTokens.surfaceDivider)
                 .frame(width: 80, height: 1)
         }
     }

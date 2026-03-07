@@ -122,7 +122,7 @@ struct SettingsView: View {
                         )
                         .overlay(alignment: .bottomTrailing) {
                             Image(systemName: "pencil.circle.fill")
-                                .font(.system(size: 22))
+                                .font(Typography.settingsIcon)
                                 .foregroundStyle(.white, Color.accentColor)
                         }
                     }
@@ -219,10 +219,10 @@ struct SettingsView: View {
             }
 
             if let syncError = syncMonitorService.syncError, !syncError.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: Spacing.gap) {
                     Text(String(localized: "settings_sync_error_title"))
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.red)
+                        .foregroundStyle(ColorTokens.error)
                     Text(syncError)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -382,13 +382,13 @@ struct SettingsView: View {
 
     private var syncStatusColor: Color {
         if syncMonitorService.isSyncing {
-            return .blue
+            return ColorTokens.info
         }
         if syncMonitorService.syncError != nil {
-            return .red
+            return ColorTokens.error
         }
         if syncMonitorService.lastSyncDate != nil {
-            return .green
+            return ColorTokens.success
         }
         return .secondary
     }

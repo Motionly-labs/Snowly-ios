@@ -29,23 +29,23 @@ struct CrewPinComposeBar: View {
     ]
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: Spacing.gutter) {
             // Quick message chips
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: Spacing.sm) {
                     ForEach(Self.quickMessages, id: \.self) { text in
                         Button {
                             message = text
                         } label: {
                             Text(text)
-                                .font(.subheadline.weight(.medium))
+                                .font(Typography.subheadlineMedium)
                                 .foregroundStyle(message == text ? Color.accentColor : .primary)
-                                .padding(.horizontal, 12)
+                                .padding(.horizontal, Spacing.md)
                                 .padding(.vertical, 7)
                                 .background(
                                     message == text
-                                        ? Color.accentColor.opacity(0.15)
-                                        : .white.opacity(0.12),
+                                        ? Color.accentColor.opacity(Opacity.gentle)
+                                        : ColorTokens.surfaceOverlay,
                                     in: Capsule()
                                 )
                         }
@@ -57,18 +57,18 @@ struct CrewPinComposeBar: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(ColorTokens.error)
             }
 
             // Message field + action buttons
-            HStack(spacing: 8) {
+            HStack(spacing: Spacing.sm) {
                 // Cancel
                 Button(action: onDismiss) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(Typography.smallSemibold)
                         .foregroundStyle(.secondary)
                         .frame(width: 36, height: 36)
-                        .background(.white.opacity(0.12), in: Circle())
+                        .background(ColorTokens.surfaceOverlay, in: Circle())
                 }
 
                 // Text field
@@ -77,9 +77,9 @@ struct CrewPinComposeBar: View {
                     text: $message
                 )
                 .font(.subheadline)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(.white.opacity(0.12), in: Capsule())
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, Spacing.sm)
+                .background(ColorTokens.surfaceOverlay, in: Capsule())
                 .submitLabel(.done)
                 .onChange(of: message) { _, newValue in
                     if newValue.count > Self.maxLength {
@@ -99,11 +99,11 @@ struct CrewPinComposeBar: View {
                             Image(systemName: "paperplane.fill")
                         }
                     }
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(Typography.smallSemibold)
                     .foregroundStyle(.white)
                     .frame(width: 36, height: 36)
                     .background(
-                        canSend ? Color.accentColor : Color.secondary.opacity(0.3),
+                        canSend ? Color.accentColor : Color.secondary.opacity(Opacity.moderate),
                         in: Circle()
                     )
                 }
@@ -116,7 +116,7 @@ struct CrewPinComposeBar: View {
             .ultraThinMaterial,
             in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous)
         )
-        .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: -2)
+        .shadowStyle(.topBar)
     }
 
     private var canSend: Bool {

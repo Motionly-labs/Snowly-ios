@@ -229,4 +229,30 @@ struct RunDetectionTests {
         let result = RunDetectionService.detect(point: point, recentPoints: recentPoints)
         #expect(result == .skiing)
     }
+
+    @Test func rawArrayOverload_matchesTrackPointOverload() {
+        let now = Date()
+        let recentPoints = makeRecentPoints(
+            count: 10,
+            startAltitude: 2050,
+            endAltitude: 2000,
+            startTime: now.addingTimeInterval(-30)
+        )
+        let point = makePoint(speed: 4.0, altitude: 1995, timestamp: now)
+
+        let pointBased = RunDetectionService.detect(
+            point: point,
+            recentPoints: recentPoints,
+            motion: .unknown
+        )
+
+        let rawBased = RunDetectionService.detect(
+            point: point,
+            recentTimestamps: recentPoints.map { $0.timestamp.timeIntervalSinceReferenceDate },
+            recentAltitudes: recentPoints.map(\.altitude),
+            motion: .unknown
+        )
+
+        #expect(rawBased == pointBased)
+    }
 }

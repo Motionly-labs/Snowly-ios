@@ -13,12 +13,12 @@ struct CrewPinBanner: View {
 
     var body: some View {
         Button(action: onDismiss) {
-            HStack(spacing: 10) {
+            HStack(spacing: Spacing.gutter) {
                 Image(systemName: "mappin.circle.fill")
                     .font(.title2)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(ColorTokens.warning)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
                     Text(pin.senderDisplayName)
                         .font(.subheadline.weight(.bold))
                         .foregroundStyle(.primary)
@@ -28,7 +28,7 @@ struct CrewPinBanner: View {
                         .lineLimit(1)
                 }
 
-                Spacer(minLength: 4)
+                Spacer(minLength: Spacing.xs)
 
                 Image(systemName: "xmark.circle.fill")
                     .font(.body)
@@ -36,9 +36,9 @@ struct CrewPinBanner: View {
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, Spacing.md)
-            .padding(.vertical, 10)
+            .padding(.vertical, Spacing.gutter)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
-            .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+            .shadowStyle(.medium)
         }
         .buttonStyle(.plain)
         .padding(.horizontal, Spacing.lg)

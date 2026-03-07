@@ -15,33 +15,40 @@ struct SlideToStopButton: View {
     @State private var isDragging = false
 
     private let trackWidth: CGFloat = 280
-    private let thumbSize: CGFloat = 52
-    private var maxOffset: CGFloat { trackWidth - thumbSize - 8 }
+    private let thumbSize: CGFloat = 56
+    private let trackPadding: CGFloat = 4
+    private var maxOffset: CGFloat { trackWidth - thumbSize - trackPadding * 2 }
+
+    private var dragProgress: Double {
+        guard maxOffset > 0 else { return 0 }
+        return Double(offset / maxOffset)
+    }
 
     var body: some View {
         ZStack(alignment: .leading) {
-            // Track
-            RoundedRectangle(cornerRadius: thumbSize / 2)
-                .fill(Color.red.opacity(0.15))
-                .frame(width: trackWidth, height: thumbSize + 8)
+            Capsule()
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    Capsule()
+                        .fill(ColorTokens.error.opacity(Opacity.light))
+                }
+                .frame(width: trackWidth, height: thumbSize + trackPadding * 2)
 
-            // Label
             Text(String(localized: "tracking_slide_to_end_day"))
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(Color.red.opacity(0.6))
-                .frame(width: trackWidth, height: thumbSize + 8)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(ColorTokens.error.opacity(max(Opacity.strong - dragProgress, 0)))
+                .frame(width: trackWidth, height: thumbSize + trackPadding * 2)
 
-            // Thumb
             Circle()
-                .fill(.red)
+                .fill(ColorTokens.error)
+                .shadowStyle(.danger)
                 .frame(width: thumbSize, height: thumbSize)
                 .overlay {
                     Image(systemName: "stop.fill")
                         .foregroundStyle(.white)
-                        .font(.system(size: 16, weight: .bold))
+                        .font(Typography.buttonStrong)
                 }
-                .offset(x: offset + 4)
+                .offset(x: offset + trackPadding)
                 .gesture(
                     DragGesture()
                         .onChanged { value in
@@ -55,7 +62,7 @@ struct SlideToStopButton: View {
                                 feedback.notificationOccurred(.warning)
                                 onStop()
                             }
-                            withAnimation(.spring(response: 0.3)) {
+                            withAnimation(AnimationTokens.gentleSpring) {
                                 offset = 0
                             }
                         }

@@ -17,7 +17,7 @@ struct GearProgressBar: View {
     }
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Spacing.sm) {
             HStack {
                 Text(statusText)
                     .font(.subheadline)
@@ -36,7 +36,7 @@ struct GearProgressBar: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, Spacing.xs)
     }
 
     private var statusText: String {
@@ -47,7 +47,7 @@ struct GearProgressBar: View {
     }
 
     private var progressColor: Color {
-        if progress >= 1.0 { return .green }
+        if progress >= 1.0 { return ColorTokens.success }
         if progress >= 0.5 { return .accentColor }
         return .gray
     }

@@ -25,10 +25,14 @@ final class MockHealthKitService: HealthKitProviding {
     var addDistanceSamplesReceived: [(meters: Double, start: Date, end: Date)] = []
     var finishWorkoutCallCount = 0
     var lastWorkoutId: UUID?
+    var lastRouteInsertFinishedAt: Date?
+    var finishWorkoutCalledAt: Date?
 
     // Error injection
     var beginWorkoutError: Error?
     var finishWorkoutError: Error?
+    var addRoutePointsDelay: TimeInterval = 0
+    var addDistanceSampleDelay: TimeInterval = 0
 
     func requestAuthorization() async {
         requestAuthorizationCallCount += 1
@@ -44,11 +48,18 @@ final class MockHealthKitService: HealthKitProviding {
     }
 
     func addRoutePoints(_ points: [TrackPoint]) async {
+        if addRoutePointsDelay > 0 {
+            try? await Task.sleep(for: .seconds(addRoutePointsDelay))
+        }
         addRoutePointsCallCount += 1
         addRoutePointsReceived.append(points)
+        lastRouteInsertFinishedAt = Date()
     }
 
     func addDistanceSample(meters: Double, start: Date, end: Date) async {
+        if addDistanceSampleDelay > 0 {
+            try? await Task.sleep(for: .seconds(addDistanceSampleDelay))
+        }
         addDistanceSampleCallCount += 1
         addDistanceSamplesReceived.append((meters: meters, start: start, end: end))
     }
@@ -59,6 +70,7 @@ final class MockHealthKitService: HealthKitProviding {
         totalVerticalDescent: Double
     ) async throws -> UUID {
         finishWorkoutCallCount += 1
+        finishWorkoutCalledAt = Date()
         if let error = finishWorkoutError {
             throw error
         }

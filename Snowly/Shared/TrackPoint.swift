@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import CoreLocation
 
 /// A single GPS data point recorded during tracking.
 /// Stored as Codable struct (NOT SwiftData @Model) to avoid
@@ -21,8 +20,14 @@ struct TrackPoint: Codable, Sendable, Equatable {
     let course: Double       // degrees, 0-360
 
     /// Haversine distance in meters between two track points.
-    func distance(to other: TrackPoint) -> Double {
-        CLLocation(latitude: latitude, longitude: longitude)
-            .distance(from: CLLocation(latitude: other.latitude, longitude: other.longitude))
+    /// Pure Swift — avoids CLLocation allocation in hot paths.
+    nonisolated func distance(to other: TrackPoint) -> Double {
+        let lat1 = latitude * .pi / 180
+        let lat2 = other.latitude * .pi / 180
+        let dLat = (other.latitude - latitude) * .pi / 180
+        let dLon = (other.longitude - longitude) * .pi / 180
+        let a = sin(dLat / 2) * sin(dLat / 2)
+            + cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2)
+        return 6_371_000 * 2 * atan2(sqrt(a), sqrt(1 - a))
     }
 }

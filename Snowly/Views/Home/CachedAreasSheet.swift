@@ -37,7 +37,7 @@ struct CachedAreasSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 12) {
+            VStack(spacing: Spacing.md) {
                 Picker("", selection: $selectedTab) {
                     ForEach(Tab.allCases) { tab in
                         Text(tab.title).tag(tab)
@@ -55,8 +55,8 @@ struct CachedAreasSheet: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .padding(.horizontal, Spacing.lg)
+            .padding(.top, Spacing.sm)
             .navigationTitle(String(localized: "cache_sheet_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -116,8 +116,8 @@ struct CachedAreasSheet: View {
                 let isBusy = actionAreaID == area.id || skiMapService.isAreaOperationInProgress(area.id)
                 let isCached = cachedAreas.contains(where: { $0.id == area.id })
 
-                HStack(alignment: .center, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .center, spacing: Spacing.md) {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
                         Text(area.name)
                             .font(.headline)
                         Text(distanceText(for: area.distanceMeters))
@@ -177,7 +177,7 @@ struct CachedAreasSheet: View {
             List(cachedAreas) { area in
                 let isBusy = actionAreaID == area.id || skiMapService.isAreaOperationInProgress(area.id)
 
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(area.name)
                             .font(.headline)
@@ -191,7 +191,7 @@ struct CachedAreasSheet: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    HStack(spacing: 8) {
+                    HStack(spacing: Spacing.sm) {
                         Button(String(localized: "cache_action_refresh")) {
                             actionAreaID = area.id
                             Task {
@@ -265,18 +265,18 @@ struct CachedAreasSheet: View {
 
     private func statusColor(for area: CachedAreaSummary, isBusy: Bool) -> Color {
         if isBusy {
-            return .blue
+            return ColorTokens.info
         }
 
         switch area.status {
         case .fresh:
-            return .green
+            return ColorTokens.success
         case .stale:
-            return .orange
+            return ColorTokens.warning
         case .downloading:
-            return .blue
+            return ColorTokens.info
         case .failed:
-            return .red
+            return ColorTokens.error
         }
     }
 }

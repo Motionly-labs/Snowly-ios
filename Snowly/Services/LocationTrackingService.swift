@@ -32,6 +32,7 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
 
     private let locationManager = CLLocationManager()
     private var trackingContinuation: AsyncStream<TrackPoint>.Continuation?
+    private var previousTrackingLocation: CLLocation?
     nonisolated private static let logger = Logger(subsystem: "com.Snowly", category: "LocationTracking")
 
     override init() {
@@ -58,6 +59,7 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
 
     func startTracking() -> AsyncStream<TrackPoint> {
         isTracking = true
+        previousTrackingLocation = nil
 
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = 5
@@ -89,6 +91,7 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
         locationManager.stopUpdatingLocation()
         trackingContinuation?.finish()
         trackingContinuation = nil
+        previousTrackingLocation = nil
         isTracking = false
         locationManager.allowsBackgroundLocationUpdates = false
         locationManager.showsBackgroundLocationIndicator = false
@@ -101,27 +104,44 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
         Task { @MainActor in
             self.currentLocation = location.coordinate
             self.currentAltitude = location.altitude
-            self.currentSpeed = max(0, location.speed)
-            self.currentCourse = location.course
-            self.currentAccuracy = location.horizontalAccuracy
+            let derivedSpeed = self.derivedSpeed(for: location)
+            let derivedCourse = self.derivedCourse(for: location)
+            let normalizedAccuracy = self.normalizedAccuracy(for: location.horizontalAccuracy)
+            self.currentSpeed = derivedSpeed
+            self.currentCourse = derivedCourse
+            self.currentAccuracy = normalizedAccuracy
             self.lastError = nil
 
             guard self.isTracking else { return }
-            guard location.horizontalAccuracy >= 0,
-                  location.horizontalAccuracy <= 50 else { return }
+            let isSimulator: Bool = {
+#if targetEnvironment(simulator)
+                true
+#else
+                false
+#endif
+            }()
+
+            if !isSimulator {
+                guard normalizedAccuracy >= 0,
+                      normalizedAccuracy <= 50 else { return }
+            } else if normalizedAccuracy > 120 {
+                // Simulator can report unstable values; avoid clearly invalid jumps.
+                return
+            }
 
             let point = TrackPoint(
                 timestamp: location.timestamp,
                 latitude: location.coordinate.latitude,
                 longitude: location.coordinate.longitude,
                 altitude: location.altitude,
-                speed: max(0, location.speed),
-                accuracy: location.horizontalAccuracy,
-                course: location.course
+                speed: derivedSpeed,
+                accuracy: normalizedAccuracy,
+                course: derivedCourse
             )
 
             self.adjustAccuracy(forSpeed: point.speed)
             self.trackingContinuation?.yield(point)
+            self.previousTrackingLocation = location
         }
     }
 
@@ -156,8 +176,14 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
     // MARK: - Private
 
     /// Dynamically adjust GPS precision to save battery.
+    private static let veryHighSpeedThreshold: Double = 15.0 // m/s (~54 km/h)
+
     private func adjustAccuracy(forSpeed speed: Double) {
-        if speed > SharedConstants.highSpeedThreshold {
+        if speed > Self.veryHighSpeedThreshold {
+            // Very high speed: widen filter to cap update rate at ~2/s
+            locationManager.desiredAccuracy = kCLLocationAccuracyBest
+            locationManager.distanceFilter = 10
+        } else if speed > SharedConstants.highSpeedThreshold {
             locationManager.desiredAccuracy = kCLLocationAccuracyBest
             locationManager.distanceFilter = 5
         } else if speed > SharedConstants.mediumSpeedThreshold {
@@ -167,5 +193,38 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
             locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
             locationManager.distanceFilter = 20
         }
+    }
+
+    private func normalizedAccuracy(for reportedAccuracy: Double) -> Double {
+        if reportedAccuracy >= 0 { return reportedAccuracy }
+#if targetEnvironment(simulator)
+        // GPX playback commonly reports -1 (unknown); use a realistic default.
+        return 8
+#else
+        return reportedAccuracy
+#endif
+    }
+
+    private func derivedSpeed(for location: CLLocation) -> Double {
+        if location.speed >= 0 {
+            return max(0, location.speed)
+        }
+        guard let previous = previousTrackingLocation else { return 0 }
+        let delta = location.timestamp.timeIntervalSince(previous.timestamp)
+        guard delta > 0.25 else { return 0 }
+        return max(0, location.distance(from: previous) / delta)
+    }
+
+    private func derivedCourse(for location: CLLocation) -> Double {
+        if location.course >= 0 { return location.course }
+        guard let previous = previousTrackingLocation else { return 0 }
+        let lat1 = previous.coordinate.latitude * .pi / 180
+        let lat2 = location.coordinate.latitude * .pi / 180
+        let dLon = (location.coordinate.longitude - previous.coordinate.longitude) * .pi / 180
+        let y = sin(dLon) * cos(lat2)
+        let x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
+        let angle = atan2(y, x) * 180 / .pi
+        let normalized = angle.truncatingRemainder(dividingBy: 360)
+        return normalized >= 0 ? normalized : normalized + 360
     }
 }
