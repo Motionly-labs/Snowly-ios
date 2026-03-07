@@ -86,7 +86,7 @@ private struct ServerErrorResponse: Decodable {
 
 @MainActor
 final class CrewAPIClient: CrewAPIProviding {
-    private let baseURL: URL
+    private(set) var baseURL: URL
     private let session: URLSession
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
@@ -116,6 +116,11 @@ final class CrewAPIClient: CrewAPIProviding {
     /// Set the member token after creating/joining a crew or Keychain restore.
     func setToken(_ token: String) {
         self.memberToken = token
+    }
+
+    /// Switch to a different server's base URL.
+    func updateBaseURL(_ url: URL) {
+        self.baseURL = url
     }
 
     // MARK: - Crew CRUD

@@ -264,6 +264,13 @@ final class CrewService: CrewProviding {
         _ = await pollCrewUpdates(for: crew)
     }
 
+    // MARK: - Server Configuration
+
+    /// Switch the API client to a different server URL.
+    func updateServerBaseURL(_ url: URL) {
+        apiClient.updateBaseURL(url)
+    }
+
     // MARK: - Upload Loop
 
     private func startUploadLoop() {

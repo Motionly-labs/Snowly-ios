@@ -36,6 +36,7 @@ struct SettingsView: View {
             profileSection
             unitsSection
             syncSection
+            serverSection
             dataSection
             aboutSection
         }
@@ -238,6 +239,18 @@ struct SettingsView: View {
         }
     }
 
+    private var serverSection: some View {
+        Section {
+            NavigationLink(destination: ServerManagementView()) {
+                Label(String(localized: "settings_server_management"), systemImage: "server.rack")
+            }
+        } header: {
+            Label(String(localized: "settings_section_server"), systemImage: "network")
+        } footer: {
+            Text(String(localized: "settings_server_footer"))
+        }
+    }
+
     private var dataSection: some View {
         Section {
             Button {
@@ -320,6 +333,7 @@ struct SettingsView: View {
             try modelContext.delete(model: Resort.self)
             try modelContext.delete(model: UserProfile.self)
             try modelContext.delete(model: DeviceSettings.self)
+            try modelContext.delete(model: ServerProfile.self)
             TrackingStatePersistence.clear()
             CrewKeychainService.delete()
             skiMapService.clearCache()

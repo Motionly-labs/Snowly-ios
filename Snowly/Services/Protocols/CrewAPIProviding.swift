@@ -12,6 +12,9 @@ protocol CrewAPIProviding: Sendable {
     // Token
     func setToken(_ token: String)
 
+    // Server
+    func updateBaseURL(_ url: URL)
+
     // Crew CRUD
     func createCrew(
         userId: String,

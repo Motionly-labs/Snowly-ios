@@ -20,6 +20,7 @@ enum SchemaV1: VersionedSchema {
             GearItem.self,
             UserProfile.self,
             DeviceSettings.self,
+            ServerProfile.self,
         ]
     }
 }

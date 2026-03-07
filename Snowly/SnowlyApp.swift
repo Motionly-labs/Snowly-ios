@@ -164,6 +164,7 @@ struct SnowlyApp: App {
                 .environment(services.phoneConnectivityService)
                 .environment(services.watchBridgeService)
                 .environment(services.crewService)
+
                 .environment(services.crewPinNotificationService)
                 .onChange(of: scenePhase) { _, newPhase in
                     services.crewPinNotificationService.scenePhase = newPhase
@@ -192,6 +193,12 @@ struct SnowlyApp: App {
                     QuickActionState.shared.pending = false
                     services.trackingService.quickStartPending = true
                 }
+                .task {
+                    SnowlyApp.restoreActiveServer(
+                        in: modelContainer.mainContext,
+                        crewAPIClient: services.crewAPIClient
+                    )
+                }
                 .onOpenURL { url in
                     guard let deepLink = DeepLinkHandler.parse(url: url) else { return }
                     switch deepLink {
@@ -209,6 +216,21 @@ struct SnowlyApp: App {
                 }
         }
         .modelContainer(modelContainer)
+    }
+
+    @MainActor
+    private static func restoreActiveServer(
+        in context: ModelContext,
+        crewAPIClient: CrewAPIClient
+    ) {
+        let descriptor = FetchDescriptor<ServerProfile>(
+            predicate: #Predicate<ServerProfile> { $0.isActive }
+        )
+        guard let activeServer = (try? context.fetch(descriptor))?.first,
+              let apiBaseURL = activeServer.apiBaseURL else {
+            return
+        }
+        crewAPIClient.updateBaseURL(apiBaseURL)
     }
 
     private static var canUseCloudKitAtLaunch: Bool {
@@ -292,7 +314,7 @@ struct SnowlyApp: App {
             cloudKitDatabase: cloudEnabled ? .private(cloudContainerIdentifier) : .none
         )
 
-        let localSchema = Schema([DeviceSettings.self])
+        let localSchema = Schema([DeviceSettings.self, ServerProfile.self])
         let localConfig = ModelConfiguration(
             "Local",
             schema: localSchema,
@@ -303,7 +325,7 @@ struct SnowlyApp: App {
         return try ModelContainer(
             for: SkiSession.self, SkiRun.self, Resort.self,
                  GearSetup.self, GearItem.self, UserProfile.self,
-                 DeviceSettings.self,
+                 DeviceSettings.self, ServerProfile.self,
             migrationPlan: SnowlyMigrationPlan.self,
             configurations: syncedConfig, localConfig
         )
