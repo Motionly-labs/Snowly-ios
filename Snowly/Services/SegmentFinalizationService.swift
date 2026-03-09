@@ -9,7 +9,7 @@
 import Foundation
 import Observation
 
-/// Immutable snapshot of a completed run or chairlift segment.
+/// Immutable snapshot of a completed run or lift segment.
 struct CompletedRunData: Sendable, Equatable {
     let startDate: Date
     let endDate: Date
@@ -36,9 +36,10 @@ final class SegmentFinalizationService {
     func processPoint(_ point: TrackPoint, activity: DetectedActivity) {
         let targetType: RunActivityType?
         switch activity {
-        case .skiing:    targetType = .skiing
-        case .chairlift: targetType = .chairlift
-        case .idle:      targetType = nil
+        case .skiing: targetType = .skiing
+        case .lift:   targetType = .lift
+        case .walk:   targetType = .walk
+        case .idle:   targetType = nil
         }
 
         if let targetType {
@@ -70,24 +71,19 @@ final class SegmentFinalizationService {
         let runDistance = zip(currentSegmentPoints, currentSegmentPoints.dropFirst())
             .reduce(0.0) { $0 + $1.0.distance(to: $1.1) }
 
-        let runVertical: Double
-        switch segmentType {
-        case .skiing:
-            runVertical = max(0, first.altitude - last.altitude)
-        case .chairlift:
-            runVertical = max(0, last.altitude - first.altitude)
-        case .idle:
-            runVertical = 0
-        }
-
-        let runMaxSpeed = currentSegmentPoints.map(\.speed).max() ?? 0
         let duration = last.timestamp.timeIntervalSince(first.timestamp)
         let avgSpeed = duration > 0 ? runDistance / duration : 0
+        let runMaxSpeed = currentSegmentPoints.map(\.speed).max() ?? 0
+
+        let runVertical = SegmentValidator.verticalDrop(
+            effectiveType: segmentType,
+            firstAltitude: first.altitude,
+            lastAltitude: last.altitude
+        )
 
         // Capture points for background encoding
         let points = currentSegmentPoints
 
-        // Create run with nil trackData first to avoid blocking MainActor
         let run = CompletedRunData(
             startDate: first.timestamp,
             endDate: last.timestamp,
@@ -106,9 +102,7 @@ final class SegmentFinalizationService {
             runCount += 1
         }
 
-        currentSegmentPoints = []
-        currentSegmentType = nil
-        lastActiveTime = nil
+        resetCurrentSegment()
 
         // Encode track data off MainActor, then patch the completed run
         Task.detached { [weak self] in
@@ -135,11 +129,17 @@ final class SegmentFinalizationService {
 
     /// Reset all state for a new session.
     func reset() {
+        resetCurrentSegment()
+        completedRuns = []
+        runCount = 0
+    }
+
+    // MARK: - Private
+
+    private func resetCurrentSegment() {
         currentSegmentPoints = []
         currentSegmentType = nil
         lastActiveTime = nil
-        completedRuns = []
-        runCount = 0
     }
 
     /// Restores finalized runs from persisted crash-recovery state.
@@ -147,9 +147,7 @@ final class SegmentFinalizationService {
         completedRuns = runs
         let skiingRuns = runs.filter { $0.activityType == .skiing }.count
         self.runCount = max(runCount, skiingRuns)
-        currentSegmentPoints = []
-        currentSegmentType = nil
-        lastActiveTime = nil
+        resetCurrentSegment()
     }
 
 }

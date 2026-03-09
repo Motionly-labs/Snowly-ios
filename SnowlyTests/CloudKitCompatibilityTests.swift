@@ -116,7 +116,8 @@ struct CloudKitCompatibilityTests {
 
         #expect(typeNames.contains("DeviceSettings"))
         #expect(typeNames.contains("UserProfile"))
-        #expect(modelTypes.count == 7)
+        #expect(typeNames.contains("ServerProfile"))
+        #expect(modelTypes.count == 8)
     }
 
     // MARK: - Regression Scenarios

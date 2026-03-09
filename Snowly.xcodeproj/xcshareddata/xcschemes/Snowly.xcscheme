@@ -58,6 +58,7 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
+      language = "zh-Hans"
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
       ignoresPersistentStateOnLaunch = "NO"
@@ -74,8 +75,20 @@
             ReferencedContainer = "container:Snowly.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "SWIFT_MODULECACHE_PATH"
+            value = "/tmp/snowly-swift-module-cache"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "CLANG_MODULE_CACHE_PATH"
+            value = "/tmp/snowly-swift-module-cache"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
       <LocationScenarioReference
-         identifier = "../../../Snowly/Debug/Locations/ZermattRothornSunneggaLoop.gpx"
+         identifier = "../../Snowly/Debug/Locations/ZermattRothornSunneggaLoop.gpx"
          referenceType = "0">
       </LocationScenarioReference>
    </LaunchAction>

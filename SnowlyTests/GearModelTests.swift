@@ -59,7 +59,7 @@ struct GearModelTests {
     // MARK: - RunActivityType
 
     @Test func runActivityType_codable() throws {
-        let types: [RunActivityType] = [.skiing, .chairlift, .idle]
+        let types: [RunActivityType] = [.skiing, .lift, .idle]
         for type in types {
             let data = try JSONEncoder().encode(type)
             let decoded = try JSONDecoder().decode(RunActivityType.self, from: data)

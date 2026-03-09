@@ -17,7 +17,7 @@ struct LongPressStopButton: View {
 
     private let duration: TimeInterval = ProcessInfo.processInfo.arguments.contains("-ui_testing_fast_start")
         ? 0.2
-        : 2.0
+        : 1.0
     private let buttonSize: CGFloat = 36
     private let ringLineWidth: CGFloat = 3
 

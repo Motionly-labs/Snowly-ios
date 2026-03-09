@@ -16,10 +16,10 @@ struct DwellTimeTests {
     // MARK: - Dwell Time Lookup
 
     @Test func dwellTimeForTransition_returnsCorrectValues() {
-        #expect(SessionTrackingService.dwellTimeForTransition(from: .skiing, to: .chairlift) == 15)
-        #expect(SessionTrackingService.dwellTimeForTransition(from: .chairlift, to: .skiing) == 8)
+        #expect(SessionTrackingService.dwellTimeForTransition(from: .skiing, to: .lift) == 25)
+        #expect(SessionTrackingService.dwellTimeForTransition(from: .lift, to: .skiing) == 5)
         #expect(SessionTrackingService.dwellTimeForTransition(from: .idle, to: .skiing) == 3)
-        #expect(SessionTrackingService.dwellTimeForTransition(from: .idle, to: .chairlift) == 10)
+        #expect(SessionTrackingService.dwellTimeForTransition(from: .idle, to: .lift) == 10)
         // Same-state transitions return 0
         #expect(SessionTrackingService.dwellTimeForTransition(from: .skiing, to: .skiing) == 0)
         #expect(SessionTrackingService.dwellTimeForTransition(from: .idle, to: .idle) == 0)
@@ -28,7 +28,7 @@ struct DwellTimeTests {
     // MARK: - Dwell Time State Machine
 
     @Test func briefAnomalyDoesNotTriggerSwitch() {
-        // Start skiing, get 5 seconds of chairlift readings (< 15s threshold)
+        // Start skiing, get 5 seconds of lift readings (< 25s threshold)
         var activity: DetectedActivity = .skiing
         var candidate: DetectedActivity?
         var candidateStart: Date?
@@ -36,7 +36,7 @@ struct DwellTimeTests {
 
         for i in 0..<5 {
             let result = SessionTrackingService.applyDwellTime(
-                rawActivity: .chairlift,
+                rawActivity: .lift,
                 currentActivity: activity,
                 candidateActivity: candidate,
                 candidateStartTime: candidateStart,
@@ -51,15 +51,15 @@ struct DwellTimeTests {
     }
 
     @Test func sustainedChangeTriggersSwitch() {
-        // Start skiing, get 16 seconds of chairlift readings (> 15s threshold)
+        // Start skiing, get 26 seconds of lift readings (> 25s threshold)
         var activity: DetectedActivity = .skiing
         var candidate: DetectedActivity?
         var candidateStart: Date?
         let baseTime = Date()
 
-        for i in 0..<16 {
+        for i in 0..<26 {
             let result = SessionTrackingService.applyDwellTime(
-                rawActivity: .chairlift,
+                rawActivity: .lift,
                 currentActivity: activity,
                 candidateActivity: candidate,
                 candidateStartTime: candidateStart,
@@ -70,20 +70,20 @@ struct DwellTimeTests {
             candidateStart = result.candidateStart
         }
 
-        #expect(activity == .chairlift) // Must switch after 15s sustained signal
+        #expect(activity == .lift) // Must switch after 25s sustained signal
     }
 
     @Test func interruptedCandidateResetsTimer() {
-        // Start skiing, get 10s of chairlift, then 1 skiing, then 10s of chairlift
+        // Start skiing, get 20s of lift, then 1 skiing, then 20s of lift
         var activity: DetectedActivity = .skiing
         var candidate: DetectedActivity?
         var candidateStart: Date?
         let baseTime = Date()
 
-        // 10 seconds of chairlift
-        for i in 0..<10 {
+        // 20 seconds of lift
+        for i in 0..<20 {
             let result = SessionTrackingService.applyDwellTime(
-                rawActivity: .chairlift,
+                rawActivity: .lift,
                 currentActivity: activity,
                 candidateActivity: candidate,
                 candidateStartTime: candidateStart,
@@ -94,7 +94,7 @@ struct DwellTimeTests {
             candidateStart = result.candidateStart
         }
 
-        #expect(activity == .skiing) // Not yet (10 < 15)
+        #expect(activity == .skiing) // Not yet (20 < 25)
 
         // 1 skiing reading — resets the candidate because raw matches current
         let resetResult = SessionTrackingService.applyDwellTime(
@@ -102,7 +102,7 @@ struct DwellTimeTests {
             currentActivity: activity,
             candidateActivity: candidate,
             candidateStartTime: candidateStart,
-            timestamp: baseTime.addingTimeInterval(10)
+            timestamp: baseTime.addingTimeInterval(20)
         )
         activity = resetResult.activity
         candidate = resetResult.candidate
@@ -110,10 +110,10 @@ struct DwellTimeTests {
 
         #expect(candidate == nil) // Candidate reset
 
-        // 10 more seconds of chairlift — timer restarts from scratch
-        for i in 11..<21 {
+        // 20 more seconds of lift — timer restarts from scratch
+        for i in 21..<41 {
             let result = SessionTrackingService.applyDwellTime(
-                rawActivity: .chairlift,
+                rawActivity: .lift,
                 currentActivity: activity,
                 candidateActivity: candidate,
                 candidateStartTime: candidateStart,
@@ -124,7 +124,7 @@ struct DwellTimeTests {
             candidateStart = result.candidateStart
         }
 
-        // 10 seconds from scratch (11..20) < 15s, so still skiing
+        // 20 seconds from scratch (21..40) < 25s, so still skiing
         #expect(activity == .skiing)
     }
 

@@ -2,7 +2,7 @@
 //  ShareCardRenderer.swift
 //  Snowly
 //
-//  Renders a 1080x1920 share card image from session data.
+//  Renders a 1920x1080 share card image from session data.
 //  Uses MKMapSnapshotter for route map + SwiftUI ImageRenderer.
 //
 //  IMPORTANT: All SwiftData model values must be extracted before
@@ -25,7 +25,7 @@ enum ShareCardRenderer {
         displayName: String
     ) async -> UIImage? {
         // Extract route data from SwiftData models BEFORE any async work
-        let routes = RouteMapView.skiingRoutes(from: session)
+        let segments = RouteMapView.routeSegments(from: session)
 
         // Snapshot all session values into local copies
         let sessionMaxSpeed = session.maxSpeed
@@ -34,9 +34,18 @@ enum ShareCardRenderer {
         let sessionTotalVertical = session.totalVertical
         let sessionDuration = session.duration
         let sessionStartDate = session.startDate
+        let sessionNoteTitle = session.effectiveNoteTitle.nonEmpty
+        let sessionNoteBody = session.effectiveNoteBody.nonEmpty
 
         // Now safe to do async work — no more SwiftData model access
-        let mapImage = await MapSnapshotRenderer.render(routes: routes)
+        let mapImage = await MapSnapshotRenderer.render(
+            segments: segments,
+            size: CGSize(
+                width: AppConstants.shareCardMapPanelWidth,
+                height: AppConstants.shareCardMapPanelHeight
+            ),
+            scale: AppConstants.shareCardMapSnapshotScale
+        )
 
         let view = ShareCardView(
             maxSpeed: sessionMaxSpeed,
@@ -49,11 +58,13 @@ enum ShareCardRenderer {
             unitSystem: unitSystem,
             avatarData: avatarData,
             displayName: displayName,
+            noteTitle: sessionNoteTitle,
+            noteBody: sessionNoteBody,
             mapImage: mapImage
         )
 
         let renderer = ImageRenderer(content: view)
-        renderer.scale = 1.0
+        renderer.scale = AppConstants.shareCardExportScale
         return renderer.uiImage
     }
 }

@@ -90,6 +90,7 @@
 		33C6BFBA2F5C540000DF2C52 /* Exceptions for "Snowly" folder in "SnowlyWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Resources/Localizable.xcstrings,
 				Shared/QuickActionState.swift,
 				Shared/SnowlyActivityAttributes.swift,
 				Shared/StartTrackingIntent.swift,
@@ -104,6 +105,8 @@
 			membershipExceptions = (
 				"Extensions/Color+Extensions.swift",
 				"Extensions/TrackPoint+CoreLocation.swift",
+				Services/MotionEstimate.swift,
+				Services/MotionEstimator.swift,
 				Services/Protocols/MotionDetecting.swift,
 				Services/RunDetectionService.swift,
 				Shared/RunActivityType.swift,
@@ -382,6 +385,8 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
+				sv,
 			);
 			mainGroup = 33A1042F2F558EA80066DAF5;
 			minimizedProjectReferenceProxies = 1;
@@ -623,18 +628,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Snowly/Snowly.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Snowly/Snowly.debug.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Snowly can open Apple Music now playing when you tap the music button.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Snowly reads your workouts to avoid saving duplicates.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Snowly saves your ski sessions as workouts in Apple Health.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Snowly needs background location access to track your ski runs while the app is in the background.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Snowly needs your location to track ski runs, measure speed, and calculate vertical drop.";
-				INFOPLIST_KEY_NSMotionUsageDescription = "Snowly uses motion data to detect whether you are skiing, on a chairlift, or idle.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Snowly uses your location to record ski tracks, measure speed, and detect runs automatically.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Snowly uses motion sensors to automatically detect when you're skiing or riding a chairlift.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Snowly needs access to save your ski day share card to Photos.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -671,15 +676,15 @@
 				CODE_SIGN_ENTITLEMENTS = Snowly/Snowly.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Snowly can open Apple Music now playing when you tap the music button.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Snowly reads your workouts to avoid saving duplicates.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Snowly saves your ski sessions as workouts in Apple Health.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Snowly needs background location access to track your ski runs while the app is in the background.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Snowly needs your location to track ski runs, measure speed, and calculate vertical drop.";
-				INFOPLIST_KEY_NSMotionUsageDescription = "Snowly uses motion data to detect whether you are skiing, on a chairlift, or idle.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Snowly uses your location to record ski tracks, measure speed, and detect runs automatically.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Snowly uses motion sensors to automatically detect when you're skiing or riding a chairlift.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Snowly needs access to save your ski day share card to Photos.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -714,6 +719,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
@@ -739,6 +745,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
@@ -763,6 +770,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Roy-Kid.SnowlyUITests";
@@ -786,6 +794,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Roy-Kid.SnowlyUITests";
@@ -811,6 +820,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SnowlyWidgetExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SnowlyWidgetExtension;
@@ -840,6 +850,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SnowlyWidgetExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SnowlyWidgetExtension;
@@ -870,11 +881,10 @@
 				CODE_SIGN_ENTITLEMENTS = SnowlyWatch/SnowlyWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Snowly;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Snowly reads your workouts to track ski sessions.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Snowly saves your ski sessions as workouts in Apple Health.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Snowly needs your location to track ski runs on Apple Watch.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "Roy-Kid.Snowly";
@@ -908,11 +918,10 @@
 				CODE_SIGN_ENTITLEMENTS = SnowlyWatch/SnowlyWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Snowly;
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Snowly reads your workouts to track ski sessions.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Snowly saves your ski sessions as workouts in Apple Health.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Snowly needs your location to track ski runs on Apple Watch.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "Roy-Kid.Snowly";

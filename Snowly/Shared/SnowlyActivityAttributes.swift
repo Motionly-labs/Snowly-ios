@@ -20,7 +20,7 @@ struct SnowlyActivityAttributes: ActivityAttributes {
         let totalVertical: Double  // meters
         let runCount: Int
         let elapsedSeconds: Int
-        let currentActivity: String // "skiing", "chairlift", "idle"
+        let currentActivity: String // "skiing", "lift", "walk", "idle"
         let isPaused: Bool
         let maxSpeed: Double       // m/s
     }

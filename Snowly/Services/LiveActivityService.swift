@@ -14,12 +14,38 @@ import Observation
 @MainActor
 final class LiveActivityService {
     private static let dismissalDelay: TimeInterval = 300 // 5 minutes
-    private static let minUpdateInterval: TimeInterval = 5
+    private var minUpdateInterval: TimeInterval = 5
     private var currentActivity: Activity<SnowlyActivityAttributes>?
     private var lastUpdateTime: Date?
 
+    func setMinimumUpdateInterval(seconds: TimeInterval) {
+        let next = min(max(seconds, 0.5), 300)
+        guard minUpdateInterval != next else { return }
+        minUpdateInterval = next
+        // Apply interval changes immediately without waiting for old throttle window.
+        lastUpdateTime = nil
+    }
+
     func startLiveActivity(startDate: Date, unitSystem: UnitSystem) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            print("[LiveActivity] Activities are disabled in system settings")
+            return
+        }
+
+        // Reuse only truly active activities. Ended/dismissed ones must not be reused.
+        if let current = currentActivity, current.activityState == .active {
+            currentActivity = current
+            lastUpdateTime = nil
+            print("[LiveActivity] Reusing current active activity: \(current.id)")
+            return
+        }
+
+        if let existing = Activity<SnowlyActivityAttributes>.activities.first(where: { $0.activityState == .active }) {
+            currentActivity = existing
+            lastUpdateTime = nil
+            print("[LiveActivity] Reusing discovered active activity: \(existing.id)")
+            return
+        }
 
         let attributes = SnowlyActivityAttributes(
             startDate: startDate,
@@ -42,6 +68,8 @@ final class LiveActivityService {
                 pushType: nil
             )
             currentActivity = activity
+            lastUpdateTime = nil
+            print("[LiveActivity] Started: \(activity.id)")
         } catch {
             print("[LiveActivity] Failed to start: \(error)")
         }
@@ -52,7 +80,7 @@ final class LiveActivityService {
 
         let now = Date()
         if let last = lastUpdateTime,
-           now.timeIntervalSince(last) < Self.minUpdateInterval {
+           now.timeIntervalSince(last) < minUpdateInterval {
             return
         }
         lastUpdateTime = now
@@ -65,11 +93,12 @@ final class LiveActivityService {
     func endLiveActivity(finalState: SnowlyActivityAttributes.ContentState) {
         guard let activity = currentActivity else { return }
         currentActivity = nil
+        lastUpdateTime = nil
 
         Task {
             await activity.end(
                 .init(state: finalState, staleDate: nil),
-                dismissalPolicy: .after(.now + Self.dismissalDelay)
+                dismissalPolicy: .immediate
             )
         }
     }

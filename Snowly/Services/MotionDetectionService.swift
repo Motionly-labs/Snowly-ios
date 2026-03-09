@@ -2,7 +2,7 @@
 //  MotionDetectionService.swift
 //  Snowly
 //
-//  CoreMotion activity recognition to assist run/chairlift detection.
+//  CoreMotion activity recognition to assist run/lift detection.
 //
 
 import Foundation

@@ -11,6 +11,7 @@ import Foundation
 import SwiftData
 import Observation
 import CoreLocation
+import os
 
 /// Tracking session state machine.
 enum TrackingState: Sendable, Equatable {
@@ -142,23 +143,13 @@ private actor TrackingEngine {
         }
     }
 
-    func ingest(point: TrackPoint, motion: DetectedMotion) async -> TrackingPointIngestResult {
+    func ingest(point: TrackPoint) async -> TrackingPointIngestResult {
         currentSpeed = point.speed
-
-        var recentTimestamps = [Double]()
-        var recentAltitudes = [Double]()
-        recentTimestamps.reserveCapacity(recentPoints.count)
-        recentAltitudes.reserveCapacity(recentPoints.count)
-        for p in recentPoints {
-            recentTimestamps.append(p.timestamp.timeIntervalSinceReferenceDate)
-            recentAltitudes.append(p.altitude)
-        }
 
         let rawActivity = RunDetectionService.detect(
             point: point,
-            recentTimestamps: recentTimestamps,
-            recentAltitudes: recentAltitudes,
-            motion: motion
+            recentPoints: recentPoints,
+            previousActivity: currentActivity
         )
 
         recentPoints.append(point)
@@ -188,7 +179,7 @@ private actor TrackingEngine {
                 if verticalDrop > 0 {
                     totalVertical += verticalDrop
                 }
-            case .chairlift, .idle:
+            case .lift, .idle, .walk:
                 break
             }
         }
@@ -306,8 +297,9 @@ private actor TrackingEngine {
         let targetType: RunActivityType?
         switch activity {
         case .skiing: targetType = .skiing
-        case .chairlift: targetType = .chairlift
-        case .idle: targetType = nil
+        case .lift:   targetType = .lift
+        case .walk:   targetType = .walk
+        case .idle:   targetType = nil
         }
 
         if let targetType {
@@ -375,18 +367,25 @@ private actor TrackingEngine {
 
         closeSegmentHandle()
 
-        let verticalDrop: Double
-        switch segmentType {
-        case .skiing:
-            verticalDrop = max(0, first.altitude - last.altitude)
-        case .chairlift:
-            verticalDrop = max(0, last.altitude - first.altitude)
-        case .idle:
-            verticalDrop = 0
-        }
-
         let duration = max(0, last.timestamp.timeIntervalSince(first.timestamp))
         let averageSpeed = duration > 0 ? segmentDistance / duration : 0
+
+        guard let effectiveType = SegmentValidator.effectiveType(
+            activityType: segmentType,
+            firstPoint: first,
+            lastPoint: last,
+            duration: duration,
+            averageSpeed: averageSpeed
+        ) else {
+            resetCurrentSegmentState(deleteFile: true)
+            return
+        }
+
+        let verticalDrop = SegmentValidator.verticalDrop(
+            effectiveType: effectiveType,
+            firstAltitude: first.altitude,
+            lastAltitude: last.altitude
+        )
 
         let summary = CompletedRunData(
             startDate: first.timestamp,
@@ -395,7 +394,7 @@ private actor TrackingEngine {
             verticalDrop: verticalDrop,
             maxSpeed: segmentMaxSpeed,
             averageSpeed: averageSpeed,
-            activityType: segmentType,
+            activityType: effectiveType,
             trackData: nil
         )
 
@@ -403,7 +402,7 @@ private actor TrackingEngine {
         completedRunFiles.append(segmentTrackFileURL)
         completedRunsVersion += 1
 
-        if segmentType == .skiing {
+        if effectiveType == .skiing {
             runCount += 1
         }
 
@@ -518,13 +517,14 @@ final class SessionTrackingService {
     private var lastProcessedPointTime: Date?
     private var lastSyncedRunsVersion: Int = 0
     private var lastSyncedSamplesVersion: Int = 0
+    private var liveActivityUnitSystem: UnitSystem = .metric
+    private var trackingUpdateIntervalSeconds: TimeInterval = 1.0
 
     private var isDashboardVisible = false
     private var isAppActive = true
 
     private static let recoveryStateMaxAge: TimeInterval = 12 * 3600
-    private static let activeForegroundRefreshInterval: TimeInterval = 1
-    private static let passiveRefreshInterval: TimeInterval = 3
+    nonisolated private static let logger = Logger(subsystem: "com.Snowly", category: "SessionTracking")
 
     init(
         locationService: any LocationProviding,
@@ -565,6 +565,7 @@ final class SessionTrackingService {
         let sessionId = UUID()
         activeSessionId = sessionId
         startDate = Date()
+        liveActivityUnitSystem = unitSystem
 
         resetPublishedStats()
         state = .tracking
@@ -576,10 +577,7 @@ final class SessionTrackingService {
             startDate: startDate ?? Date()
         )
 
-        liveActivityService?.startLiveActivity(
-            startDate: startDate ?? Date(),
-            unitSystem: unitSystem
-        )
+        ensureLiveActivityStarted(unitSystem: unitSystem)
 
         startLiveTrackingPipeline()
         startTimer()
@@ -597,7 +595,7 @@ final class SessionTrackingService {
         await syncPublishedSnapshot(recordSpeedSample: false)
     }
 
-    func resumeTracking() async {
+    func resumeTracking(unitSystem: UnitSystem? = nil) async {
         guard state == .paused else { return }
 
         if trackingTask == nil {
@@ -617,6 +615,7 @@ final class SessionTrackingService {
         }
         pauseStartTime = nil
         state = .tracking
+        ensureLiveActivityStarted(unitSystem: unitSystem ?? liveActivityUnitSystem)
 
         await syncPublishedSnapshot(recordSpeedSample: false)
     }
@@ -729,6 +728,14 @@ final class SessionTrackingService {
         isAppActive = active
     }
 
+    func updateTrackingUpdateInterval(seconds: TimeInterval) {
+        let clamped = min(max(seconds, 0.5), 30)
+        guard trackingUpdateIntervalSeconds != clamped else { return }
+        trackingUpdateIntervalSeconds = clamped
+        lastProcessedPointTime = nil
+        liveActivityService?.setMinimumUpdateInterval(seconds: clamped)
+    }
+
     // MARK: - Private
 
     private func startLiveTrackingPipeline() {
@@ -742,21 +749,29 @@ final class SessionTrackingService {
         }
     }
 
-    /// Minimum interval between processed points to cap CPU at high speed.
-    private static let minPointInterval: TimeInterval = 0.4
+    private func ensureLiveActivityStarted(unitSystem: UnitSystem) {
+        liveActivityUnitSystem = unitSystem
+        guard let liveActivityService else {
+            Self.logger.error("Live Activity service missing")
+            return
+        }
+        liveActivityService.setMinimumUpdateInterval(seconds: trackingUpdateIntervalSeconds)
+        let start = startDate ?? Date()
+        liveActivityService.startLiveActivity(startDate: start, unitSystem: unitSystem)
+        liveActivityService.update(state: buildLiveActivityState())
+    }
 
     private func processTrackPoint(_ point: TrackPoint) async {
         guard state == .tracking else { return }
 
-        // Throttle: skip points arriving faster than minPointInterval
+        // Throttle by configured update interval.
         if let lastTime = lastProcessedPointTime,
-           point.timestamp.timeIntervalSince(lastTime) < Self.minPointInterval {
+           point.timestamp.timeIntervalSince(lastTime) < trackingUpdateIntervalSeconds {
             return
         }
         lastProcessedPointTime = point.timestamp
 
-        let motion = motionService.currentMotion
-        let ingestResult = await trackingEngine.ingest(point: point, motion: motion)
+        let ingestResult = await trackingEngine.ingest(point: point)
 
         if let previous = ingestResult.previousPoint {
             healthKitCoordinator.forwardPoint(
@@ -766,6 +781,25 @@ final class SessionTrackingService {
                 isSkiing: ingestResult.activity == .skiing
             )
         }
+
+        await pushLiveActivityUpdateFromEngine()
+    }
+
+    /// Pushes Live Activity updates directly from engine state so background
+    /// updates are not blocked by UI refresh cadence.
+    private func pushLiveActivityUpdateFromEngine() async {
+        guard liveActivityService != nil else { return }
+        let scalar = await trackingEngine.scalarSnapshot()
+        let state = SnowlyActivityAttributes.ContentState(
+            currentSpeed: scalar.currentSpeed,
+            totalVertical: scalar.totalVertical,
+            runCount: scalar.runCount,
+            elapsedSeconds: Int(computeElapsedTime()),
+            currentActivity: scalar.currentActivity.activityName,
+            isPaused: self.state == .paused,
+            maxSpeed: scalar.maxSpeed
+        )
+        liveActivityService?.update(state: state)
     }
 
     private func startTimer() {
@@ -782,10 +816,8 @@ final class SessionTrackingService {
     }
 
     private var currentRefreshInterval: TimeInterval {
-        guard state == .tracking else { return Self.activeForegroundRefreshInterval }
-        return (isDashboardVisible && isAppActive)
-            ? Self.activeForegroundRefreshInterval
-            : Self.passiveRefreshInterval
+        guard state == .tracking else { return 1.0 }
+        return trackingUpdateIntervalSeconds
     }
 
     private func handleTimerTick(interval: TimeInterval) async {
@@ -920,19 +952,66 @@ final class SessionTrackingService {
 
     private func loadTrackData(for runStorage: [CompletedRunStorage]) async -> [MaterializedCompletedRun] {
         await Task.detached(priority: .utility) {
-            runStorage.map { storedRun in
-                let trackData: Data?
+            func decodeNDJSONTrackPoints(from data: Data) -> [TrackPoint]? {
+                let lines = data.split(separator: 0x0A)
+                guard !lines.isEmpty else { return [] }
+
+                var points: [TrackPoint] = []
+                points.reserveCapacity(lines.count)
+
+                for line in lines where !line.isEmpty {
+                    guard
+                        let object = try? JSONSerialization.jsonObject(with: Data(line)),
+                        let dict = object as? [String: Any],
+                        let timestamp = dict["timestamp"] as? Double,
+                        let latitude = dict["latitude"] as? Double,
+                        let longitude = dict["longitude"] as? Double,
+                        let altitude = dict["altitude"] as? Double,
+                        let speed = dict["speed"] as? Double,
+                        let accuracy = dict["accuracy"] as? Double,
+                        let course = dict["course"] as? Double
+                    else {
+                        return nil
+                    }
+                    points.append(TrackPoint(
+                        timestamp: Date(timeIntervalSinceReferenceDate: timestamp),
+                        latitude: latitude,
+                        longitude: longitude,
+                        altitude: altitude,
+                        speed: speed,
+                        accuracy: accuracy,
+                        course: course
+                    ))
+                }
+                return points
+            }
+
+            func canonicalTrackData(from rawData: Data?) -> Data? {
+                guard let rawData else { return nil }
+
+                if let points = try? JSONDecoder().decode([TrackPoint].self, from: rawData) {
+                    return try? JSONEncoder().encode(points)
+                }
+
+                guard let points = decodeNDJSONTrackPoints(from: rawData) else {
+                    return nil
+                }
+                return try? JSONEncoder().encode(points)
+            }
+
+            return runStorage.map { storedRun in
+                let rawTrackData: Data?
                 if let embedded = storedRun.summary.trackData {
-                    trackData = embedded
+                    rawTrackData = embedded
                 } else if let url = storedRun.trackFileURL {
-                    trackData = try? Data(contentsOf: url, options: .mappedIfSafe)
+                    rawTrackData = try? Data(contentsOf: url, options: .mappedIfSafe)
                 } else {
-                    trackData = nil
+                    rawTrackData = nil
                 }
 
                 return MaterializedCompletedRun(
                     summary: storedRun.summary,
-                    trackData: trackData
+                    trackData: canonicalTrackData(from: rawTrackData)
                 )
             }
         }.value
@@ -984,14 +1063,20 @@ final class SessionTrackingService {
         to target: DetectedActivity
     ) -> TimeInterval {
         switch (current, target) {
-        case (.skiing, .chairlift):
-            return SharedConstants.dwellTimeSkiingToChairlift
-        case (.chairlift, .skiing):
-            return SharedConstants.dwellTimeChairliftToSkiing
+        case (.skiing, .lift):
+            return SharedConstants.dwellTimeSkiingToLift
+        case (.lift, .skiing):
+            return SharedConstants.dwellTimeLiftToSkiing
         case (.idle, .skiing):
             return SharedConstants.dwellTimeIdleToSkiing
-        case (.idle, .chairlift):
-            return SharedConstants.dwellTimeIdleToChairlift
+        case (.idle, .lift):
+            return SharedConstants.dwellTimeIdleToLift
+        case (_, .walk):
+            return SharedConstants.dwellTimeAnyToWalk
+        case (.walk, .skiing):
+            return SharedConstants.dwellTimeWalkToSkiing
+        case (.walk, .lift):
+            return SharedConstants.dwellTimeWalkToLift
         default:
             return 0
         }

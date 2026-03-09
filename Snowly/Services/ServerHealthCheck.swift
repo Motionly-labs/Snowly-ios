@@ -14,9 +14,9 @@ enum ServerHealthStatus: Sendable {
 }
 
 enum ServerHealthCheck {
-    /// Sends a GET request to `baseURL/health` and returns connectivity status.
+    /// Sends a GET request to `baseURL/api/v1/health` and returns connectivity status.
     static func check(baseURL: URL, timeout: TimeInterval = 5) async -> ServerHealthStatus {
-        let healthURL = baseURL.appendingPathComponent("health")
+        let healthURL = baseURL.appendingPathComponent("api/v1/health")
         var request = URLRequest(url: healthURL)
         request.httpMethod = "GET"
         request.timeoutInterval = timeout

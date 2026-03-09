@@ -14,6 +14,7 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SyncMonitorService.self) private var syncMonitorService
     @Environment(SkiMapCacheService.self) private var skiMapService
+    @Environment(SessionTrackingService.self) private var trackingService
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
     @Query(sort: \DeviceSettings.createdAt) private var deviceSettings: [DeviceSettings]
 
@@ -30,12 +31,14 @@ struct SettingsView: View {
     private var defaultUnitSystem: UnitSystem {
         Locale.current.measurementSystem == .metric ? .metric : .imperial
     }
+    private let trackingIntervalOptions: [Double] = [0.5, 1, 2, 3, 5, 10, 15, 30]
 
     var body: some View {
         Form {
             profileSection
             unitsSection
             syncSection
+            liveActivitySection
             serverSection
             dataSection
             aboutSection
@@ -56,6 +59,7 @@ struct SettingsView: View {
         .onAppear {
             guard !isResettingData else { return }
             ensureSettingsDataIfNeeded()
+            applyTrackingIntervalIfNeeded()
         }
         .onChange(of: profiles.count) { _, _ in
             guard !isResettingData else { return }
@@ -64,6 +68,10 @@ struct SettingsView: View {
         .onChange(of: deviceSettings.count) { _, _ in
             guard !isResettingData else { return }
             ensureSettingsDataIfNeeded()
+            applyTrackingIntervalIfNeeded()
+        }
+        .onChange(of: deviceSettings.first?.trackingUpdateIntervalSeconds) { _, _ in
+            applyTrackingIntervalIfNeeded()
         }
         .alert(String(localized: "settings_alert_delete_title"), isPresented: $showingDeleteConfirmation) {
             Button(String(localized: "common_cancel"), role: .cancel) {}
@@ -251,6 +259,28 @@ struct SettingsView: View {
         }
     }
 
+    private var liveActivitySection: some View {
+        Section {
+            if let settings = deviceSettings.first {
+                Picker(
+                    String(localized: "settings_tracking_interval_label"),
+                    selection: Binding(
+                        get: { settings.resolvedTrackingUpdateIntervalSeconds },
+                        set: { settings.trackingUpdateIntervalSeconds = $0 }
+                    )
+                ) {
+                    ForEach(trackingIntervalOptions, id: \.self) { option in
+                        Text(formattedTrackingInterval(option)).tag(option)
+                    }
+                }
+            }
+        } header: {
+            Label(String(localized: "settings_tracking_interval_title"), systemImage: "location")
+        } footer: {
+            Text(String(localized: "settings_tracking_interval_footer"))
+        }
+    }
+
     private var dataSection: some View {
         Section {
             Button {
@@ -306,6 +336,18 @@ struct SettingsView: View {
             // Appearance is now always system-driven.
             settings.appearanceMode = AppearanceMode.system.rawValue
         }
+    }
+
+    private func applyTrackingIntervalIfNeeded() {
+        guard let settings = deviceSettings.first else { return }
+        trackingService.updateTrackingUpdateInterval(seconds: settings.resolvedTrackingUpdateIntervalSeconds)
+    }
+
+    private func formattedTrackingInterval(_ value: Double) -> String {
+        if abs(value - value.rounded()) < 0.001 {
+            return "\(Int(value.rounded()))s"
+        }
+        return String(format: "%.1fs", value)
     }
 
     private func exportData() {
@@ -478,6 +520,10 @@ private struct DeviceSettingsSnapshot: Codable {
     let healthKitEnabled: Bool
     let hasCompletedOnboarding: Bool
     let appearanceMode: String
+    let trackingUpdateIntervalSeconds: Double
+    let liveActivityRefreshActiveSeconds: Int
+    let liveActivityRefreshInactiveSeconds: Int
+    let liveActivityRefreshBackgroundSeconds: Int
     let createdAt: Date
 
     @MainActor init(_ settings: DeviceSettings) {
@@ -485,6 +531,10 @@ private struct DeviceSettingsSnapshot: Codable {
         healthKitEnabled = settings.healthKitEnabled
         hasCompletedOnboarding = settings.hasCompletedOnboarding
         appearanceMode = settings.appearanceMode
+        trackingUpdateIntervalSeconds = settings.trackingUpdateIntervalSeconds
+        liveActivityRefreshActiveSeconds = settings.liveActivityRefreshActiveSeconds
+        liveActivityRefreshInactiveSeconds = settings.liveActivityRefreshInactiveSeconds
+        liveActivityRefreshBackgroundSeconds = settings.liveActivityRefreshBackgroundSeconds
         createdAt = settings.createdAt
     }
 }
@@ -493,6 +543,9 @@ private struct SessionSnapshot: Codable {
     let id: UUID
     let startDate: Date
     let endDate: Date?
+    let noteTitle: String?
+    let noteBody: String?
+    let note: String?
     let totalDistance: Double
     let totalVertical: Double
     let maxSpeed: Double
@@ -505,6 +558,9 @@ private struct SessionSnapshot: Codable {
         id = session.id
         startDate = session.startDate
         endDate = session.endDate
+        noteTitle = session.noteTitle
+        noteBody = session.noteBody
+        note = session.note
         totalDistance = session.totalDistance
         totalVertical = session.totalVertical
         maxSpeed = session.maxSpeed

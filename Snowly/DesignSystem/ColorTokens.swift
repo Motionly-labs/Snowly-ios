@@ -10,6 +10,7 @@ import SwiftUI
 
 enum ColorTokens {
     // MARK: - Brand
+    static let brandIceBlue = Color(hex: "1E88E5")
     static let brandWarmAmber = Color(hex: "F88800")
     static let brandWarmOrange = Color(hex: "F88000")
     static let brandRed = Color(hex: "D82000")

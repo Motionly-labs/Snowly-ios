@@ -52,16 +52,16 @@ enum StatsService {
         var newRecords: [String] = []
 
         if session.maxSpeed > profile.seasonBestMaxSpeed {
-            newRecords.append("Max Speed")
+            newRecords.append(String(localized: "stat_max_speed"))
         }
         if session.totalVertical > profile.seasonBestVertical {
-            newRecords.append("Vertical Drop")
+            newRecords.append(String(localized: "stat_vertical_drop"))
         }
         if session.totalDistance > profile.seasonBestDistance {
-            newRecords.append("Distance")
+            newRecords.append(String(localized: "common_distance"))
         }
         if session.runCount > profile.seasonBestRunCount {
-            newRecords.append("Run Count")
+            newRecords.append(String(localized: "stat_run_count"))
         }
 
         return newRecords

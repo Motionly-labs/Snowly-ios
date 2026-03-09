@@ -2,11 +2,7 @@
 //  ShareCardView.swift
 //  Snowly
 //
-//  1080x1920 share card layout with avatar, route map,
-//  and stats on a dark gradient background.
-//
-//  Accepts plain values (not SwiftData models) to avoid
-//  EXC_BAD_ACCESS when rendered via ImageRenderer.
+//  1920x1080 landscape share card mirroring the ski day recap composition.
 //
 
 import SwiftUI
@@ -22,186 +18,196 @@ struct ShareCardView: View {
     let unitSystem: UnitSystem
     let avatarData: Data?
     let displayName: String
+    let noteTitle: String?
+    let noteBody: String?
     let mapImage: UIImage?
 
     var body: some View {
         ZStack {
             background
-
-            VStack(spacing: 0) {
-                Spacer().frame(height: Spacing.section)
-
-                headerSection
-                    .padding(.bottom, Spacing.xxl)
-
-                mapSection
-                    .padding(.horizontal, Spacing.section)
-                    .padding(.bottom, Spacing.xxxl)
-
-                statsGrid
-                    .padding(.horizontal, Spacing.section)
-                    .padding(.bottom, Spacing.xxl)
-
-                durationSection
-                    .padding(.bottom, Spacing.xxxl)
-
-                Spacer()
-
-                footerSection
-                    .padding(.bottom, Spacing.section)
+            HStack(spacing: AppConstants.shareCardColumnSpacing) {
+                mapPanel
+                infoPanel
             }
+            .padding(.horizontal, AppConstants.shareCardHorizontalPadding)
+            .padding(.vertical, AppConstants.shareCardVerticalPadding)
         }
         .frame(width: AppConstants.shareCardWidth, height: AppConstants.shareCardHeight)
     }
 
-    // MARK: - Background
-
     private var background: some View {
         LinearGradient(
-            colors: [
-                AppConstants.backgroundDark,
-                AppConstants.backgroundCard,
-                AppConstants.backgroundDark,
-            ],
+            colors: [AppConstants.backgroundDark, AppConstants.backgroundCard, AppConstants.backgroundDark],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
-    }
-
-    // MARK: - Header
-
-    private var headerSection: some View {
-        VStack(spacing: Spacing.md) {
-            AvatarView(avatarData: avatarData, displayName: displayName, size: 72)
-
-            if !displayName.isEmpty {
-                Text(displayName)
-                    .font(Typography.headingLarge)
-                    .foregroundStyle(.white)
-            }
-
-            HStack(spacing: Spacing.sm) {
-                if let name = resortName {
-                    Text(name)
-                    Text("\u{00B7}")
-                }
-                Text(startDate.longDisplay)
-            }
-            .font(Typography.headingMedium)
-            .foregroundStyle(.white.opacity(Opacity.half))
+        .overlay {
+            Circle()
+                .fill(ColorTokens.brandWarmOrange.opacity(0.12))
+                .frame(width: 360, height: 360)
+                .blur(radius: 16)
+                .offset(x: 640, y: -240)
         }
     }
 
-    // MARK: - Map
-
-    private var mapSection: some View {
+    private var mapPanel: some View {
         Group {
             if let image = mapImage {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
-                    .frame(height: 500)
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
             } else {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                AppConstants.surfaceElevated,
-                                AppConstants.backgroundCard,
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(height: 500)
-                    .overlay {
-                        Image(systemName: "mountain.2.fill")
-                            .font(Typography.onboardingIcon)
-                            .foregroundStyle(.white.opacity(Opacity.gentle))
-                    }
-            }
-        }
-    }
-
-    // MARK: - Stats
-
-    private var statsGrid: some View {
-        VStack(spacing: Spacing.xl) {
-            HStack(spacing: Spacing.xl) {
-                statCard(
-                    value: Formatters.speedValue(maxSpeed, unit: unitSystem),
-                    unit: Formatters.speedUnit(unitSystem),
-                    label: String(localized: "stat_max_speed")
+                LinearGradient(
+                    colors: [AppConstants.surfaceElevated, AppConstants.backgroundCard],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
-                statCard(
-                    value: "\(runCount)",
-                    unit: "",
-                    label: String(localized: "common_runs")
-                )
-            }
-            HStack(spacing: Spacing.xl) {
-                statCard(
-                    value: Formatters.distance(totalDistance, unit: unitSystem),
-                    unit: "",
-                    label: String(localized: "common_distance")
-                )
-                statCard(
-                    value: Formatters.vertical(totalVertical, unit: unitSystem),
-                    unit: "",
-                    label: String(localized: "common_vertical")
-                )
-            }
-        }
-    }
-
-    private func statCard(value: String, unit: String, label: String) -> some View {
-        VStack(spacing: Spacing.gap) {
-            HStack(alignment: .lastTextBaseline, spacing: Spacing.xs) {
-                Text(value)
-                    .font(Typography.metricMedium)
-                    .foregroundStyle(ColorTokens.brandGradient)
-                if !unit.isEmpty {
-                    Text(unit)
-                        .font(Typography.bodyLabel)
-                        .foregroundStyle(.white.opacity(Opacity.half))
+                .overlay {
+                    Image(systemName: "mountain.2.fill")
+                        .font(.system(size: 64, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.35))
                 }
             }
-            Text(label)
-                .font(Typography.captionMedium)
-                .foregroundStyle(.white.opacity(Opacity.half))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color.white.opacity(0.18), lineWidth: 1)
+        }
+    }
+
+    private var infoPanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            headerBlock
+
+            if noteTitle != nil || noteBody != nil {
+                noteBlock(title: noteTitle, body: noteBody)
+                    .padding(.top, 20)
+            }
+
+            Spacer()
+
+            // Max speed — hero stat
+            VStack(alignment: .leading, spacing: 8) {
+                Text(String(localized: "stat_max_speed").uppercased())
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.45))
+                    .tracking(2.5)
+                Text("\(Formatters.speedValue(maxSpeed, unit: unitSystem)) \(Formatters.speedUnit(unitSystem))")
+                    .font(.system(size: 96, weight: .black, design: .rounded).monospacedDigit())
+                    .foregroundStyle(ColorTokens.brandGradient)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.55)
+            }
+
+            Spacer().frame(height: 40)
+
+            // 4-stat band
+            HStack(spacing: 0) {
+                statBlock(value: "\(runCount)", label: String(localized: "common_runs"))
+                statSeparator
+                statBlock(
+                    value: Formatters.distance(totalDistance, unit: unitSystem),
+                    label: String(localized: "common_distance")
+                )
+                statSeparator
+                statBlock(
+                    value: Formatters.vertical(totalVertical, unit: unitSystem),
+                    label: String(localized: "common_vertical")
+                )
+                statSeparator
+                statBlock(
+                    value: Formatters.duration(duration),
+                    label: String(localized: "common_ski_time")
+                )
+            }
+            .padding(.vertical, 24)
+            .background(AppConstants.surfaceElevated.opacity(0.6), in: RoundedRectangle(cornerRadius: 16))
+
+            Spacer()
+
+            // Brand lockup — bottom right
+            HStack {
+                Spacer()
+                HStack(spacing: 10) {
+                    Image("SnowlyLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 26)
+                    Text("Snowly")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+            }
+        }
+        .frame(width: AppConstants.shareCardInfoPanelWidth, alignment: .leading)
+    }
+
+    private var headerBlock: some View {
+        HStack(spacing: 16) {
+            AvatarView(avatarData: avatarData, displayName: displayName, size: 58)
+            VStack(alignment: .leading, spacing: 5) {
+                if !displayName.isEmpty {
+                    Text(displayName)
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                }
+                HStack(spacing: 8) {
+                    if let resortName {
+                        Text(resortName)
+                        Text("\u{00B7}")
+                    }
+                    Text(startDate.longDisplay)
+                }
+                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.55))
+            }
+        }
+    }
+
+    private func noteBlock(title: String?, body: String?) -> some View {
+        HStack(spacing: 12) {
+            Rectangle()
+                .fill(ColorTokens.brandWarmAmber.opacity(0.7))
+                .frame(width: 3)
+                .clipShape(Capsule())
+            VStack(alignment: .leading, spacing: 4) {
+                if let title, !title.isEmpty {
+                    Text(title)
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .lineLimit(1)
+                }
+                if let body, !body.isEmpty {
+                    Text(body)
+                        .font(.system(size: 14, weight: .regular, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .lineLimit(2)
+                }
+            }
+        }
+    }
+
+    private var statSeparator: some View {
+        Rectangle()
+            .fill(.white.opacity(0.1))
+            .frame(width: 1, height: 52)
+    }
+
+    private func statBlock(value: String, label: String) -> some View {
+        VStack(alignment: .center, spacing: 8) {
+            Text(value)
+                .font(.system(size: 36, weight: .bold, design: .rounded).monospacedDigit())
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+            Text(label.uppercased())
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.45))
+                .tracking(1.5)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.content)
-        .background(AppConstants.surfaceElevated, in: RoundedRectangle(cornerRadius: CornerRadius.large))
-    }
-
-    // MARK: - Duration
-
-    private var durationSection: some View {
-        VStack(spacing: Spacing.gap) {
-            Text(Formatters.duration(duration))
-                .font(Typography.metricLarge)
-                .foregroundStyle(ColorTokens.brandGradient)
-            Text(String(localized: "common_ski_time"))
-                .font(Typography.captionMedium)
-                .foregroundStyle(.white.opacity(Opacity.half))
-        }
-    }
-
-    // MARK: - Footer
-
-    private var footerSection: some View {
-        HStack(spacing: Spacing.md) {
-            Rectangle()
-                .fill(ColorTokens.surfaceDivider)
-                .frame(width: 80, height: 1)
-            Text(String(localized: "share_card_logged_with"))
-                .font(Typography.bodyLabel)
-                .foregroundStyle(.white.opacity(Opacity.prominent))
-            Rectangle()
-                .fill(ColorTokens.surfaceDivider)
-                .frame(width: 80, height: 1)
-        }
     }
 }

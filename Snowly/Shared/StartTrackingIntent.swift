@@ -10,7 +10,7 @@ import AppIntents
 
 struct StartTrackingIntent: AppIntent {
     static let title: LocalizedStringResource = "Start Ski Tracking"
-    static let description: IntentDescription = "Start a ski tracking session in Snowly."
+    static let description: IntentDescription = IntentDescription("intent_start_tracking_description", categoryName: "Tracking")
     static let openAppWhenRun = true
 
     func perform() async throws -> some IntentResult {

@@ -56,6 +56,9 @@ final class WatchBridgeService {
         connectivityService.registerMessageHandler { [weak self] message in
             self?.handleWatchMessage(message)
         }
+        connectivityService.registerConnectivityStateHandler { [weak self] state in
+            self?.handleConnectivityStateChange(state)
+        }
 
         startObservingTrackingState()
     }
@@ -194,6 +197,14 @@ final class WatchBridgeService {
         case .paused, .idle:
             stopLiveUpdates()
             connectivityService.updateApplicationContext(state: state, liveData: nil)
+        }
+    }
+
+    private func handleConnectivityStateChange(_ state: WatchConnectivityState) {
+        guard state.canCommunicate else { return }
+        sendCurrentStateToWatch()
+        if trackingService.state == .tracking {
+            startLiveUpdates()
         }
     }
 

@@ -209,7 +209,7 @@ final class CrewService: CrewProviding {
             throw CrewServiceError.notInCrew
         }
         guard canKick(member) else {
-            throw CrewAPIError.forbidden("You do not have permission.")
+            throw CrewAPIError.forbidden(String(localized: "crew_error_no_permission"))
         }
 
         try await apiClient.kickMember(crewId: crew.id, userId: member.id)
@@ -362,7 +362,7 @@ final class CrewService: CrewProviding {
             throw CrewServiceError.notInCrew
         }
         guard canManagePin(pin) else {
-            throw CrewAPIError.forbidden("You do not have permission.")
+            throw CrewAPIError.forbidden(String(localized: "crew_error_no_permission"))
         }
 
         try await apiClient.deletePin(crewId: crew.id, pinId: pin.id)

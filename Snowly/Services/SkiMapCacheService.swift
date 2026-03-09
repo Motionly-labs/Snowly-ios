@@ -94,7 +94,7 @@ final class SkiMapCacheService {
     nonisolated static let defaultAreaCacheRadiusMeters: Double = 6000
     nonisolated static let defaultReclassifyDistanceMeters: Double = 3000
     nonisolated static let reverseGeocodeThrottleSeconds: TimeInterval = 60
-    nonisolated static let fallbackDisplayTitle = "Resort"
+    nonisolated static let fallbackDisplayTitle = String(localized: "map_fallback_resort_name")
 
     init(
         overpassService: OverpassService? = nil,

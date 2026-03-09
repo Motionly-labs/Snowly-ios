@@ -2,8 +2,8 @@
 //  RunDetectionService.swift
 //  Snowly
 //
-//  Pure-function run/chairlift/idle detection.
-//  Uses speed + altitude trend + CoreMotion for triple-confirmation.
+//  Pure-function activity detection using a rolling feature window.
+//  Motion estimation is delegated to MotionEstimator.
 //  No side effects — all state is passed in, result is returned.
 //
 
@@ -12,143 +12,82 @@ import Foundation
 /// Result of analyzing a track point for activity detection.
 enum DetectedActivity: Sendable, Equatable {
     case idle
-    case chairlift
+    case lift
     case skiing
+    case walk
 }
 
 extension DetectedActivity {
     var activityName: String {
         switch self {
         case .skiing: "skiing"
-        case .chairlift: "chairlift"
-        case .idle: "idle"
+        case .lift:   "lift"
+        case .idle:   "idle"
+        case .walk:   "walk"
         }
     }
 }
 
+/// Optional CoreMotion hint that can strengthen lift classification.
+enum MotionHint: Sendable, Equatable {
+    case unknown
+    case automotive   // CoreMotion detected smooth motorized movement (gondola / chairlift)
+}
+
 enum RunDetectionService {
 
-    /// Determines activity type from a new track point plus recent history.
+    /// Classifies a GPS track point into one of four ski activity states.
     ///
-    /// Algorithm:
-    /// - speed < gpsNoiseFloor → idle (GPS drift filter)
-    /// - speed < idleSpeedThreshold → idle
-    /// - speed > chairliftMaxSpeed → skiing (lifts can't go this fast)
-    /// - speed 1.5–6 m/s + altitude rising → chairlift
-    /// - speed > skiingMinSpeed + altitude falling/flat → skiing
+    /// Returns a **raw** classification. Callers must apply dwell-time hysteresis
+    /// (`SessionTrackingService.applyDwellTime`) before surfacing the result.
+    ///
+    /// Delegates motion feature extraction to `MotionEstimator.estimate()` and classification
+    /// to `classify(estimate:motion:)`. See `classify` for the full decision tree.
     ///
     /// - Parameters:
-    ///   - point: The current track point.
-    ///   - recentPoints: Last 5-10 points for altitude trend analysis.
-    ///   - motion: Current CoreMotion activity (optional enhancement).
-    /// - Returns: The detected activity type.
+    ///   - point: Current GPS track point.
+    ///   - recentPoints: Recent history buffer (chronological, not including `point`).
+    ///   - previousActivity: Kept for API compatibility. Not used in classification.
+    /// - Returns: Raw detected activity. Apply dwell-time hysteresis before acting on it.
     nonisolated static func detect(
         point: TrackPoint,
         recentPoints: [TrackPoint],
-        motion: DetectedMotion = .unknown
+        previousActivity: DetectedActivity = .idle
     ) -> DetectedActivity {
-        classifyActivity(point: point, motion: motion) {
-            calculateAltitudeTrend(current: point, recent: recentPoints)
-        }
+        detect(point: point, recentPoints: recentPoints, motion: .unknown)
     }
 
-    /// Overload that takes pre-extracted timestamps and altitudes to avoid
-    /// intermediate array allocations when the caller already has raw data.
+    /// Overload that accepts a CoreMotion hint for enhanced lift detection.
+    nonisolated static func detect(
+        point: TrackPoint,
+        recentPoints: [TrackPoint],
+        motion: MotionHint
+    ) -> DetectedActivity {
+        let estimate = MotionEstimator.estimate(current: point, recentPoints: recentPoints)
+        return classify(estimate: estimate, motion: motion)
+    }
+
+    /// Raw-array overload for callers that store timestamps and altitudes separately.
+    /// Reconstructs `TrackPoint` values using the current point's position and passes
+    /// through to the standard overload.
     nonisolated static func detect(
         point: TrackPoint,
         recentTimestamps: [Double],
         recentAltitudes: [Double],
-        motion: DetectedMotion = .unknown
+        motion: MotionHint = .unknown
     ) -> DetectedActivity {
-        classifyActivity(point: point, motion: motion) {
-            calculateAltitudeTrendFromRaw(
-                currentTimestamp: point.timestamp.timeIntervalSinceReferenceDate,
-                currentAltitude: point.altitude,
-                recentTimestamps: recentTimestamps,
-                recentAltitudes: recentAltitudes
+        let recentPoints = zip(recentTimestamps, recentAltitudes).map { ts, alt in
+            TrackPoint(
+                timestamp: Date(timeIntervalSinceReferenceDate: ts),
+                latitude: point.latitude,
+                longitude: point.longitude,
+                altitude: alt,
+                speed: point.speed,
+                accuracy: point.accuracy,
+                course: point.course
             )
         }
-    }
-
-    /// Core classification logic shared by all detect overloads.
-    /// The altitudeTrendProvider closure is only called when the speed is in
-    /// the ambiguous range, avoiding unnecessary computation for clear-cut cases.
-    nonisolated private static func classifyActivity(
-        point: TrackPoint,
-        motion: DetectedMotion,
-        altitudeTrendProvider: () -> Double
-    ) -> DetectedActivity {
-        let speed = point.speed
-
-        // GPS noise filter
-        if speed < SharedConstants.gpsNoiseFloor {
-            return .idle
-        }
-
-        // Clearly idle
-        if speed < SharedConstants.idleSpeedThreshold {
-            return .idle
-        }
-
-        // Too fast for a chairlift — definitely skiing
-        if speed > SharedConstants.chairliftMaxSpeed {
-            return .skiing
-        }
-
-        // Medium speed range: use altitude trend to distinguish
-        if speed >= SharedConstants.idleSpeedThreshold
-            && speed <= SharedConstants.chairliftMaxSpeed {
-
-            // Only compute altitude trend when actually needed
-            let altitudeTrend = altitudeTrendProvider()
-
-            if altitudeTrend > SharedConstants.altitudeTrendUpThreshold {
-                // Altitude is rising consistently → chairlift
-                return .chairlift
-            }
-
-            if altitudeTrend < SharedConstants.altitudeTrendDownThreshold {
-                // Altitude is dropping → skiing
-                return .skiing
-            }
-
-            // Flat altitude at medium speed: use CoreMotion hint
-            if case .automotive = motion {
-                return .chairlift
-            }
-        }
-
-        // Default: if above skiing threshold and altitude not rising
-        if speed >= SharedConstants.skiingMinSpeed {
-            return .skiing
-        }
-
-        return .idle
-    }
-
-    /// Applies a median filter to smooth altitude values and remove GPS spikes.
-    /// Window size must be odd; values at edges use a smaller window.
-    /// Uses a single reusable scratch buffer to avoid per-element allocations.
-    nonisolated static func medianFilter(
-        values: [Double],
-        windowSize: Int = SharedConstants.medianFilterWindowSize
-    ) -> [Double] {
-        guard values.count >= windowSize, windowSize >= 3 else { return values }
-        let halfWindow = windowSize / 2
-        var result = [Double](repeating: 0, count: values.count)
-        var scratch = [Double]()
-        scratch.reserveCapacity(windowSize)
-        for i in values.indices {
-            let start = max(0, i - halfWindow)
-            let end = min(values.count - 1, i + halfWindow)
-            scratch.removeAll(keepingCapacity: true)
-            for j in start...end {
-                scratch.append(values[j])
-            }
-            scratch.sort()
-            result[i] = scratch[scratch.count / 2]
-        }
-        return result
+        return detect(point: point, recentPoints: recentPoints, motion: motion)
     }
 
     /// Whether the current idle period has lasted long enough to end a run.
@@ -159,78 +98,81 @@ enum RunDetectionService {
         now.timeIntervalSince(lastActivityTime) >= SharedConstants.stopDurationThreshold
     }
 
-    // MARK: - Private
+    // MARK: - Internal (testable)
 
-    /// Calculates altitude trend using least-squares linear regression.
-    /// Returns slope in meters per second (positive = ascending, negative = descending).
-    /// Regression is far more robust to single-point GPS altitude spikes than
-    /// simple endpoint subtraction.
-    nonisolated private static func calculateAltitudeTrend(
-        current: TrackPoint,
-        recent: [TrackPoint]
-    ) -> Double {
-        let allPoints = recent + [current]
-        guard allPoints.count >= SharedConstants.minPointsForAltitudeTrend else { return 0 }
+    /// Maps a `MotionEstimate` and optional CoreMotion hint to a `DetectedActivity`.
+    ///
+    /// This is the single classification authority for the entire run-detection pipeline.
+    /// `internal` access allows unit tests to supply synthetic `MotionEstimate` values
+    /// without going through the full GPS pipeline.
+    ///
+    /// ## State Decision Logic (evaluated in priority order)
+    ///
+    /// | # | Condition                                          | Result    |
+    /// |---|----------------------------------------------------|-----------|
+    /// | 1 | `h < idleSpeedMax` (0.6 m/s)                      | `.idle`   |
+    /// | 2 | `h ≥ skiFastMin` (6.0 m/s)                        | `.skiing` |
+    /// | 3 | `motion == .automotive`                            | `.lift`   |
+    /// | 4 | reliable trend AND `h ≥ skiMinSpeed` (2.8) AND `v ≤ skiVerticalSpeedMax` (−0.15) | `.skiing` |
+    /// | 5 | reliable trend AND `h ∈ [liftSpeedMin, liftSpeedMax]` [1.2, 6.5] AND `v ≥ liftVerticalSpeedMin` (−0.10) | `.lift` |
+    /// | 6 | `h ≥ skiMinSpeed` (2.8) [no altitude context]     | `.skiing` |
+    /// | 7 | fallthrough                                        | `.idle`   |
+    ///
+    /// Rules 4–5 require `estimate.hasReliableAltitudeTrend = true`; when false, the
+    /// classifier falls through directly to rule 6/7 (speed-only path).
+    ///
+    /// - Parameters:
+    ///   - estimate: Feature vector from `MotionEstimator.estimate()`. `h` and `v` are in m/s.
+    ///   - motion: Optional CoreMotion hint. `.automotive` short-circuits to `.lift` (rule 3).
+    /// - Returns: Raw activity classification. Apply dwell-time hysteresis before surfacing.
+    ///
+    /// ## Thresholds
+    ///
+    /// * `idleSpeedMax = 0.6 m/s` — below this, motion is too slow for any ski activity.
+    /// * `skiFastMin = 6.0 m/s` — above this, speed alone confirms skiing; no lift moves this fast.
+    /// * `skiMinSpeed = 2.8 m/s` — minimum horizontal speed for the altitude-informed skiing rule.
+    /// * `skiVerticalSpeedMax = −0.15 m/s` — must be descending at ≥ 0.15 m/s to confirm skiing.
+    /// * `liftSpeedMin = 1.2 m/s` — minimum horizontal speed for chairlift / gondola detection.
+    /// * `liftSpeedMax = 6.5 m/s` — above this, an ascending object is more likely an outlier.
+    /// * `liftVerticalSpeedMin = −0.10 m/s` — allows slight descent (gondola transition sections).
+    ///
+    /// ## Edge Cases
+    ///
+    /// * `hasReliableAltitudeTrend = false` → rules 4 and 5 are skipped entirely; classification
+    ///   falls through to speed-only rule 6/7 (speeds in [0.6, 2.8) return `.idle`).
+    /// * `motion == .automotive` short-circuits to `.lift` regardless of speed or altitude (rule 3).
+    /// * Speed between `idleSpeedMax` (0.6) and `skiMinSpeed` (2.8) with no altitude context → `.idle`.
+    nonisolated internal static func classify(
+        estimate: MotionEstimate,
+        motion: MotionHint = .unknown
+    ) -> DetectedActivity {
+        let h = estimate.avgHorizontalSpeed
+        let v = estimate.avgVerticalSpeed
 
-        let baseTime = allPoints[0].timestamp.timeIntervalSinceReferenceDate
-        let xs = allPoints.map { $0.timestamp.timeIntervalSinceReferenceDate - baseTime }
-        let ys = medianFilter(values: allPoints.map { $0.altitude })
+        // Barely moving — idle regardless of altitude
+        if h < SharedConstants.idleSpeedMax { return .idle }
 
-        let n = Double(allPoints.count)
-        let sumX = xs.reduce(0, +)
-        let sumY = ys.reduce(0, +)
-        let sumXY = zip(xs, ys).reduce(0.0) { $0 + $1.0 * $1.1 }
-        let sumX2 = xs.reduce(0.0) { $0 + $1 * $1 }
+        // Very fast — definitely skiing regardless of altitude
+        if h >= SharedConstants.skiFastMin { return .skiing }
 
-        let denominator = n * sumX2 - sumX * sumX
-        guard denominator > 0 else { return 0 }
+        // Automotive motion hint overrides to lift (motorized transport confirmed)
+        if motion == .automotive { return .lift }
 
-        return (n * sumXY - sumX * sumY) / denominator
-    }
-
-    /// Altitude trend from pre-extracted timestamp/altitude arrays.
-    /// Avoids allocating intermediate arrays when called from CircularBuffer paths.
-    nonisolated private static func calculateAltitudeTrendFromRaw(
-        currentTimestamp: Double,
-        currentAltitude: Double,
-        recentTimestamps: [Double],
-        recentAltitudes: [Double]
-    ) -> Double {
-        let totalCount = recentTimestamps.count + 1
-        guard totalCount >= SharedConstants.minPointsForAltitudeTrend else { return 0 }
-
-        var allAltitudes = recentAltitudes
-        allAltitudes.append(currentAltitude)
-        let ys = medianFilter(values: allAltitudes)
-
-        let baseTime = recentTimestamps[0]
-
-        let n = Double(totalCount)
-        var sumX = 0.0
-        var sumY = 0.0
-        var sumXY = 0.0
-        var sumX2 = 0.0
-
-        for i in 0..<recentTimestamps.count {
-            let x = recentTimestamps[i] - baseTime
-            let y = ys[i]
-            sumX += x
-            sumY += y
-            sumXY += x * y
-            sumX2 += x * x
+        if estimate.hasReliableAltitudeTrend {
+            // Medium-fast + descending — skiing
+            if h >= SharedConstants.skiMinSpeed && v <= SharedConstants.skiVerticalSpeedMax {
+                return .skiing
+            }
+            // Moderate speed + not steeply descending — lift (gondola, chairlift)
+            if h >= SharedConstants.liftSpeedMin
+                && h <= SharedConstants.liftSpeedMax
+                && v >= SharedConstants.liftVerticalSpeedMin {
+                return .lift
+            }
         }
 
-        // Add current point
-        let xCurrent = currentTimestamp - baseTime
-        let yCurrent = ys[totalCount - 1]
-        sumX += xCurrent
-        sumY += yCurrent
-        sumXY += xCurrent * yCurrent
-        sumX2 += xCurrent * xCurrent
-
-        let denominator = n * sumX2 - sumX * sumX
-        guard denominator > 0 else { return 0 }
-
-        return (n * sumXY - sumX * sumY) / denominator
+        // No reliable altitude context: classify by speed alone
+        // (below skiMinSpeed we default to idle — not enough speed for skiing or walk)
+        return h >= SharedConstants.skiMinSpeed ? .skiing : .idle
     }
 }

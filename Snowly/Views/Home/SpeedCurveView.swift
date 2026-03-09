@@ -101,12 +101,24 @@ struct SpeedCurveView: View {
             return [CGPoint(x: 0, y: height), CGPoint(x: width, y: height)]
         }
 
-        let maxValue = max(data.max() ?? 1, 1)
+        let maxValue = robustScaleMax(for: data)
         return data.enumerated().map { index, value in
             let x = CGFloat(index) / CGFloat(data.count - 1) * width
-            let y = height - CGFloat(value / maxValue) * height * 0.85 - 4
+            let clamped = min(max(value, 0), maxValue)
+            let y = height - CGFloat(clamped / maxValue) * height * 0.85 - 4
             return CGPoint(x: x, y: y)
         }
+    }
+
+    /// Uses a high percentile so isolated spikes don't flatten the whole curve.
+    private func robustScaleMax(for values: [Double]) -> Double {
+        let positives = values.filter { $0 > 0 }.sorted()
+        guard let peak = positives.last else { return 1 }
+        guard positives.count >= 6 else { return max(peak, 1) }
+
+        let percentile90 = positives[Int(Double(positives.count - 1) * 0.9)]
+        let padded = percentile90 * 1.12
+        return max(min(peak, padded), 1)
     }
 
     /// Catmull-Rom spline for smooth, natural-looking curves through all data points.

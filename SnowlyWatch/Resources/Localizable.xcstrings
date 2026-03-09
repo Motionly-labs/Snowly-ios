@@ -14,25 +14,24 @@
         }
       }
     },
-    "%lld runs" : {
-
-    },
-    "%lld runs - %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld runs - %2$@"
-          }
-        }
-      }
-    },
     "common_distance" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Distance"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distans"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "距离"
           }
         }
       }
@@ -44,6 +43,18 @@
             "state" : "translated",
             "value" : "Done"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
         }
       }
     },
@@ -53,6 +64,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duration"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Längd"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "时长"
           }
         }
       }
@@ -64,6 +87,18 @@
             "state" : "translated",
             "value" : "Pause"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pausa"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂停"
+          }
         }
       }
     },
@@ -73,6 +108,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Resume"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Återuppta"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续"
           }
         }
       }
@@ -84,6 +131,18 @@
             "state" : "translated",
             "value" : "Runs"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "趟数"
+          }
         }
       }
     },
@@ -94,16 +153,17 @@
             "state" : "translated",
             "value" : "Ski Time"
           }
-        }
-      }
-    },
-    "common_start" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Start"
+            "value" : "Skidtid"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪时间"
           }
         }
       }
@@ -115,19 +175,22 @@
             "state" : "translated",
             "value" : "Vertical"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Höjdmeter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "落差"
+          }
         }
       }
     },
-    "Current ski session status" : {
-
-    },
-    "Ready to ski" : {
-
-    },
     "Snowly" : {
-
-    },
-    "Snowly - Ready" : {
 
     },
     "stat_max_speed" : {
@@ -136,6 +199,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Max Speed"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Topphastighet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最高速度"
           }
         }
       }
@@ -147,16 +222,17 @@
             "state" : "translated",
             "value" : "%d bpm"
           }
-        }
-      }
-    },
-    "watch_hold_to_start" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hold to Start"
+            "value" : "%d bpm"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 次/分"
           }
         }
       }
@@ -168,12 +244,36 @@
             "state" : "translated",
             "value" : "Hold to Stop"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Håll för att stoppa"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "长按停止"
+          }
         }
       }
     },
     "watch_placeholder_dash" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "--"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "--"
+          }
+        },
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "--"
@@ -188,38 +288,17 @@
             "state" : "translated",
             "value" : "Session Complete"
           }
-        }
-      }
-    },
-    "watch_start_mode_companion" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Companion Mode"
+            "value" : "Session klar"
           }
-        }
-      }
-    },
-    "watch_start_mode_independent" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Independent Mode"
-          }
-        }
-      }
-    },
-    "watch_start_on_watch" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start on Watch"
+            "value" : "滑雪结束"
           }
         }
       }
@@ -231,6 +310,18 @@
             "state" : "translated",
             "value" : "Avg Heart Rate"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medelhjärtfrekvens"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平均心率"
+          }
         }
       }
     },
@@ -240,6 +331,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Heart Rate"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hjärtfrekvens"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "心率"
           }
         }
       }
@@ -251,16 +354,171 @@
             "state" : "translated",
             "value" : "Current Speed"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktuell hastighet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前速度"
+          }
         }
       }
     },
-    "watch_swipe_for_stats" : {
-      "extractionState" : "stale",
+    "watch_widget_app_name" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Swipe for stats"
+            "value" : "Snowly"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly"
+          }
+        }
+      }
+    },
+    "watch_widget_description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current ski session status"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktuell skidsessionsstatus"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前滑雪记录状态"
+          }
+        }
+      }
+    },
+    "watch_widget_display_name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly"
+          }
+        }
+      }
+    },
+    "watch_widget_inline_ready" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly - Ready"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly - Redo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly - 就绪"
+          }
+        }
+      }
+    },
+    "watch_widget_inline_tracking_format %lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld runs - %2$@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld åk - %2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld 趟 - %2$@"
+          }
+        }
+      }
+    },
+    "watch_widget_ready" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ready to ski"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redo att åka"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备滑雪"
+          }
+        }
+      }
+    },
+    "watch_widget_run_count_format %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld runs"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld åk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 趟"
           }
         }
       }

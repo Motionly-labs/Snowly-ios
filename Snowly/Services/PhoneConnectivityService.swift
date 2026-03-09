@@ -11,6 +11,16 @@ import WatchConnectivity
 import Observation
 import os
 
+struct WatchConnectivityState: Sendable, Equatable {
+    let isPaired: Bool
+    let isWatchAppInstalled: Bool
+    let isReachable: Bool
+
+    var canCommunicate: Bool {
+        isPaired && isWatchAppInstalled
+    }
+}
+
 @Observable
 @MainActor
 final class PhoneConnectivityService: NSObject {
@@ -19,15 +29,36 @@ final class PhoneConnectivityService: NSObject {
 
     private(set) var isWatchReachable = false
     private(set) var isPaired = false
+    private(set) var isWatchAppInstalled = false
 
     // MARK: - Callback
 
     /// Called on the main actor whenever a WatchMessage is received from the Watch.
     private var onMessageReceived: ((WatchMessage) -> Void)?
+    private var onConnectivityStateChanged: ((WatchConnectivityState) -> Void)?
 
     /// Register a handler for incoming Watch messages.
     func registerMessageHandler(_ handler: @escaping (WatchMessage) -> Void) {
         onMessageReceived = handler
+    }
+
+    /// Register a handler for watch connectivity state changes.
+    func registerConnectivityStateHandler(_ handler: @escaping (WatchConnectivityState) -> Void) {
+        onConnectivityStateChanged = handler
+    }
+
+    func currentConnectivityState() -> WatchConnectivityState {
+        WatchConnectivityState(
+            isPaired: isPaired,
+            isWatchAppInstalled: isWatchAppInstalled,
+            isReachable: isWatchReachable
+        )
+    }
+
+    /// Manual state refresh (useful on app foreground to catch pairing changes).
+    func refreshWatchState() {
+        guard let session else { return }
+        handleSessionAvailabilityChange(session)
     }
 
     // MARK: - Private
@@ -46,9 +77,10 @@ final class PhoneConnectivityService: NSObject {
         super.init()
         guard WCSession.isSupported() else { return }
         let wcSession = WCSession.default
+        session = wcSession
         wcSession.delegate = self
         wcSession.activate()
-        session = wcSession
+        handleSessionAvailabilityChange(wcSession)
     }
 
     // MARK: - Public API
@@ -147,6 +179,16 @@ final class PhoneConnectivityService: NSObject {
     }
 
     private func handleSessionAvailabilityChange(_ session: WCSession) {
+        let previous = currentConnectivityState()
+        isPaired = session.isPaired
+        isWatchReachable = session.isReachable
+        isWatchAppInstalled = session.isWatchAppInstalled
+        let current = currentConnectivityState()
+
+        if previous != current {
+            onConnectivityStateChanged?(current)
+        }
+
         if canCommunicateWithWatch(session) {
             hasLoggedUnavailableWatchState = false
             flushPendingPayloadsIfNeeded()
@@ -214,8 +256,6 @@ extension PhoneConnectivityService: WCSessionDelegate {
             Self.logger.error("WCSession activation failed: \(error.localizedDescription)")
         }
         Task { @MainActor in
-            self.isPaired = session.isPaired
-            self.isWatchReachable = session.isReachable
             self.handleSessionAvailabilityChange(session)
         }
     }
@@ -229,16 +269,12 @@ extension PhoneConnectivityService: WCSessionDelegate {
 
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
         Task { @MainActor in
-            self.isPaired = session.isPaired
-            self.isWatchReachable = session.isReachable
             self.handleSessionAvailabilityChange(session)
         }
     }
 
     nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
         Task { @MainActor in
-            self.isPaired = session.isPaired
-            self.isWatchReachable = session.isReachable
             self.handleSessionAvailabilityChange(session)
         }
     }

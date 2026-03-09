@@ -2,18 +2,24 @@
 //  RouteMapView.swift
 //  Snowly
 //
-//  Displays skiing routes on a satellite map.
-//  Only shows skiing segments, ignores chairlift and idle.
+//  Displays session routes on a satellite map.
+//  Skiing segments are rainbow-colored; lift segments are thin dashed lines.
 //
 
 import SwiftUI
 import MapKit
 
+struct RouteSegment {
+    let coordinates: [CLLocationCoordinate2D]
+    let activityType: RunActivityType
+}
+
 struct RouteMapView: View {
     let session: SkiSession
     let height: CGFloat
 
-    @State private var cachedRoutes: [[CLLocationCoordinate2D]]?
+    @State private var cachedSegments: [RouteSegment]?
+    @State private var showingFullscreen = false
 
     init(session: SkiSession, height: CGFloat = 240) {
         self.session = session
@@ -21,44 +27,97 @@ struct RouteMapView: View {
     }
 
     var body: some View {
-        let routes = cachedRoutes ?? Self.skiingRoutes(from: session)
-        let region = Self.fittedRegion(for: routes) ?? Self.fallbackRegion(for: session)
-        routeMap(routes: routes, region: region)
+        let segments = cachedSegments ?? Self.routeSegments(from: session)
+        let region = Self.fittedRegion(for: segments) ?? Self.fallbackRegion(for: session)
+        routeMap(segments: segments, region: region, interactive: false)
+            .overlay(alignment: .topTrailing) {
+                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .padding(8)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .padding(10)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+            .onTapGesture { showingFullscreen = true }
             .task(id: session.id) {
-                cachedRoutes = Self.skiingRoutes(from: session)
+                cachedSegments = Self.routeSegments(from: session)
+            }
+            .fullScreenCover(isPresented: $showingFullscreen) {
+                FullscreenRouteMapView(
+                    segments: segments,
+                    region: region,
+                    onDismiss: { showingFullscreen = false }
+                )
             }
     }
 
     private func routeMap(
-        routes: [[CLLocationCoordinate2D]],
-        region: MKCoordinateRegion
+        segments: [RouteSegment],
+        region: MKCoordinateRegion,
+        interactive: Bool
     ) -> some View {
-        Map(initialPosition: .region(region), interactionModes: []) {
-            ForEach(Array(routes.enumerated()), id: \.offset) { index, coords in
-                MapPolyline(coordinates: coords)
-                    .stroke(
-                        Self.strokeColor(index: index, total: routes.count),
-                        style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
-                    )
+        let skiingIndices = segments.enumerated()
+            .compactMap { $0.element.activityType == .skiing ? $0.offset : nil }
+        let skiingOrder = Dictionary(
+            uniqueKeysWithValues: skiingIndices.enumerated().map { order, segmentIndex in
+                (segmentIndex, order)
+            }
+        )
+        let skiingTotal = skiingIndices.count
+
+        return Map(initialPosition: .region(region), interactionModes: interactive ? .all : []) {
+            ForEach(Array(segments.enumerated()), id: \.offset) { index, segment in
+                let style = Self.strokeStyle(for: segment.activityType)
+                let skiIndex = skiingOrder[index] ?? 0
+                let color: Color = switch segment.activityType {
+                case .skiing:    RunColorPalette.color(forRunIndex: skiIndex, totalRuns: skiingTotal)
+                case .lift: Self.liftStrokeColor
+                case .walk:      Self.walkStrokeColor
+                case .idle:      .clear
+                }
+
+                MapPolyline(coordinates: segment.coordinates)
+                    .stroke(color, style: style)
             }
         }
         .mapStyle(.imagery(elevation: .realistic))
-        .allowsHitTesting(false)
-        .frame(height: height)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+        .allowsHitTesting(interactive)
+        .frame(height: interactive ? nil : height)
+        .clipShape(RoundedRectangle(cornerRadius: interactive ? 0 : CornerRadius.large))
     }
 
     // MARK: - Pure Functions
 
-    /// Extract skiing routes as coordinate arrays, filtering out non-skiing and short runs.
-    static func skiingRoutes(from session: SkiSession) -> [[CLLocationCoordinate2D]] {
+    /// Extract route segments as coordinate arrays, preserving activity type.
+    static func routeSegments(from session: SkiSession) -> [RouteSegment] {
         session.runs
-            .filter { $0.activityType == .skiing && $0.trackData != nil }
+            .filter {
+                ($0.activityType == .skiing || $0.activityType == .lift || $0.activityType == .walk) && $0.trackData != nil
+            }
             .sorted { $0.startDate < $1.startDate }
             .map { run in
-                run.trackPoints.map { $0.clLocation.coordinate }
+                RouteSegment(
+                    coordinates: run.trackPoints.map { $0.clLocation.coordinate },
+                    activityType: run.activityType
+                )
             }
-            .filter { $0.count >= 2 }
+            .filter { $0.coordinates.count >= 2 }
+    }
+
+    /// Extract skiing routes as coordinate arrays, filtering out non-skiing and short runs.
+    static func skiingRoutes(from session: SkiSession) -> [[CLLocationCoordinate2D]] {
+        routeSegments(from: session)
+            .filter { $0.activityType == .skiing }
+            .map(\.coordinates)
+    }
+
+    /// Compute a map region that fits all routes with 30% padding.
+    /// Returns nil if no coordinates exist.
+    static func fittedRegion(
+        for segments: [RouteSegment]
+    ) -> MKCoordinateRegion? {
+        fittedRegion(for: segments.map(\.coordinates))
     }
 
     /// Compute a map region that fits all routes with 30% padding.
@@ -107,13 +166,72 @@ struct RouteMapView: View {
         )
     }
 
-    /// Stroke color for a route based on its position in the time sequence.
-    /// Single run uses brand orange; multiple runs fade from 0.5 to 1.0 opacity.
-    static func strokeColor(index: Int, total: Int) -> Color {
-        guard total > 1 else {
-            return ColorTokens.brandWarmOrange
+    static let liftStrokeColor = Color.white.opacity(0.82)
+    static let walkStrokeColor = Color.secondary.opacity(0.6)
+
+    static func strokeStyle(for activityType: RunActivityType) -> StrokeStyle {
+        switch activityType {
+        case .skiing:
+            return StrokeStyle(lineWidth: 1.7, lineCap: .round, lineJoin: .round)
+        case .lift:
+            return StrokeStyle(lineWidth: 0.9, lineCap: .round, lineJoin: .round, dash: [3, 4])
+        case .walk:
+            return StrokeStyle(lineWidth: 1.0, lineCap: .round, lineJoin: .round, dash: [2, 3])
+        case .idle:
+            return StrokeStyle(lineWidth: 0)
         }
-        let opacity = 0.5 + 0.5 * Double(index) / Double(total - 1)
-        return ColorTokens.brandWarmOrange.opacity(opacity)
+    }
+}
+
+// MARK: - Fullscreen
+
+private struct FullscreenRouteMapView: View {
+    let segments: [RouteSegment]
+    let region: MKCoordinateRegion
+    let onDismiss: () -> Void
+
+    private var skiingOrder: [Int: Int] {
+        let skiingIndices = segments.enumerated()
+            .compactMap { $0.element.activityType == .skiing ? $0.offset : nil }
+        return Dictionary(
+            uniqueKeysWithValues: skiingIndices.enumerated().map { order, segmentIndex in
+                (segmentIndex, order)
+            }
+        )
+    }
+    private var skiingTotal: Int {
+        segments.filter { $0.activityType == .skiing }.count
+    }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Map(initialPosition: .region(region), interactionModes: .all) {
+                ForEach(Array(segments.enumerated()), id: \.offset) { index, segment in
+                    let style = RouteMapView.strokeStyle(for: segment.activityType)
+                    let skiIndex = skiingOrder[index] ?? 0
+                    let color: Color = switch segment.activityType {
+                    case .skiing:    RunColorPalette.color(forRunIndex: skiIndex, totalRuns: skiingTotal)
+                    case .lift: RouteMapView.liftStrokeColor
+                    case .walk:      RouteMapView.walkStrokeColor
+                    case .idle:      .clear
+                    }
+
+                    MapPolyline(coordinates: segment.coordinates)
+                        .stroke(color, style: style)
+                }
+            }
+            .mapStyle(.imagery(elevation: .realistic))
+            .ignoresSafeArea()
+
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(12)
+                    .background(.ultraThinMaterial, in: Circle())
+            }
+            .padding(.top, 56)
+            .padding(.leading, Spacing.lg)
+        }
     }
 }

@@ -11,7 +11,7 @@ struct WorkoutControlsView: View {
 
     @Environment(WatchWorkoutManager.self) private var workoutManager
 
-    private static let stopHoldDuration: TimeInterval = 2.0
+    private static let stopHoldDuration: TimeInterval = 1.0
 
     var body: some View {
         VStack(spacing: WatchSpacing.xl) {

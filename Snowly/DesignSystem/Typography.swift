@@ -23,6 +23,7 @@ enum Typography {
     static let metricMedium = Font.system(size: 44, weight: .bold, design: .rounded)
     static let metricSmall = Font.system(size: 36, weight: .bold, design: .rounded)
     static let speedDisplay = Font.system(size: 44, weight: .medium)
+    static let statValue = Font.system(size: 24, weight: .bold, design: .rounded)
 
     // MARK: - Heading
     static let onboardingTitle = Font.title.weight(.bold)

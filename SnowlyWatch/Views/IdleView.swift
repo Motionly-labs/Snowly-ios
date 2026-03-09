@@ -12,7 +12,7 @@ struct IdleView: View {
     @Environment(WatchConnectivityService.self) private var connectivity
     @Environment(WatchWorkoutManager.self) private var workoutManager
 
-    private static let startHoldDuration: TimeInterval = 2.0
+    private static let startHoldDuration: TimeInterval = 1.0
 
     var body: some View {
         VStack(spacing: WatchSpacing.xl) {

@@ -70,7 +70,13 @@ struct ActivityHistoryView: View {
 
             Section(String(localized: "activity_section_recent_ski_days")) {
                 ForEach(sessions) { session in
-                    NavigationLink(destination: SessionDetailView(session: session)) {
+                    NavigationLink(
+                        destination: SessionSummaryView(
+                            selectedSession: session,
+                            showsDoneButton: false,
+                            processesPersonalBests: false
+                        )
+                    ) {
                         SessionCard(session: session, unitSystem: unitSystem)
                     }
                 }

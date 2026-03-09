@@ -52,27 +52,27 @@ struct SegmentFinalizationServiceTests {
         service.processPoint(makePoint(altitude: 2000, timestamp: base), activity: .skiing)
         service.processPoint(makePoint(altitude: 1990, timestamp: base.addingTimeInterval(2)), activity: .skiing)
 
-        // Switch to chairlift → finalizes skiing segment
-        service.processPoint(makePoint(altitude: 1980, timestamp: base.addingTimeInterval(4)), activity: .chairlift)
+        // Switch to lift → finalizes skiing segment
+        service.processPoint(makePoint(altitude: 1980, timestamp: base.addingTimeInterval(4)), activity: .lift)
 
         #expect(service.completedRuns.count == 1)
         #expect(service.completedRuns[0].activityType == .skiing)
         #expect(service.runCount == 1)
     }
 
-    @Test func processPoint_chairliftToSkiing() {
+    @Test func processPoint_liftToSkiing() {
         let service = SegmentFinalizationService()
         let base = Date()
 
         // Chairlift segment
-        service.processPoint(makePoint(altitude: 1800, timestamp: base), activity: .chairlift)
-        service.processPoint(makePoint(altitude: 1900, timestamp: base.addingTimeInterval(60)), activity: .chairlift)
+        service.processPoint(makePoint(altitude: 1800, timestamp: base), activity: .lift)
+        service.processPoint(makePoint(altitude: 1900, timestamp: base.addingTimeInterval(60)), activity: .lift)
 
-        // Switch to skiing → finalizes chairlift segment
+        // Switch to skiing → finalizes lift segment
         service.processPoint(makePoint(altitude: 2000, timestamp: base.addingTimeInterval(120)), activity: .skiing)
 
         #expect(service.completedRuns.count == 1)
-        #expect(service.completedRuns[0].activityType == .chairlift)
+        #expect(service.completedRuns[0].activityType == .lift)
         #expect(service.runCount == 0)  // Chairlift doesn't increment runCount
     }
 
@@ -82,7 +82,7 @@ struct SegmentFinalizationServiceTests {
         #expect(service.completedRuns.isEmpty)
     }
 
-    @Test func finalizeCurrentSegment_producesRunData() {
+    @Test func finalizeCurrentSegment_producesRunData() async {
         let service = SegmentFinalizationService()
         let base = Date()
 
@@ -94,7 +94,10 @@ struct SegmentFinalizationServiceTests {
         let run = service.completedRuns[0]
         #expect(run.activityType == .skiing)
         #expect(run.verticalDrop >= 0)
-        #expect(run.trackData != nil)
+
+        // trackData is encoded off-MainActor via Task.detached; wait for it to complete.
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        #expect(service.completedRuns[0].trackData != nil)
     }
 
     @Test func reset_clearsAllState() {

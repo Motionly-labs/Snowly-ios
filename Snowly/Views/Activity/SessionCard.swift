@@ -12,17 +12,25 @@ struct SessionCard: View {
     let session: SkiSession
     let unitSystem: UnitSystem
 
+    private var headerTitle: String {
+        let location = session.resort?.name ?? String(localized: "session_card_unknown_resort")
+        let title = session.effectiveNoteTitle
+        guard !title.isEmpty else { return location }
+        return "\(title)（\(location)）"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             // Date label
             Text(session.startDate.shortDisplay.uppercased())
                 .font(.caption2.weight(.bold))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(ColorTokens.brandIceBlue)
 
             // Resort name + Runs
             HStack(alignment: .center) {
-                Text(session.resort?.name ?? String(localized: "session_card_unknown_resort"))
+                Text(headerTitle)
                     .font(.headline)
+                    .lineLimit(1)
 
                 Spacer()
 

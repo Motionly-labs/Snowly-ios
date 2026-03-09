@@ -206,7 +206,9 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
     }
 
     private func derivedSpeed(for location: CLLocation) -> Double {
-        if location.speed >= 0 {
+        // GPX playback (and some simulated feeds) can report 0 as "unknown speed".
+        // Fall back to coordinate delta when reported speed is effectively zero.
+        if location.speed > 0.1 {
             return max(0, location.speed)
         }
         guard let previous = previousTrackingLocation else { return 0 }

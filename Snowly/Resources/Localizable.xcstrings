@@ -53,6 +53,18 @@
             "state" : "translated",
             "value" : "Activity ring"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktivitetsring"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "活动圆环"
+          }
         }
       }
     },
@@ -62,6 +74,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Battery level"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Batterinivå"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "电池电量"
           }
         }
       }
@@ -73,6 +97,18 @@
             "state" : "translated",
             "value" : "Long press to start tracking"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck och håll för att börja spåra"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "长按开始记录"
+          }
         }
       }
     },
@@ -82,6 +118,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Long press to end ski day"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck och håll för att avsluta skiddagen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "长按结束滑雪日"
+          }
+        }
+      }
+    },
+    "accessibility_share_summary_label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share day summary"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享今日总结"
           }
         }
       }
@@ -93,16 +157,17 @@
             "state" : "translated",
             "value" : "Slide to stop tracking"
           }
-        }
-      }
-    },
-    "accessibility_weather_loading" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Loading weather data"
+            "value" : "Svep för att stoppa spårning"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑动以停止记录"
           }
         }
       }
@@ -114,6 +179,18 @@
             "state" : "translated",
             "value" : "Start tracking, and your ski days will appear here."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Börja spåra, dina skiddagar visas här."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始记录，你的滑雪日将在这里显示。"
+          }
         }
       }
     },
@@ -123,6 +200,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Ski Days Yet"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inga skiddagar än"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有滑雪记录"
           }
         }
       }
@@ -134,6 +223,18 @@
             "state" : "translated",
             "value" : "Tracks"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spår"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记录"
+          }
         }
       }
     },
@@ -143,6 +244,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recent Ski Days"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senaste skiddagar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最近的滑雪日"
           }
         }
       }
@@ -154,6 +267,18 @@
             "state" : "translated",
             "value" : "Runs"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "趟数"
+          }
         }
       }
     },
@@ -163,6 +288,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ski Days"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skiddagar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪天数"
           }
         }
       }
@@ -174,6 +311,18 @@
             "state" : "translated",
             "value" : "Vertical"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Höjdmeter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "累计落差"
+          }
         }
       }
     },
@@ -183,6 +332,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "~%1$@ left"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "~%1$@ kvar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "约剩 %1$@"
           }
         }
       }
@@ -194,6 +355,18 @@
             "state" : "translated",
             "value" : "Download"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ladda ner"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载"
+          }
         }
       }
     },
@@ -203,6 +376,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Refresh"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uppdatera"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新"
           }
         }
       }
@@ -214,6 +399,18 @@
             "state" : "translated",
             "value" : "Remove"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta bort"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除"
+          }
         }
       }
     },
@@ -223,6 +420,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Retry"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Försök igen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重试"
           }
         }
       }
@@ -234,6 +443,18 @@
             "state" : "translated",
             "value" : "Map tiles may be unavailable offline"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kartrutor kanske inte är tillgängliga offline"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "离线时地图可能无法加载"
+          }
         }
       }
     },
@@ -243,6 +464,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%.1f km away"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%.1f km bort"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%.1f 公里"
           }
         }
       }
@@ -254,6 +487,18 @@
             "state" : "translated",
             "value" : "Distance unavailable"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avstånd okänt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "距离未知"
+          }
         }
       }
     },
@@ -263,6 +508,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No cached areas yet"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inga cachade områden ännu"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无缓存区域"
           }
         }
       }
@@ -274,6 +531,18 @@
             "state" : "translated",
             "value" : "No nearby ski areas"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inga skidområden i närheten"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附近没有雪场"
+          }
         }
       }
     },
@@ -283,6 +552,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Try refreshing, moving to an open ski map area, or zooming out by waiting for a broader search."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Försök uppdatera, flytta till ett område med skidanläggning, eller vänta på en bredare sökning."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "试试刷新，移动到有雪场的区域，或等待更大范围的搜索。"
           }
         }
       }
@@ -294,6 +575,18 @@
             "state" : "translated",
             "value" : "Using cached ski area data"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Använder cachad skidområdesdata"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在使用缓存的雪场数据"
+          }
         }
       }
     },
@@ -303,6 +596,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cache Area"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cacha område"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缓存区域"
           }
         }
       }
@@ -314,6 +619,18 @@
             "state" : "translated",
             "value" : "Cached Areas"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cachade områden"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缓存区域"
+          }
         }
       }
     },
@@ -323,6 +640,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Downloading"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laddar ner"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下载中"
           }
         }
       }
@@ -334,6 +663,18 @@
             "state" : "translated",
             "value" : "Failed"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misslyckades"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "失败"
+          }
         }
       }
     },
@@ -343,6 +684,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fresh"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktuell"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最新"
           }
         }
       }
@@ -354,6 +707,18 @@
             "state" : "translated",
             "value" : "Stale"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inaktuell"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "过期"
+          }
         }
       }
     },
@@ -363,6 +728,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Downloaded"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nedladdade"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已下载"
           }
         }
       }
@@ -374,6 +751,82 @@
             "state" : "translated",
             "value" : "Nearby"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Närliggande"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附近"
+          }
+        }
+      }
+    },
+    "chart_sample_count_format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld pts"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个样本"
+          }
+        }
+      }
+    },
+    "chart_stat_max" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Max"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大值"
+          }
+        }
+      }
+    },
+    "chart_stat_mean" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mean"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "均值"
+          }
+        }
+      }
+    },
+    "chart_stat_min" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Min"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最小值"
+          }
         }
       }
     },
@@ -383,6 +836,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Active"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktiv"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "活跃"
+          }
+        }
+      }
+    },
+    "common_app_tagline" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your skiing companion"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din skidkompis"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的滑雪搭档"
           }
         }
       }
@@ -394,6 +881,18 @@
             "state" : "translated",
             "value" : "Cancel"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avbryt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
         }
       }
     },
@@ -403,6 +902,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Continue"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortsätt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续"
           }
         }
       }
@@ -414,6 +925,18 @@
             "state" : "translated",
             "value" : "Create"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建"
+          }
         }
       }
     },
@@ -423,6 +946,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Date"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datum"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日期"
           }
         }
       }
@@ -434,6 +969,18 @@
             "state" : "translated",
             "value" : "Delete"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radera"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
+          }
         }
       }
     },
@@ -443,6 +990,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Distance"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distans"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "距离"
           }
         }
       }
@@ -454,6 +1013,18 @@
             "state" : "translated",
             "value" : "Done"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
         }
       }
     },
@@ -463,6 +1034,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duration"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Längd"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "时长"
           }
         }
       }
@@ -474,6 +1057,18 @@
             "state" : "translated",
             "value" : "End"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slut"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "结束"
+          }
         }
       }
     },
@@ -483,6 +1078,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "min"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "min"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分钟"
           }
         }
       }
@@ -494,6 +1101,18 @@
             "state" : "translated",
             "value" : "OK"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好"
+          }
         }
       }
     },
@@ -504,16 +1123,17 @@
             "state" : "translated",
             "value" : "Open Settings"
           }
-        }
-      }
-    },
-    "common_pause" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pause"
+            "value" : "Öppna Inställningar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开设置"
           }
         }
       }
@@ -525,16 +1145,17 @@
             "state" : "translated",
             "value" : "Resort"
           }
-        }
-      }
-    },
-    "common_resume" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Resume"
+            "value" : "Skidort"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雪场"
           }
         }
       }
@@ -546,6 +1167,18 @@
             "state" : "translated",
             "value" : "Runs"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "趟数"
+          }
         }
       }
     },
@@ -555,6 +1188,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Save"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spara"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存"
           }
         }
       }
@@ -566,6 +1211,18 @@
             "state" : "translated",
             "value" : "Ski Time"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skidtid"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪时间"
+          }
         }
       }
     },
@@ -575,6 +1232,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Start"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始"
           }
         }
       }
@@ -586,6 +1255,18 @@
             "state" : "translated",
             "value" : "Time"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tid"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "时间"
+          }
         }
       }
     },
@@ -596,41 +1277,29 @@
             "state" : "translated",
             "value" : "Vertical"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Höjdmeter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "落差"
+          }
         }
       }
     },
     "control_widget_description" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start a ski tracking session"
-          }
-        }
-      }
+
     },
     "control_widget_display_name" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start Skiing"
-          }
-        }
-      }
+
     },
     "control_widget_start" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start Skiing"
-          }
-        }
-      }
+
     },
     "crew_create" : {
       "localizations" : {
@@ -638,6 +1307,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create Crew"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa grupp"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建队伍"
           }
         }
       }
@@ -649,6 +1330,18 @@
             "state" : "translated",
             "value" : "Create a Crew"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa en grupp"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建队伍"
+          }
         }
       }
     },
@@ -658,6 +1351,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dissolve Crew"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upplös grupp"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解散队伍"
           }
         }
       }
@@ -669,6 +1374,18 @@
             "state" : "translated",
             "value" : "Are you sure you want to dissolve this crew? All members will be removed."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Är du säker på att du vill upplösa gruppen? Alla medlemmar tas bort."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要解散这个队伍吗？所有成员将被移除。"
+          }
         }
       }
     },
@@ -678,6 +1395,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create or join a crew to share locations with your ski group."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa eller gå med i en grupp för att dela plats med dina skidkompisar."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建或加入队伍，与你的滑雪伙伴共享位置。"
           }
         }
       }
@@ -689,6 +1418,40 @@
             "state" : "translated",
             "value" : "No Crew"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen grupp"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无队伍"
+          }
+        }
+      }
+    },
+    "crew_error_conflict" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conflict"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konflikt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "冲突"
+          }
         }
       }
     },
@@ -698,6 +1461,53 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Connection lost. Retrying..."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anslutningen förlorades. Försöker igen..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接中断，正在重试…"
+          }
+        }
+      }
+    },
+    "crew_error_decoding_format %@" : {
+
+    },
+    "crew_error_forbidden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forbidden"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Förbjudet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无权限"
+          }
+        }
+      }
+    },
+    "crew_error_http_format %lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "crew_error_http_format %1$lld %2$@"
           }
         }
       }
@@ -709,6 +1519,18 @@
             "state" : "translated",
             "value" : "Paste a valid invite link or code."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klistra in en giltig inbjudningslänk eller kod."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请粘贴有效的邀请链接或代码。"
+          }
         }
       }
     },
@@ -718,6 +1540,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This invite is no longer valid."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denna inbjudan är inte längre giltig."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此邀请已失效。"
           }
         }
       }
@@ -729,6 +1563,18 @@
             "state" : "translated",
             "value" : "Location is unavailable."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plats är inte tillgänglig."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法获取位置信息。"
+          }
         }
       }
     },
@@ -738,6 +1584,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Network unavailable. Check your connection."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nätverket är inte tillgängligt. Kontrollera din anslutning."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "网络不可用，请检查连接。"
+          }
+        }
+      }
+    },
+    "crew_error_no_permission" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You do not have permission."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du har inte behörighet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你没有权限。"
           }
         }
       }
@@ -749,6 +1629,18 @@
             "state" : "translated",
             "value" : "Please set up your profile first."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vänligen skapa din profil först."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先设置你的个人资料。"
+          }
         }
       }
     },
@@ -758,6 +1650,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Crew not found."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppen hittades inte."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到该队伍。"
           }
         }
       }
@@ -769,6 +1673,18 @@
             "state" : "translated",
             "value" : "You are not in a crew."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du är inte i en grupp."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你不在任何队伍中。"
+          }
         }
       }
     },
@@ -778,6 +1694,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Too many requests. Please wait a moment."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "För många förfrågningar. Vänta en stund."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请求太频繁，请稍等。"
           }
         }
       }
@@ -789,6 +1717,18 @@
             "state" : "translated",
             "value" : "Session expired. Please rejoin the crew."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessionen har gått ut. Vänligen gå med i gruppen igen."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会话已过期，请重新加入队伍。"
+          }
         }
       }
     },
@@ -798,6 +1738,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Generate Invite Link"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa inbjudningslänk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "生成邀请链接"
           }
         }
       }
@@ -809,6 +1761,18 @@
             "state" : "translated",
             "value" : "Host"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Värd"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "队长"
+          }
         }
       }
     },
@@ -818,6 +1782,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invite"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bjud in"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "邀请"
           }
         }
       }
@@ -829,6 +1805,18 @@
             "state" : "translated",
             "value" : "Join Crew"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gå med i grupp"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入队伍"
+          }
         }
       }
     },
@@ -838,6 +1826,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Join"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gå med"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入"
           }
         }
       }
@@ -849,6 +1849,18 @@
             "state" : "translated",
             "value" : "Join a Crew"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gå med i en grupp"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入队伍"
+          }
         }
       }
     },
@@ -858,6 +1870,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invite link or code"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inbjudningslänk eller kod"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "邀请链接或代码"
           }
         }
       }
@@ -869,6 +1893,18 @@
             "state" : "translated",
             "value" : "Leave Crew"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lämna grupp"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "离开队伍"
+          }
         }
       }
     },
@@ -878,6 +1914,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Are you sure you want to leave this crew?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Är du säker på att du vill lämna gruppen?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要离开这个队伍吗？"
           }
         }
       }
@@ -889,6 +1937,18 @@
             "state" : "translated",
             "value" : "Members"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medlemmar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "成员"
+          }
         }
       }
     },
@@ -898,6 +1958,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Crew name"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppnamn"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "队伍名称"
+          }
+        }
+      }
+    },
+    "crew_notification_joined" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "joined the crew."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "gick med i gruppen."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入了队伍。"
+          }
+        }
+      }
+    },
+    "crew_notification_left" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "left the crew."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lämnade gruppen."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "离开了队伍。"
           }
         }
       }
@@ -909,6 +2025,18 @@
             "state" : "translated",
             "value" : "Swipe to dismiss"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Svep för att stänga"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑动以关闭"
+          }
         }
       }
     },
@@ -918,6 +2046,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Drop Pin"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Placera markering"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放置标记"
           }
         }
       }
@@ -929,6 +2069,18 @@
             "state" : "translated",
             "value" : "Drop Pin"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Placera markering"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放置标记"
+          }
         }
       }
     },
@@ -938,6 +2090,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add a message..."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till meddelande..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加消息…"
           }
         }
       }
@@ -949,6 +2113,18 @@
             "state" : "translated",
             "value" : "Caution ahead"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varning framför"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前方注意"
+          }
         }
       }
     },
@@ -958,6 +2134,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Food break"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matrast"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "吃饭休息"
           }
         }
       }
@@ -969,6 +2157,18 @@
             "state" : "translated",
             "value" : "Meet here!"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Möt här!"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在这里集合！"
+          }
         }
       }
     },
@@ -978,6 +2178,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wait for me"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vänta på mig"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等等我"
+          }
+        }
+      }
+    },
+    "crew_pin_resend_action" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resend"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skicka om"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新发送"
           }
         }
       }
@@ -989,6 +2223,18 @@
             "state" : "translated",
             "value" : "Jump to the latest unread pin"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoppa till senaste olästa markering"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跳到最新未读标记"
+          }
         }
       }
     },
@@ -999,27 +2245,17 @@
             "state" : "translated",
             "value" : "Unread crew pins"
           }
-        }
-      }
-    },
-    "crew_status_active %lld" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Active · %lld members"
+            "value" : "Olästa gruppmarkeringar"
           }
-        }
-      }
-    },
-    "crew_status_connecting" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Connecting..."
+            "value" : "未读队伍标记"
           }
         }
       }
@@ -1030,6 +2266,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Manual"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manuellt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手动"
           }
         }
       }
@@ -1042,6 +2290,18 @@
             "state" : "translated",
             "value" : "Refreshes teammates roughly every %@. Your location stays on this device."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uppdaterar gruppmedlemmar ungefär varje %@. Din plats stannar på enheten."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大约每 %@ 刷新一次队友位置。你的位置不会离开设备。"
+          }
         }
       }
     },
@@ -1052,6 +2312,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Refreshes teammates roughly every %@. Your location stays on this device. This crew currently enforces a minimum of %@."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "...minst %@ intervall."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "…最低间隔 %@。"
           }
         }
       }
@@ -1064,6 +2336,18 @@
             "state" : "translated",
             "value" : "Uploads your position and refreshes teammates roughly every %@."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laddar upp din position ungefär varje %@..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大约每 %@ 上传你的位置…"
+          }
         }
       }
     },
@@ -1075,6 +2359,18 @@
             "state" : "translated",
             "value" : "Uploads your position and refreshes teammates roughly every %@. This crew currently enforces a minimum of %@."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "...minst %@ intervall."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "…最低间隔 %@。"
+          }
         }
       }
     },
@@ -1085,6 +2381,18 @@
             "state" : "translated",
             "value" : "Only fetches crew updates when you tap Sync Now. Your location stays on this device."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hämtar bara gruppuppdateringar när du trycker Synka nu. Din plats stannar på enheten."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅在你点击「立即同步」时获取队友更新。你的位置不会离开设备。"
+          }
         }
       }
     },
@@ -1094,6 +2402,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Only uploads your position and fetches crew updates when you tap Sync Now."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laddar bara upp din position och hämtar gruppuppdateringar när du trycker Synka nu."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅在你点击「立即同步」时上传你的位置并获取队友更新。"
           }
         }
       }
@@ -1106,6 +2426,18 @@
             "state" : "translated",
             "value" : "%lldm"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld分"
+          }
         }
       }
     },
@@ -1117,6 +2449,18 @@
             "state" : "translated",
             "value" : "%llds"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld s"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld秒"
+          }
         }
       }
     },
@@ -1126,6 +2470,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Last sync"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senaste synk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上次同步"
           }
         }
       }
@@ -1137,6 +2493,18 @@
             "state" : "translated",
             "value" : "Mode"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Läge"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模式"
+          }
         }
       }
     },
@@ -1146,6 +2514,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Automatic"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatiskt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动"
           }
         }
       }
@@ -1157,6 +2537,18 @@
             "state" : "translated",
             "value" : "Manual"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manuellt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手动"
+          }
         }
       }
     },
@@ -1166,6 +2558,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sync Now"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synka nu"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即同步"
           }
         }
       }
@@ -1177,6 +2581,18 @@
             "state" : "translated",
             "value" : "Refresh every"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uppdatera varje"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新间隔"
+          }
         }
       }
     },
@@ -1186,6 +2602,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sync"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步"
           }
         }
       }
@@ -1197,6 +2625,18 @@
             "state" : "translated",
             "value" : "Share my current location"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dela min nuvarande plats"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共享我的当前位置"
+          }
         }
       }
     },
@@ -1207,11 +2647,20 @@
             "state" : "translated",
             "value" : "Syncing..."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synkar..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步中…"
+          }
         }
       }
-    },
-    "Delete" : {
-
     },
     "gear_alert_reset_confirm" : {
       "localizations" : {
@@ -1219,6 +2668,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reset"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Återställ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置"
           }
         }
       }
@@ -1230,6 +2691,18 @@
             "state" : "translated",
             "value" : "Uncheck all items? This won't delete any items."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avmarkera alla föremål? Detta raderar inga föremål."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消勾选所有物品？这不会删除任何物品。"
+          }
         }
       }
     },
@@ -1239,6 +2712,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reset Checklist"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Återställ checklista"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置清单"
           }
         }
       }
@@ -1250,6 +2735,18 @@
             "state" : "translated",
             "value" : "Ready to ride!"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redo att åka!"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备就绪！"
+          }
         }
       }
     },
@@ -1259,6 +2756,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Item"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till föremål"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加物品"
           }
         }
       }
@@ -1270,6 +2779,18 @@
             "state" : "translated",
             "value" : "No items"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inga föremål"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无物品"
+          }
         }
       }
     },
@@ -1279,6 +2800,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$lld/%2$lld ready"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld klara"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld 已准备"
           }
         }
       }
@@ -1290,6 +2823,18 @@
             "state" : "translated",
             "value" : "My Setup"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Min utrustning"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我的装备"
+          }
         }
       }
     },
@@ -1299,6 +2844,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Uncheck All"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avmarkera alla"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部取消勾选"
           }
         }
       }
@@ -1310,6 +2867,18 @@
             "state" : "translated",
             "value" : "Add Default Items"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till standardföremål"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加默认物品"
+          }
         }
       }
     },
@@ -1319,6 +2888,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Brand (optional)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Märke (valfritt)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "品牌（可选）"
           }
         }
       }
@@ -1330,6 +2911,18 @@
             "state" : "translated",
             "value" : "Model (optional)"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modell (valfritt)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "型号（可选）"
+          }
         }
       }
     },
@@ -1339,6 +2932,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Setup Name"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utrustningsnamn"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "装备方案名称"
           }
         }
       }
@@ -1350,6 +2955,18 @@
             "state" : "translated",
             "value" : "Edit Setup"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redigera utrustning"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑装备方案"
+          }
         }
       }
     },
@@ -1359,6 +2976,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New Setup"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny utrustning"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新装备方案"
           }
         }
       }
@@ -1370,6 +2999,18 @@
             "state" : "translated",
             "value" : "Details"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detaljer"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "详情"
+          }
         }
       }
     },
@@ -1379,6 +3020,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create Setup"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa utrustning"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建装备方案"
           }
         }
       }
@@ -1390,6 +3043,18 @@
             "state" : "translated",
             "value" : "Create a gear checklist to make sure you never forget anything on the mountain."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa en utrustningslista så att du aldrig glömmer något på berget."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "创建一个装备清单，确保上山时什么都不忘带。"
+          }
         }
       }
     },
@@ -1399,6 +3064,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Gear Setups"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inga utrustningar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有装备方案"
           }
         }
       }
@@ -1410,6 +3087,18 @@
             "state" : "translated",
             "value" : "Item Name"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Föremålsnamn"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "物品名称"
+          }
         }
       }
     },
@@ -1419,6 +3108,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Item"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till föremål"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加物品"
           }
         }
       }
@@ -1430,6 +3131,18 @@
             "state" : "translated",
             "value" : "Edit Item"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redigera föremål"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑物品"
+          }
         }
       }
     },
@@ -1439,6 +3152,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Body Zone"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kroppszon"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "身体部位"
           }
         }
       }
@@ -1450,6 +3175,18 @@
             "state" : "translated",
             "value" : "Item Details"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Föremålsdetaljer"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "物品详情"
+          }
         }
       }
     },
@@ -1459,6 +3196,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New Preset"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny förinställning"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新预设"
           }
         }
       }
@@ -1470,6 +3219,18 @@
             "state" : "translated",
             "value" : "Reset Checklist"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Återställ checklista"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置清单"
+          }
         }
       }
     },
@@ -1479,6 +3240,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gear"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utrustning"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "装备"
           }
         }
       }
@@ -1490,6 +3263,18 @@
             "state" : "translated",
             "value" : "%1$lld items total"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld föremål totalt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共 %1$lld 件"
+          }
         }
       }
     },
@@ -1499,6 +3284,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All packed!"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allt packat!"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部打包完毕！"
           }
         }
       }
@@ -1510,6 +3307,18 @@
             "state" : "translated",
             "value" : "Almost there"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nästan klart"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快好了"
+          }
         }
       }
     },
@@ -1519,6 +3328,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Getting ready"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Förbereder"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备中"
           }
         }
       }
@@ -1530,6 +3351,18 @@
             "state" : "translated",
             "value" : "Not started"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ej påbörjat"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未开始"
+          }
         }
       }
     },
@@ -1539,6 +3372,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$lld items"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld föremål"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld 件物品"
           }
         }
       }
@@ -1550,6 +3395,18 @@
             "state" : "translated",
             "value" : "Almost there!"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nästan klart!"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快好了！"
+          }
         }
       }
     },
@@ -1559,6 +3416,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Getting started..."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Börjar packa..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始准备…"
           }
         }
       }
@@ -1570,6 +3439,18 @@
             "state" : "translated",
             "value" : "Let's get ready!"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dags att packa!"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始准备吧！"
+          }
         }
       }
     },
@@ -1580,75 +3461,171 @@
             "state" : "translated",
             "value" : "Ready to ride!"
           }
-        }
-      }
-    },
-    "gear_zone_backpack" : {
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Backpack"
+            "value" : "Redo att åka!"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备就绪！"
           }
         }
       }
     },
-    "gear_zone_clothing" : {
+    "gear_zone_arms" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Clothing"
+            "value" : "Arms"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Armar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "胳膊"
           }
         }
       }
     },
-    "gear_zone_equipment" : {
+    "gear_zone_body" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Equipment"
+            "value" : "Body"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Överkropp"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上身"
           }
         }
       }
     },
-    "gear_zone_footwear" : {
+    "gear_zone_feet" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Footwear"
+            "value" : "Feet"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fötter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "足部"
           }
         }
       }
     },
-    "gear_zone_hand_gear" : {
+    "gear_zone_hands" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gloves & Hands"
+            "value" : "Hands"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Händer"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手部"
           }
         }
       }
     },
-    "gear_zone_head_protection" : {
+    "gear_zone_head" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Head & Protection"
+            "value" : "Head"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Huvud"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "头部"
           }
         }
       }
     },
-    "gear_zone_tech_other" : {
+    "gear_zone_legs" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tech & Other"
+            "value" : "Legs"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ben"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "腿部"
+          }
+        }
+      }
+    },
+    "gear_zone_other" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Övrigt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "其他"
           }
         }
       }
@@ -1660,6 +3637,18 @@
             "state" : "translated",
             "value" : "GPS DENIED"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS NEKAD"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS 被拒绝"
+          }
         }
       }
     },
@@ -1669,6 +3658,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "LOCATING..."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SÖKER POSITION..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "定位中…"
           }
         }
       }
@@ -1680,6 +3681,18 @@
             "state" : "translated",
             "value" : "GPS PENDING"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS VÄNTAR"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS 等待中"
+          }
         }
       }
     },
@@ -1689,6 +3702,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "GPS READY"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS KLAR"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS 就绪"
           }
         }
       }
@@ -1700,6 +3725,18 @@
             "state" : "translated",
             "value" : "Let's Ride!"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nu kör vi!"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始滑雪！"
+          }
         }
       }
     },
@@ -1709,6 +3746,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Map"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karta"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地图"
           }
         }
       }
@@ -1720,38 +3769,17 @@
             "state" : "translated",
             "value" : "UI Test Start"
           }
-        }
-      }
-    },
-    "home_weather_status_allow_location_access" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Allow location access to load weather"
+            "value" : "UI-test Start"
           }
-        }
-      }
-    },
-    "home_weather_status_location_required" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Location required for weather"
-          }
-        }
-      }
-    },
-    "home_weather_status_updating" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Updating weather"
+            "value" : "UI 测试开始"
           }
         }
       }
@@ -1763,115 +3791,262 @@
             "state" : "translated",
             "value" : "Waiting for GPS"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Väntar på GPS"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等待 GPS 定位"
+          }
+        }
+      }
+    },
+    "In-App (Not Visible)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In-App (Not Visible)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I appen (inte synlig)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用内（不可见）"
+          }
+        }
+      }
+    },
+    "In-App (Visible)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In-App (Visible)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I appen (synlig)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用内（可见）"
+          }
+        }
+      }
+    },
+    "intent_start_tracking_description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start a ski tracking session in Snowly."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starta en skidspårningssession i Snowly."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Snowly 中开始滑雪记录。"
+          }
+        }
+      }
+    },
+    "Live Activity Refresh" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live Activity Refresh"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liveaktivitet uppdatering"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实时活动刷新"
+          }
         }
       }
     },
     "live_activity_chairlift" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chairlift"
           }
-        }
-      }
-    },
-    "live_activity_ft" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ft"
+            "value" : "Stolslift"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缆车"
           }
         }
       }
     },
     "live_activity_idle" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Idle"
           }
-        }
-      }
-    },
-    "live_activity_kmh" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "km/h"
+            "value" : "Vilar"
           }
-        }
-      }
-    },
-    "live_activity_m" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "m"
+            "value" : "空闲"
           }
         }
       }
     },
     "live_activity_max" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "max"
           }
-        }
-      }
-    },
-    "live_activity_mph" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "mph"
+            "value" : "Max"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最高"
           }
         }
       }
     },
     "live_activity_paused" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Paused"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pausad"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已暂停"
+          }
         }
       }
     },
     "live_activity_runs" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "runs"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "åk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "趟"
+          }
         }
       }
     },
     "live_activity_skiing" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Skiing"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åker"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑行中"
+          }
+        }
+      }
+    },
+    "map_fallback_resort_name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resort"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skidort"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雪场"
           }
         }
       }
@@ -1883,6 +4058,18 @@
             "state" : "translated",
             "value" : "Allow Snowly to access Apple Music to control playback."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ge Snowly tillgång till Apple Music för att styra uppspelning."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "允许 Snowly 访问 Apple Music 以控制播放。"
+          }
         }
       }
     },
@@ -1892,6 +4079,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Music Access Required"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Musikåtkomst krävs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要音乐访问权限"
           }
         }
       }
@@ -1903,6 +4102,18 @@
             "state" : "translated",
             "value" : "Not Playing"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spelar inte"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未在播放"
+          }
         }
       }
     },
@@ -1912,6 +4123,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pause"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pausa"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂停"
           }
         }
       }
@@ -1923,6 +4146,18 @@
             "state" : "translated",
             "value" : "Play"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spela"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放"
+          }
         }
       }
     },
@@ -1932,6 +4167,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create playlists in Apple Music to see them here."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa spellistor i Apple Music för att se dem här."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Apple Music 中创建播放列表后会在这里显示。"
           }
         }
       }
@@ -1943,6 +4190,18 @@
             "state" : "translated",
             "value" : "No playlists"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inga spellistor"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有播放列表"
+          }
         }
       }
     },
@@ -1952,6 +4211,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Loading playlists…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laddar spellistor..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载播放列表中…"
           }
         }
       }
@@ -1963,6 +4234,18 @@
             "state" : "translated",
             "value" : "Playlists"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spellistor"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放列表"
+          }
         }
       }
     },
@@ -1972,6 +4255,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Search playlists"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sök spellistor"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索播放列表"
           }
         }
       }
@@ -1983,6 +4278,18 @@
             "state" : "translated",
             "value" : "Next"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nästa"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一首"
+          }
         }
       }
     },
@@ -1992,6 +4299,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Previous"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Föregående"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一首"
+          }
+        }
+      }
+    },
+    "note_editor_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day Note"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当日备注"
+          }
+        }
+      }
+    },
+    "note_editor_title_placeholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "标题"
           }
         }
       }
@@ -2003,6 +4354,18 @@
             "state" : "translated",
             "value" : "Save ski workouts to Health"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spåra träningsdata och puls"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记录锻炼数据和心率"
+          }
         }
       }
     },
@@ -2012,6 +4375,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apple Health"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hälsodata"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "健康数据"
           }
         }
       }
@@ -2023,6 +4398,18 @@
             "state" : "translated",
             "value" : "GPS for speed, distance & altitude"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spåra rutt, hastighet och höjd"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记录路线、速度和海拔"
+          }
         }
       }
     },
@@ -2032,6 +4419,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Location"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plats"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置信息"
           }
         }
       }
@@ -2043,6 +4442,18 @@
             "state" : "translated",
             "value" : "Snowly needs a few permissions to track your ski day. Ski data can sync privately with your iCloud account."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly behöver följande behörigheter för att spåra din skiddag."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly 需要以下权限来记录你的滑雪日。"
+          }
         }
       }
     },
@@ -2052,6 +4463,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Permissions"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Behörigheter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "权限设置"
           }
         }
       }
@@ -2063,6 +4486,18 @@
             "state" : "translated",
             "value" : "Temperature, wind & UV via WeatherKit (uses location)"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visa aktuellt bergsväder"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示实时山区天气"
+          }
         }
       }
     },
@@ -2072,6 +4507,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Weather"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Väder"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "天气"
           }
         }
       }
@@ -2083,6 +4530,18 @@
             "state" : "translated",
             "value" : "Start Your Ski Day"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Börja din skiddag"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启你的滑雪日"
+          }
         }
       }
     },
@@ -2092,6 +4551,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Skier Name"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skidåkarens namn"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪者姓名"
           }
         }
       }
@@ -2103,6 +4574,18 @@
             "state" : "translated",
             "value" : "Ready for the Slopes"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redo för backen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备好上雪道了"
+          }
         }
       }
     },
@@ -2112,6 +4595,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Units"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enheter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单位"
           }
         }
       }
@@ -2123,6 +4618,18 @@
             "state" : "translated",
             "value" : "Plan Your First Run"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planera ditt första åk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始你的第一滑"
+          }
         }
       }
     },
@@ -2132,6 +4639,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your mountain companion. Track runs, check your gear, and share your ski day."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din skidkompis, spårar varje åk."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的滑雪搭档，记录每一滑。"
           }
         }
       }
@@ -2143,6 +4662,18 @@
             "state" : "translated",
             "value" : "Welcome to Snowly"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Välkommen till Snowly"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "欢迎来到 Snowly"
+          }
         }
       }
     },
@@ -2152,6 +4683,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Last updated: March 2026"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senast uppdaterad"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最后更新"
           }
         }
       }
@@ -2163,6 +4706,18 @@
             "state" : "translated",
             "value" : "Privacy"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Integritet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐私"
+          }
         }
       }
     },
@@ -2172,6 +4727,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Snowly uses background location access exclusively during active ski tracking to record your runs. A blue indicator bar is always visible when background tracking is active. Background tracking stops when you end your session."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Under åkning använder Snowly plats i bakgrunden för att spåra hela din rutt. Data lagras bara på din enhet."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当你在滑雪时，Snowly 会在后台持续获取你的位置信息以记录完整的轨迹。这些数据仅存储在你的设备上。"
           }
         }
       }
@@ -2183,6 +4750,18 @@
             "state" : "translated",
             "value" : "Background Location"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bakgrundsplats"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "后台定位"
+          }
         }
       }
     },
@@ -2192,6 +4771,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Snowly collects the following data to provide ski tracking:\n- GPS location (latitude, longitude, altitude) during active tracking\n- Motion sensor data for activity detection (skiing vs chairlift)\n- Battery level for tracking time estimation"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly samlar in GPS-spår, hastighet, höjd och annan skiddata. All data lagras på din enhet och i ditt privata iCloud."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly 收集 GPS 轨迹、速度、海拔等滑雪数据。所有数据存储在你的设备上和你的私有 iCloud 中。"
           }
         }
       }
@@ -2203,6 +4794,18 @@
             "state" : "translated",
             "value" : "What We Collect"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datainsamling"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "数据采集"
+          }
         }
       }
     },
@@ -2212,6 +4815,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You can export all your data as JSON from Settings > Export Data. You can delete all data from Settings > Delete All Data. You can also disable iCloud for Snowly in iOS settings to stop cloud sync."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du kan exportera eller radera all din data i inställningarna när som helst."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你可以随时在设置中导出或删除你的所有数据。"
           }
         }
       }
@@ -2223,6 +4838,18 @@
             "state" : "translated",
             "value" : "Your Rights (GDPR)"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina rättigheter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的权利"
+          }
         }
       }
     },
@@ -2232,6 +4859,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "When you share a session card, the image contains aggregated statistics (speed, distance, vertical) but does not include GPS coordinates, protecting your location privacy."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delningskort genereras lokalt på din enhet. Bilder lämnar inte enheten om du inte aktivt delar dem."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享卡片由你的设备本地生成。除非你主动分享，否则图片不会离开设备。"
           }
         }
       }
@@ -2243,6 +4882,18 @@
             "state" : "translated",
             "value" : "Share Cards"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delningskort"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享卡片"
+          }
         }
       }
     },
@@ -2252,6 +4903,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Snowly does not sell your data and does not share it with advertisers or analytics providers. Cloud sync uses Apple's CloudKit infrastructure."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din data säljs aldrig eller delas med tredje part. Platsdata i gruppfunktionen delas bara med medlemmar när du aktivt väljer det."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的数据永远不会被出售或与第三方共享。Crew 功能中的位置信息仅在你主动选择时才与队友共享。"
           }
         }
       }
@@ -2263,6 +4926,18 @@
             "state" : "translated",
             "value" : "Third-Party Sharing"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datadelning"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "数据共享"
+          }
         }
       }
     },
@@ -2272,6 +4947,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Snowly stores data locally on your device with encrypted storage (NSFileProtectionComplete). Ski sessions, gear, and profile data can sync through your private iCloud CloudKit database when iCloud is available. Device-specific settings (onboarding status and Health preference) stay local."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din data krypteras på enheten med NSFileProtectionComplete. iCloud-synkdata lagras i din privata CloudKit-behållare."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的数据在设备上使用 NSFileProtectionComplete 加密。iCloud 同步数据存储在你的私有 CloudKit 容器中。"
           }
         }
       }
@@ -2283,6 +4970,18 @@
             "state" : "translated",
             "value" : "Where Data Is Stored"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datalagring"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "数据存储"
+          }
         }
       }
     },
@@ -2292,6 +4991,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Longest Distance"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Längsta distans"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最远距离"
           }
         }
       }
@@ -2303,6 +5014,18 @@
             "state" : "translated",
             "value" : "Most Runs"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flest åk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最多趟数"
+          }
         }
       }
     },
@@ -2312,6 +5035,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Most Vertical"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mest höjdmeter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大落差"
           }
         }
       }
@@ -2323,6 +5058,18 @@
             "state" : "translated",
             "value" : "Top Speed"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Topphastighet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最高速度"
+          }
         }
       }
     },
@@ -2332,6 +5079,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Skier"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skidåkare"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪者"
           }
         }
       }
@@ -2343,6 +5102,18 @@
             "state" : "translated",
             "value" : "Member since %1$@"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medlem sedan %1$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入于 %1$@"
+          }
         }
       }
     },
@@ -2352,6 +5123,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Privacy"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Integritet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐私"
           }
         }
       }
@@ -2363,6 +5146,18 @@
             "state" : "translated",
             "value" : "Settings"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inställningar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置"
+          }
         }
       }
     },
@@ -2372,6 +5167,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Profile"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "个人资料"
           }
         }
       }
@@ -2383,6 +5190,18 @@
             "state" : "translated",
             "value" : "Season Bests"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Säsongens bästa"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "赛季最佳"
+          }
         }
       }
     },
@@ -2393,22 +5212,20 @@
             "state" : "translated",
             "value" : "Version"
           }
-        }
-      }
-    },
-    "quick_action_start_tracking" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Start Skiing"
+            "value" : "Version"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本"
           }
         }
       }
-    },
-    "Resend" : {
-
     },
     "run_detail_end_altitude" : {
       "localizations" : {
@@ -2416,6 +5233,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "End Altitude"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sluthöjd"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "终点海拔"
           }
         }
       }
@@ -2427,6 +5256,18 @@
             "state" : "translated",
             "value" : "GPS Points"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS-punkter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS 点数"
+          }
         }
       }
     },
@@ -2436,6 +5277,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Run Stats"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åkstatistik"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑行数据"
           }
         }
       }
@@ -2447,6 +5300,18 @@
             "state" : "translated",
             "value" : "Timing"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tid"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "计时"
+          }
         }
       }
     },
@@ -2456,6 +5321,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Track Data"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spårdata"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轨迹数据"
           }
         }
       }
@@ -2467,86 +5344,17 @@
             "state" : "translated",
             "value" : "Start Altitude"
           }
-        }
-      }
-    },
-    "session_card_stat_max" : {
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Max"
+            "value" : "Starthöjd"
           }
-        }
-      }
-    },
-    "session_card_unknown_resort" : {
-      "localizations" : {
-        "en" : {
+        },
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unknown Resort"
-          }
-        }
-      }
-    },
-    "session_detail_section_chairlift_rides" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chairlift Rides"
-          }
-        }
-      }
-    },
-    "session_detail_section_overview" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ski Day Overview"
-          }
-        }
-      }
-    },
-    "session_detail_section_runs" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Runs"
-          }
-        }
-      }
-    },
-    "session_detail_section_stats" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ski Day Stats"
-          }
-        }
-      }
-    },
-    "session_run_title_format" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Run %1$lld"
-          }
-        }
-      }
-    },
-    "session_summary_no_gps_track" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No GPS track was recorded for this ski day."
+            "value" : "起点海拔"
           }
         }
       }
@@ -2558,6 +5366,18 @@
             "state" : "translated",
             "value" : "Delete"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radera"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
+          }
         }
       }
     },
@@ -2567,6 +5387,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redigera"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑"
           }
         }
       }
@@ -2578,6 +5410,18 @@
             "state" : "translated",
             "value" : "Default"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认"
+          }
         }
       }
     },
@@ -2588,12 +5432,36 @@
             "state" : "translated",
             "value" : "Check All"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontrollera alla"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部检测"
+          }
         }
       }
     },
     "server_default_alias" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly Cloud"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly Cloud"
+          }
+        },
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Snowly Cloud"
@@ -2608,6 +5476,18 @@
             "state" : "translated",
             "value" : "Delete Server"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radera server"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除服务器"
+          }
         }
       }
     },
@@ -2617,6 +5497,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Are you sure you want to delete this server profile?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Är du säker på att du vill radera den här serverprofilen?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要删除此服务器配置吗？"
           }
         }
       }
@@ -2628,6 +5520,18 @@
             "state" : "translated",
             "value" : "Delete Server"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radera server"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除服务器"
+          }
         }
       }
     },
@@ -2637,6 +5541,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Server Name"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servernamn"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器名称"
           }
         }
       }
@@ -2648,6 +5564,18 @@
             "state" : "translated",
             "value" : "Server Details"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serverdetaljer"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器信息"
+          }
         }
       }
     },
@@ -2657,6 +5585,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Connection"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anslutning"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接测试"
           }
         }
       }
@@ -2668,6 +5608,18 @@
             "state" : "translated",
             "value" : "Test Connection"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Testa anslutning"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "测试连接"
+          }
         }
       }
     },
@@ -2677,6 +5629,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Server"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till server"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加服务器"
           }
         }
       }
@@ -2688,12 +5652,36 @@
             "state" : "translated",
             "value" : "Edit Server"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redigera server"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑服务器"
+          }
         }
       }
     },
     "server_edit_url_placeholder" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "https://your-server.com"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "https://your-server.com"
+          }
+        },
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "https://your-server.com"
@@ -2708,6 +5696,18 @@
             "state" : "translated",
             "value" : "Cannot connect to host"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kan inte ansluta till servern"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法连接到服务器"
+          }
         }
       }
     },
@@ -2717,6 +5717,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Checking…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kontrollerar…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "检测中…"
           }
         }
       }
@@ -2728,6 +5740,18 @@
             "state" : "translated",
             "value" : "Invalid URL"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ogiltig URL"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无效的 URL"
+          }
         }
       }
     },
@@ -2737,6 +5761,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Connected (%lld ms)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ansluten (%lld ms)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已连接（%lld ms）"
           }
         }
       }
@@ -2748,6 +5784,18 @@
             "state" : "translated",
             "value" : "Connection timed out"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anslutningen fick timeout"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接超时"
+          }
         }
       }
     },
@@ -2757,6 +5805,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Servers"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servrar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器"
           }
         }
       }
@@ -2768,6 +5828,18 @@
             "state" : "translated",
             "value" : "Add your self-hosted server to connect. Tap a server to set it as active."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till din egna server för att ansluta. Tryck på en server för att välja den som aktiv."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加自部署服务器以连接。点击服务器可将其设为活动。"
+          }
         }
       }
     },
@@ -2777,6 +5849,264 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Servers"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servrar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器"
+          }
+        }
+      }
+    },
+    "session_card_stat_max" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Max"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Max"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最高"
+          }
+        }
+      }
+    },
+    "session_card_unknown_resort" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown Resort"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okänd skidort"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知雪场"
+          }
+        }
+      }
+    },
+    "session_detail_section_chairlift_rides" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chairlift Rides"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liftåk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缆车"
+          }
+        }
+      }
+    },
+    "session_detail_section_overview" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ski Day Overview"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skiddagsöversikt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪日概览"
+          }
+        }
+      }
+    },
+    "session_detail_section_runs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runs"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑行"
+          }
+        }
+      }
+    },
+    "session_detail_section_stats" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ski Day Stats"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skiddagsstatistik"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪日数据"
+          }
+        }
+      }
+    },
+    "session_detail_section_walking" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Walking"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "步行段"
+          }
+        }
+      }
+    },
+    "session_export_data_button" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export Track Data"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出轨迹数据"
+          }
+        }
+      }
+    },
+    "session_export_data_exporting" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exporting…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在导出…"
+          }
+        }
+      }
+    },
+    "session_recap_delete_confirm_message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This action cannot be undone."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här åtgärden kan inte ångras."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此操作无法撤销。"
+          }
+        }
+      }
+    },
+    "session_recap_delete_confirm_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete This Recap?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta bort den här sammanfattningen?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除这条回顾？"
+          }
+        }
+      }
+    },
+    "session_run_title_format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Run %1$lld"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åk %1$lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$lld 趟"
           }
         }
       }
@@ -2788,6 +6118,18 @@
             "state" : "translated",
             "value" : "App Version"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appversion"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "应用版本"
+          }
         }
       }
     },
@@ -2797,6 +6139,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Privacy Policy"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Integritetspolicy"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐私政策"
           }
         }
       }
@@ -2808,6 +6162,18 @@
             "state" : "translated",
             "value" : "Delete Everything"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radera"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除"
+          }
         }
       }
     },
@@ -2817,6 +6183,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This will permanently delete all your sessions, gear setups, and profile data. This action cannot be undone."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detta raderar permanent all din data. Åtgärden kan inte ångras."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这将永久删除你的所有数据，无法恢复。"
           }
         }
       }
@@ -2828,6 +6206,18 @@
             "state" : "translated",
             "value" : "Delete All Data?"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radera all data?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除所有数据？"
+          }
         }
       }
     },
@@ -2837,6 +6227,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your data has been saved to the Files app."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din data har exporterats."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的数据已导出。"
           }
         }
       }
@@ -2848,6 +6250,18 @@
             "state" : "translated",
             "value" : "Export Complete"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export klar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出完成"
+          }
         }
       }
     },
@@ -2857,6 +6271,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Export Failed"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export misslyckades"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出失败"
           }
         }
       }
@@ -2868,6 +6294,18 @@
             "state" : "translated",
             "value" : "Unknown export error."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okänt fel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知错误"
+          }
         }
       }
     },
@@ -2877,6 +6315,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dark"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mörkt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色"
           }
         }
       }
@@ -2888,6 +6338,18 @@
             "state" : "translated",
             "value" : "Light"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ljust"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浅色"
+          }
         }
       }
     },
@@ -2897,6 +6359,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "System"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跟随系统"
           }
         }
       }
@@ -2908,6 +6382,18 @@
             "state" : "translated",
             "value" : "Delete All Data"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radera all data"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除所有数据"
+          }
         }
       }
     },
@@ -2917,6 +6403,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Export Data (JSON)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportera data"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "导出数据"
           }
         }
       }
@@ -2928,6 +6426,18 @@
             "state" : "translated",
             "value" : "Settings"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inställningar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置"
+          }
         }
       }
     },
@@ -2937,6 +6447,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Name"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skidåkarens namn"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪者姓名"
           }
         }
       }
@@ -2948,6 +6470,18 @@
             "state" : "translated",
             "value" : "Your name"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ange ditt namn"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入你的名字"
+          }
         }
       }
     },
@@ -2958,16 +6492,17 @@
             "state" : "translated",
             "value" : "About"
           }
-        }
-      }
-    },
-    "settings_section_appearance" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Appearance"
+            "value" : "Om"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关于"
           }
         }
       }
@@ -2979,6 +6514,18 @@
             "state" : "translated",
             "value" : "Data"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "数据"
+          }
         }
       }
     },
@@ -2988,6 +6535,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Profile"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "个人资料"
           }
         }
       }
@@ -2999,6 +6558,18 @@
             "state" : "translated",
             "value" : "Server"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器"
+          }
         }
       }
     },
@@ -3008,6 +6579,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Units"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enheter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单位"
           }
         }
       }
@@ -3019,6 +6602,18 @@
             "state" : "translated",
             "value" : "Connect to your own self-hosted Snowly server."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anslut till din egna självhostade Snowly-server."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接到你自建的 Snowly 服务器。"
+          }
         }
       }
     },
@@ -3028,6 +6623,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Server Management"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serverhantering"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器管理"
           }
         }
       }
@@ -3039,6 +6646,18 @@
             "state" : "translated",
             "value" : "Sync Error"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synkfel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步错误"
+          }
         }
       }
     },
@@ -3048,6 +6667,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Snowly syncs ski data to your private iCloud account. Disable iCloud for Snowly in iOS Settings to keep data local only."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synkar data mellan dina enheter via iCloud."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过 iCloud 在你的设备之间同步数据。"
           }
         }
       }
@@ -3059,6 +6690,18 @@
             "state" : "translated",
             "value" : "Syncing with iCloud..."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synkar..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步中…"
+          }
         }
       }
     },
@@ -3068,6 +6711,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Last Sync"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senaste synk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上次同步"
           }
         }
       }
@@ -3079,6 +6734,18 @@
             "state" : "translated",
             "value" : "Your data remains available locally, and syncing will retry automatically."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synkning försöker igen automatiskt."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步将自动重试。"
+          }
         }
       }
     },
@@ -3088,6 +6755,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "iCloud Sync"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步"
           }
         }
       }
@@ -3099,6 +6778,18 @@
             "state" : "translated",
             "value" : "Status"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synkstatus"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步状态"
+          }
         }
       }
     },
@@ -3108,6 +6799,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Needs Attention"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kräver uppmärksamhet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要注意"
           }
         }
       }
@@ -3119,6 +6822,18 @@
             "state" : "translated",
             "value" : "Not Synced Yet"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ej synkad"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未同步"
+          }
         }
       }
     },
@@ -3128,6 +6843,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Syncing"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synkar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同步中"
           }
         }
       }
@@ -3139,6 +6866,84 @@
             "state" : "translated",
             "value" : "Up to Date"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uppdaterad"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已是最新"
+          }
+        }
+      }
+    },
+    "settings_tracking_interval_footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controls tracking processing frequency (0.5s-30s). Live Activity updates follow the same interval."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Styr spårningsfrekvensen (0,5s-30s). Liveaktivitet uppdateras med samma intervall."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "控制轨迹处理频率（0.5s-30s）。实时活动刷新与该频率保持一致。"
+          }
+        }
+      }
+    },
+    "settings_tracking_interval_label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interval"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intervall"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "间隔"
+          }
+        }
+      }
+    },
+    "settings_tracking_interval_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tracking Interval"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spårningsintervall"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记录间隔"
+          }
         }
       }
     },
@@ -3148,6 +6953,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Imperial (mph, ft, °F)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imperial"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "英制"
           }
         }
       }
@@ -3159,6 +6976,18 @@
             "state" : "translated",
             "value" : "Metric (km/h, m, °C)"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metriskt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "公制"
+          }
         }
       }
     },
@@ -3169,18 +6998,80 @@
             "state" : "translated",
             "value" : "Unit System"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enheter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "单位"
+          }
         }
       }
     },
     "share_card_logged_with" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Logged with Snowly"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loggad med Snowly"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由 Snowly 记录"
+          }
         }
       }
+    },
+    "share_option_copy" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy Image"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制图片"
+          }
+        }
+      }
+    },
+    "share_option_more" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More Apps…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多应用…"
+          }
+        }
+      }
+    },
+    "Snowly" : {
+
     },
     "SNOWLY" : {
 
@@ -3192,11 +7083,20 @@
             "state" : "translated",
             "value" : "Stay safe, have fun."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åk säkert, ha kul."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安全滑雪，尽情享受。"
+          }
         }
       }
-    },
-    "Start a ski tracking session in Snowly." : {
-
     },
     "Start Ski Tracking" : {
 
@@ -3211,6 +7111,18 @@
             "state" : "translated",
             "value" : "Avg Speed"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medelhastighet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平均速度"
+          }
         }
       }
     },
@@ -3220,6 +7132,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Current Speed"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktuell hastighet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前速度"
           }
         }
       }
@@ -3231,6 +7155,18 @@
             "state" : "translated",
             "value" : "Max Speed"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Topphastighet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最高速度"
+          }
         }
       }
     },
@@ -3240,6 +7176,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Peak Speed"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Topphastighet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "峰值速度"
+          }
+        }
+      }
+    },
+    "stat_run_count" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Run Count"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antal åk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "趟数"
           }
         }
       }
@@ -3251,6 +7221,18 @@
             "state" : "translated",
             "value" : "Top Speed"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Topphastighet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最高速度"
+          }
         }
       }
     },
@@ -3260,6 +7242,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Total Distance"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total distans"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "总距离"
           }
         }
       }
@@ -3271,6 +7265,18 @@
             "state" : "translated",
             "value" : "Vertical Drop"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Höjdskillnad"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "落差"
+          }
         }
       }
     },
@@ -3280,6 +7286,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Finish tracking your ski day to see the recap."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avsluta spårning för att se din skiddag här."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "结束记录后在这里查看你的滑雪日。"
           }
         }
       }
@@ -3291,6 +7309,18 @@
             "state" : "translated",
             "value" : "No Ski Day Data"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen skiddagsdata"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有滑雪日数据"
+          }
         }
       }
     },
@@ -3300,6 +7330,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ski Day Recap"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skiddagssammanfattning"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪日回顾"
           }
         }
       }
@@ -3311,26 +7353,61 @@
             "state" : "translated",
             "value" : "New Ski Personal Best!"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nytt personligt rekord!"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新的个人最佳！"
+          }
         }
       }
     },
     "summary_no_route_map_title" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "No ski route map yet"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen ruttkarta än"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无路线地图"
+          }
         }
       }
     },
-    "summary_share_cta" : {
+    "summary_share_title" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Share Ski Day"
+            "value" : "My Ski Day"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Min skiddag"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我的滑雪日"
           }
         }
       }
@@ -3342,6 +7419,18 @@
             "state" : "translated",
             "value" : "Gear"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utrustning"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "装备"
+          }
         }
       }
     },
@@ -3351,6 +7440,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ride"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åka"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪"
           }
         }
       }
@@ -3362,8 +7463,23 @@
             "state" : "translated",
             "value" : "Tracks"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spår"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记录"
+          }
         }
       }
+    },
+    "Tracking" : {
+
     },
     "tracking_activity_idle" : {
       "localizations" : {
@@ -3371,6 +7487,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Idle"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vilar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空闲"
           }
         }
       }
@@ -3382,6 +7510,18 @@
             "state" : "translated",
             "value" : "On lift"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I liften"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "坐缆车"
+          }
         }
       }
     },
@@ -3391,6 +7531,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Skiing"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åker"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑行中"
+          }
+        }
+      }
+    },
+    "tracking_activity_walk" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Walking"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "步行"
           }
         }
       }
@@ -3402,6 +7570,18 @@
             "state" : "translated",
             "value" : "Last run average"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senaste åkets medel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上趟平均"
+          }
         }
       }
     },
@@ -3412,6 +7592,18 @@
             "state" : "translated",
             "value" : "Session average"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessionsmedel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本次平均"
+          }
         }
       }
     },
@@ -3420,7 +7612,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Speed by Run"
+            "value" : "Runs"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Åk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每趟"
           }
         }
       }
@@ -3432,6 +7636,18 @@
             "state" : "translated",
             "value" : "of your %1$lldh ski goal"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "av ditt %1$lld-timmarsmål"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目标 %1$lld 小时"
+          }
         }
       }
     },
@@ -3441,6 +7657,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Peak"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Topp"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "峰值"
           }
         }
       }
@@ -3452,6 +7680,18 @@
             "state" : "translated",
             "value" : "%1$@ vertical · %2$.1f min"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ höjdmeter · %2$.1f min"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 落差 · %2$.1f 分钟"
+          }
         }
       }
     },
@@ -3461,6 +7701,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ vertical · %2$.0f min"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ höjdmeter · %2$.0f min"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 落差 · %2$.0f 分钟"
           }
         }
       }
@@ -3472,27 +7724,17 @@
             "state" : "translated",
             "value" : "Tracking"
           }
-        }
-      }
-    },
-    "tracking_resume_cta" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Resume Tracking"
+            "value" : "Spårning"
           }
-        }
-      }
-    },
-    "tracking_runs_subtitle_format" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ total vertical"
+            "value" : "记录中"
           }
         }
       }
@@ -3504,6 +7746,18 @@
             "state" : "translated",
             "value" : "Slide to End Ski Day"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Svep för att avsluta skiddagen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑动结束滑雪日"
+          }
         }
       }
     },
@@ -3514,15 +7768,17 @@
             "state" : "translated",
             "value" : "Paused"
           }
-        }
-      }
-    },
-    "tracking_state_riding" : {
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Riding"
+            "value" : "Pausad"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已暂停"
           }
         }
       }
@@ -3534,16 +7790,17 @@
             "state" : "translated",
             "value" : "End Ski Day"
           }
-        }
-      }
-    },
-    "tracking_stop_confirmation_title" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "End your ski day?"
+            "value" : "Avsluta skiddag"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "结束滑雪日"
           }
         }
       }
@@ -3555,6 +7812,18 @@
             "state" : "translated",
             "value" : "Ski Day"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skiddag"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪日"
+          }
         }
       }
     },
@@ -3564,6 +7833,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Top Run"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bästa åk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最佳一趟"
           }
         }
       }
@@ -3575,60 +7856,17 @@
             "state" : "translated",
             "value" : "%1$lld runs · %2$.0f min"
           }
-        }
-      }
-    },
-    "trail_difficulty_advanced" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Advanced"
+            "value" : "%1$lld åk · %2$.0f min"
           }
-        }
-      }
-    },
-    "trail_difficulty_easy" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Easy"
-          }
-        }
-      }
-    },
-    "trail_difficulty_expert" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Expert"
-          }
-        }
-      }
-    },
-    "trail_difficulty_intermediate" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Intermediate"
-          }
-        }
-      }
-    },
-    "trail_difficulty_novice" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Novice"
+            "value" : "%1$lld 趟 · %2$.0f 分钟"
           }
         }
       }
@@ -3640,6 +7878,18 @@
             "state" : "translated",
             "value" : "Imperial (mph, ft)"
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imperial (mph, ft)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "英制 (mph, ft)"
+          }
         }
       }
     },
@@ -3650,82 +7900,58 @@
             "state" : "translated",
             "value" : "Metric (km/h, m)"
           }
-        }
-      }
-    },
-    "watch_heart_rate_format" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%d bpm"
+            "value" : "Metriskt (km/h, m)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "公制 (km/h, m)"
           }
         }
       }
     },
-    "watch_hold_to_stop" : {
-      "extractionState" : "stale",
+    "weather_updated_just_now" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hold to Stop"
+            "value" : "Just now"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Just nu"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刚刚"
           }
         }
       }
     },
-    "watch_placeholder_dash" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "--"
-          }
-        }
-      }
+    "weather_updated_minutes_ago_format %lld" : {
+
     },
-    "watch_session_complete" : {
-      "extractionState" : "stale",
+    "weather_uv_index_format" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Session Complete"
+            "value" : "UV %lld"
           }
-        }
-      }
-    },
-    "watch_start_on_watch" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
+        },
+        "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Start on Watch"
-          }
-        }
-      }
-    },
-    "watch_stat_heart_rate_average" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avg Heart Rate"
-          }
-        }
-      }
-    },
-    "watch_stat_heart_rate_current" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Heart Rate"
+            "value" : "紫外线 %lld"
           }
         }
       }

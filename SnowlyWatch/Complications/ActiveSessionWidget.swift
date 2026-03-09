@@ -56,8 +56,8 @@ struct ActiveSessionWidget: Widget {
         StaticConfiguration(kind: kind, provider: ActiveSessionProvider()) { entry in
             ActiveSessionWidgetView(entry: entry)
         }
-        .configurationDisplayName("Snowly")
-        .description("Current ski session status")
+        .configurationDisplayName("watch_widget_display_name")
+        .description("watch_widget_description")
         .supportedFamilies([
             .accessoryCircular,
             .accessoryRectangular,
@@ -110,19 +110,19 @@ struct ActiveSessionWidgetView: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Image(systemName: "figure.skiing.downhill")
-                Text("Snowly")
+                Text("watch_widget_app_name")
                     .font(.caption.bold())
             }
             .widgetAccentable()
 
             if entry.isTracking {
-                Text("\(entry.runCount) runs")
+                Text("watch_widget_run_count_format \(entry.runCount)")
                     .font(.caption2)
                 Text(Formatters.duration(entry.duration))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             } else {
-                Text("Ready to ski")
+                Text("watch_widget_ready")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -134,9 +134,9 @@ struct ActiveSessionWidgetView: View {
 
     private var inlineView: some View {
         if entry.isTracking {
-            Text("\(entry.runCount) runs - \(Formatters.duration(entry.duration))")
+            Text("watch_widget_inline_tracking_format \(entry.runCount) \(Formatters.duration(entry.duration))")
         } else {
-            Text("Snowly - Ready")
+            Text("watch_widget_inline_ready")
         }
     }
 

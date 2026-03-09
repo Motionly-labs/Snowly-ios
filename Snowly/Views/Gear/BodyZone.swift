@@ -21,13 +21,13 @@ enum BodyZone: Int, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .head: return String(localized: "gear_zone_head_protection")
-        case .body: return String(localized: "gear_zone_clothing")
-        case .hands: return String(localized: "gear_zone_hand_gear")
-        case .gear: return String(localized: "gear_zone_equipment")
-        case .pack: return String(localized: "gear_zone_tech_other")
-        case .feet: return String(localized: "gear_zone_footwear")
-        case .backpack: return String(localized: "gear_zone_backpack")
+        case .head: return String(localized: "gear_zone_head")
+        case .body: return String(localized: "gear_zone_body")
+        case .hands: return String(localized: "gear_zone_hands")
+        case .gear: return String(localized: "gear_zone_arms")
+        case .pack: return String(localized: "gear_zone_legs")
+        case .feet: return String(localized: "gear_zone_feet")
+        case .backpack: return String(localized: "gear_zone_other")
         }
     }
 

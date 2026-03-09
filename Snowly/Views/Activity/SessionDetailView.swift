@@ -23,9 +23,15 @@ struct SessionDetailView: View {
             .sorted { $0.startDate < $1.startDate }
     }
 
-    private var chairliftRuns: [SkiRun] {
+    private var liftRuns: [SkiRun] {
         session.runs
-            .filter { $0.activityType == .chairlift }
+            .filter { $0.activityType == .lift }
+            .sorted { $0.startDate < $1.startDate }
+    }
+
+    private var walkingRuns: [SkiRun] {
+        session.runs
+            .filter { $0.activityType == .walk }
             .sorted { $0.startDate < $1.startDate }
     }
 
@@ -61,9 +67,9 @@ struct SessionDetailView: View {
                 }
             }
 
-            if !chairliftRuns.isEmpty {
+            if !liftRuns.isEmpty {
                 Section(String(localized: "session_detail_section_chairlift_rides")) {
-                    ForEach(chairliftRuns) { ride in
+                    ForEach(liftRuns) { ride in
                         HStack {
                             Image(systemName: "cablecar.fill")
                                 .foregroundStyle(ColorTokens.info)
@@ -71,6 +77,19 @@ struct SessionDetailView: View {
                             Spacer()
                             Text("+\(Formatters.vertical(ride.verticalDrop, unit: unitSystem))")
                                 .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+
+            if !walkingRuns.isEmpty {
+                Section(String(localized: "session_detail_section_walking")) {
+                    ForEach(walkingRuns) { segment in
+                        HStack {
+                            Image(systemName: "figure.walk")
+                                .foregroundStyle(.secondary)
+                            Text(Formatters.duration(segment.duration))
+                            Spacer()
                         }
                     }
                 }

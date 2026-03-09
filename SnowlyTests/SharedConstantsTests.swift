@@ -12,10 +12,9 @@ import Foundation
 struct SharedConstantsTests {
 
     @Test func speedThresholds_areOrdered() {
-        // GPS noise < idle < skiing min < chairlift max
-        #expect(SharedConstants.gpsNoiseFloor < SharedConstants.idleSpeedThreshold)
-        #expect(SharedConstants.idleSpeedThreshold < SharedConstants.skiingMinSpeed)
-        #expect(SharedConstants.skiingMinSpeed < SharedConstants.chairliftMaxSpeed)
+        // idle max < skiing min < lift max
+        #expect(SharedConstants.idleSpeedMax < SharedConstants.skiMinSpeed)
+        #expect(SharedConstants.skiMinSpeed < SharedConstants.liftSpeedMax)
     }
 
     @Test func stopDuration_isReasonable() {

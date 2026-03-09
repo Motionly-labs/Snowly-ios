@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+
+	<!-- MARK: - Quick Actions -->
 	<key>UIApplicationShortcutItems</key>
 	<array>
 		<dict>
@@ -13,6 +15,32 @@
 			<string>figure.skiing.downhill</string>
 		</dict>
 	</array>
+
+	<!-- MARK: - Background Modes -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+
+	<!-- MARK: - Location -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Snowly uses your location to record ski tracks, measure speed, and detect runs automatically.</string>
+
+	<!-- MARK: - Motion -->
+	<key>NSMotionUsageDescription</key>
+	<string>Snowly uses motion sensors to automatically detect when you're skiing or riding a chairlift.</string>
+
+	<!-- MARK: - HealthKit -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>Snowly reads your heart rate and workout data to enrich your ski session stats.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Snowly saves your ski sessions as workouts in Health so you can track your fitness progress.</string>
+
+	<!-- MARK: - Photos -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Snowly needs access to save your ski day share card to Photos.</string>
+
+	<!-- MARK: - Deep Link -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -24,5 +52,6 @@
 			</array>
 		</dict>
 	</array>
+
 </dict>
 </plist>

@@ -60,6 +60,11 @@ struct HomeView: View {
         trackingService.state != .idle && !showingTracking
     }
 
+    private var trackingIntervalKey: String {
+        let value = deviceSettings.first?.resolvedTrackingUpdateIntervalSeconds ?? 1.0
+        return String(format: "%.1f", value)
+    }
+
     var body: some View {
         mapBackground
             .overlay {
@@ -165,7 +170,11 @@ struct HomeView: View {
             }
             .onAppear {
                 trackingService.updateAppActiveState(scenePhase == .active)
+                applyTrackingIntervalSettings()
                 handleQuickStartIfPending()
+            }
+            .task(id: trackingIntervalKey) {
+                applyTrackingIntervalSettings()
             }
             .onChange(of: trackingService.quickStartPending) {
                 handleQuickStartIfPending()
@@ -245,6 +254,11 @@ struct HomeView: View {
         .padding(0)
         .frame(maxWidth: .infinity)
         .background(.regularMaterial, in: Capsule())
+    }
+
+    private func applyTrackingIntervalSettings() {
+        let settings = deviceSettings.first
+        trackingService.updateTrackingUpdateInterval(seconds: settings?.resolvedTrackingUpdateIntervalSeconds ?? 1.0)
     }
 
     private func pagePickerButton(
@@ -739,7 +753,7 @@ struct HomeView: View {
                             systemImage: "wind"
                         )
                         weatherMetricText(
-                            text: "UV \(weather.uvIndex)",
+                            text: String(format: String(localized: "weather_uv_index_format"), Int64(weather.uvIndex)),
                             systemImage: "sun.max"
                         )
                     }

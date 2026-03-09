@@ -15,19 +15,17 @@ struct SnowlyLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: SnowlyActivityAttributes.self) { context in
             lockScreenView(context: context)
-        } dynamicIsland: { context in
+            } dynamicIsland: { context in
             DynamicIsland {
                 expandedContent(context: context)
             } compactLeading: {
-                activityIcon(for: context.state.currentActivity, isPaused: context.state.isPaused)
-                    .font(.caption)
-                    .foregroundStyle(.white)
+                snowlyLogo(size: 16)
             } compactTrailing: {
                 Text(formattedSpeed(context.state.currentSpeed, unit: context.attributes.unitSystem))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.white)
             } minimal: {
-                Image(systemName: "figure.skiing.downhill")
+                Image(systemName: playbackIconName(isPaused: context.state.isPaused))
                     .font(.caption)
                     .foregroundStyle(.white)
             }
@@ -41,49 +39,56 @@ struct SnowlyLiveActivityWidget: Widget {
         let state = context.state
         let unit = context.attributes.unitSystem
 
-        HStack(spacing: 16) {
-            // Left: activity icon + elapsed time
-            VStack(spacing: 4) {
-                activityIcon(for: state.currentActivity, isPaused: state.isPaused)
-                    .font(.title2)
-                Text(formattedElapsedTime(state.elapsedSeconds))
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-            .frame(minWidth: 56)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
+                snowlyLogo(size: 30)
 
-            // Center: current speed (large)
-            VStack(spacing: 2) {
-                Text(formattedSpeed(state.currentSpeed, unit: unit))
-                    .font(.system(size: 36, weight: .bold, design: .rounded).monospacedDigit())
-                    .minimumScaleFactor(0.6)
-                Text(speedUnitLabel(unit: unit))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-
-            // Right: vertical + run count
-            VStack(spacing: 8) {
-                VStack(spacing: 2) {
-                    Text(formattedVertical(state.totalVertical, unit: unit))
-                        .font(.callout.bold().monospacedDigit())
-                    Text(verticalUnitLabel(unit: unit))
-                        .font(.caption2)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(activityLabel(for: state.currentActivity, isPaused: state.isPaused))
+                        .font(.caption.bold())
+                    Text(formattedElapsedTime(state.elapsedSeconds))
+                        .font(.caption2.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
-                VStack(spacing: 2) {
-                    Text("\(state.runCount)")
-                        .font(.callout.bold().monospacedDigit())
-                    Text(String(localized: "live_activity_runs"))
-                        .font(.caption2)
+
+                Spacer(minLength: 8)
+
+                HStack(alignment: .lastTextBaseline, spacing: 4) {
+                    Text(formattedSpeed(state.currentSpeed, unit: unit))
+                        .font(.system(size: 32, weight: .bold, design: .rounded).monospacedDigit())
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.65)
+                    Text(speedUnitLabel(unit: unit))
+                        .font(.caption.bold())
                         .foregroundStyle(.secondary)
                 }
             }
-            .frame(minWidth: 56)
+
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 8) {
+                statChip(
+                    label: String(localized: "live_activity_max"),
+                    value: "\(formattedSpeed(state.maxSpeed, unit: unit)) \(speedUnitLabel(unit: unit))",
+                    align: .leading
+                )
+                statChip(
+                    label: String(localized: "live_activity_runs"),
+                    value: "\(state.runCount)",
+                    align: .trailing
+                )
+                statChip(
+                    label: String(localized: "common_vertical"),
+                    value: "\(formattedVertical(state.totalVertical, unit: unit)) \(verticalUnitLabel(unit: unit))",
+                    align: .leading
+                )
+                statChip(
+                    label: String(localized: "stat_current_speed"),
+                    value: "\(formattedSpeed(state.currentSpeed, unit: unit)) \(speedUnitLabel(unit: unit))",
+                    align: .trailing
+                )
+            }
         }
-        .padding(16)
-        .activityBackgroundTint(.black.opacity(0.75))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 
     // MARK: - Dynamic Island Expanded
@@ -94,13 +99,12 @@ struct SnowlyLiveActivityWidget: Widget {
         let unit = context.attributes.unitSystem
 
         DynamicIslandExpandedRegion(.leading) {
-            Label {
-                Text(activityLabel(for: state.currentActivity, isPaused: state.isPaused))
-            } icon: {
-                activityIcon(for: state.currentActivity, isPaused: state.isPaused)
+            HStack(spacing: 6) {
+                snowlyLogo(size: 14)
+                Image(systemName: playbackIconName(isPaused: state.isPaused))
+                    .font(.caption2.bold())
+                    .foregroundStyle(.secondary)
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
         }
 
         DynamicIslandExpandedRegion(.trailing) {
@@ -110,52 +114,63 @@ struct SnowlyLiveActivityWidget: Widget {
         }
 
         DynamicIslandExpandedRegion(.bottom) {
-            HStack(spacing: 0) {
-                statCell(
-                    value: formattedSpeed(state.currentSpeed, unit: unit),
-                    label: speedUnitLabel(unit: unit)
-                )
-                statCell(
-                    value: formattedSpeed(state.maxSpeed, unit: unit),
-                    label: String(localized: "live_activity_max")
-                )
-                statCell(
-                    value: formattedVertical(state.totalVertical, unit: unit),
-                    label: verticalUnitLabel(unit: unit)
-                )
-                statCell(
-                    value: "\(state.runCount)",
-                    label: String(localized: "live_activity_runs")
-                )
+            VStack(alignment: .leading, spacing: 8) {
+                Text("\(formattedSpeed(state.currentSpeed, unit: unit)) \(speedUnitLabel(unit: unit))")
+                    .font(.title3.bold().monospacedDigit())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                HStack(spacing: 6) {
+                    metricPill("\(String(localized: "live_activity_max")) \(formattedSpeed(state.maxSpeed, unit: unit)) \(speedUnitLabel(unit: unit))")
+                    metricPill("\(String(localized: "common_vertical")) \(formattedVertical(state.totalVertical, unit: unit)) \(verticalUnitLabel(unit: unit))")
+                }
+                HStack(spacing: 6) {
+                    metricPill("\(String(localized: "live_activity_runs")) \(state.runCount)")
+                    metricPill(formattedElapsedTime(state.elapsedSeconds))
+                    metricPill(activityLabel(for: state.currentActivity, isPaused: state.isPaused))
+                }
             }
         }
     }
 
     // MARK: - Helpers
 
-    private func statCell(value: String, label: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .font(.callout.bold().monospacedDigit())
+    private func statChip(label: String, value: String, align: HorizontalAlignment) -> some View {
+        VStack(alignment: align, spacing: 1) {
             Text(label)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+            Text(value)
+                .font(.caption2.monospacedDigit().weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: align == .leading ? .leading : .trailing)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 
-    private func activityIcon(for activity: String, isPaused: Bool) -> Image {
-        if isPaused {
-            return Image(systemName: "pause.fill")
-        }
-        switch activity {
-        case "skiing":
-            return Image(systemName: "figure.skiing.downhill")
-        case "chairlift":
-            return Image(systemName: "cablecar")
-        default:
-            return Image(systemName: "figure.skiing.downhill")
-        }
+    private func metricPill(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2.monospacedDigit())
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(.ultraThinMaterial, in: Capsule())
+    }
+
+    private func snowlyLogo(size: CGFloat) -> some View {
+        Image("SnowlyLiveLogo")
+            .resizable()
+            .renderingMode(.original)
+            .scaledToFit()
+            .frame(width: size, height: size)
+    }
+
+    private func playbackIconName(isPaused: Bool) -> String {
+        isPaused ? "pause.fill" : "play.fill"
     }
 
     private func activityLabel(for activity: String, isPaused: Bool) -> String {
@@ -165,7 +180,7 @@ struct SnowlyLiveActivityWidget: Widget {
         switch activity {
         case "skiing":
             return String(localized: "live_activity_skiing")
-        case "chairlift":
+        case "lift":
             return String(localized: "live_activity_chairlift")
         default:
             return String(localized: "live_activity_idle")

@@ -68,8 +68,8 @@ final class WeatherService {
     var lastUpdateDisplay: String? {
         guard let weather = currentWeather else { return nil }
         let interval = Date().timeIntervalSince(weather.lastUpdated)
-        if interval < 60 { return "Just now" }
+        if interval < 60 { return String(localized: "weather_updated_just_now") }
         let minutes = Int(interval / 60)
-        return "\(minutes)m ago"
+        return String(localized: "weather_updated_minutes_ago_format \(minutes)")
     }
 }

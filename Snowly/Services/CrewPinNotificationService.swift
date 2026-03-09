@@ -148,9 +148,9 @@ final class CrewPinNotificationService {
     private func membershipMessage(for event: CrewMembershipEvent) -> String {
         switch event.kind {
         case .joined:
-            return "joined the crew."
+            return String(localized: "crew_notification_joined")
         case .left:
-            return "left the crew."
+            return String(localized: "crew_notification_left")
         }
     }
 }

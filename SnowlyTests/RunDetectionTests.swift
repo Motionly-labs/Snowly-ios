@@ -95,7 +95,7 @@ struct RunDetectionTests {
         let point = makePoint(speed: 4.0, altitude: 2055, timestamp: now)
 
         let result = RunDetectionService.detect(point: point, recentPoints: recentPoints)
-        #expect(result == .chairlift)
+        #expect(result == .lift)
     }
 
     // MARK: - Skiing Detection (altitude falling)
@@ -124,7 +124,7 @@ struct RunDetectionTests {
             recentPoints: [makePoint(speed: 4.0, altitude: 2000)],
             motion: .automotive
         )
-        #expect(result == .chairlift)
+        #expect(result == .lift)
     }
 
     // MARK: - Run End Detection
@@ -164,7 +164,7 @@ struct RunDetectionTests {
 
     @Test func medianFilter_removesSpikes() {
         let values = [10.0, 11.0, 50.0, 12.0, 13.0, 14.0, 15.0]
-        let filtered = RunDetectionService.medianFilter(values: values, windowSize: 5)
+        let filtered = MotionEstimator.medianFilter(values: values, windowSize: 5)
 
         // The spike at index 2 (50.0) should be replaced by the median of its window
         #expect(filtered[2] == 12.0)
@@ -189,9 +189,9 @@ struct RunDetectionTests {
         let current = makePoint(speed: 4.0, altitude: 2020, timestamp: now)
 
         // Without median filter the spike would skew regression negative.
-        // With median filter the ascending trend is preserved → chairlift.
+        // With median filter the ascending trend is preserved → lift.
         let result = RunDetectionService.detect(point: current, recentPoints: points)
-        #expect(result == .chairlift)
+        #expect(result == .lift)
     }
 
     // MARK: - Minimum Points Threshold

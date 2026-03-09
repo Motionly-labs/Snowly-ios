@@ -38,7 +38,7 @@ struct CrewPinAnnotation: View {
                 Button {
                     onResend()
                 } label: {
-                    Label("Resend", systemImage: "arrow.clockwise")
+                    Label(String(localized: "crew_pin_resend_action"), systemImage: "arrow.clockwise")
                 }
             }
 
@@ -46,7 +46,7 @@ struct CrewPinAnnotation: View {
                 Button(role: .destructive) {
                     onDelete()
                 } label: {
-                    Label("Delete", systemImage: "trash")
+                    Label(String(localized: "common_delete"), systemImage: "trash")
                 }
             }
         }

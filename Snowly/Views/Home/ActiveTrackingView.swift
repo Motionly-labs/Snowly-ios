@@ -47,8 +47,9 @@ private struct LiveSpeedCurveView: View {
     let cachedMaxRunSpeed: Double
 
     private static let windowDuration: TimeInterval = 600 // 10 minutes
-    private static let resampleInterval: TimeInterval = 5  // seconds between points
+    private static let resampleInterval: TimeInterval = 2  // seconds between points
     private static let refreshInterval: TimeInterval = 2   // timeline tick
+    private static let smoothingAlpha: Double = 0.45
 
     private var bestSpeed: Double {
         max(cachedMaxRunSpeed, trackingService.maxSpeed)
@@ -122,7 +123,7 @@ private struct LiveSpeedCurveView: View {
             }
         }
 
-        return Self.smoothBidirectionalEMA(result, alpha: 0.25)
+        return Self.smoothBidirectionalEMA(result, alpha: Self.smoothingAlpha)
     }
 
     /// Zero-phase EMA: forward pass + backward pass averaged.
@@ -224,10 +225,18 @@ struct ActiveTrackingView: View {
 
     private var currentSpeedSubtitle: String {
         switch trackingService.currentActivity {
-        case .skiing: return String(localized: "tracking_activity_skiing")
-        case .chairlift: return String(localized: "tracking_activity_lift")
-        case .idle: return String(localized: "tracking_activity_idle")
+        case .skiing:    return String(localized: "tracking_activity_skiing")
+        case .lift:      return String(localized: "tracking_activity_lift")
+        case .walk:      return String(localized: "tracking_activity_walk")
+        case .idle:      return String(localized: "tracking_activity_idle")
         }
+    }
+
+    private var trackingStatusText: String {
+        if trackingService.state == .paused {
+            return String(localized: "tracking_state_paused")
+        }
+        return currentSpeedSubtitle
     }
 
     private var runCountValue: Double {
@@ -401,9 +410,7 @@ struct ActiveTrackingView: View {
                     )
                     .animation(AnimationTokens.moderateEaseInOut, value: trackingService.state)
 
-                Text(trackingService.state == .paused
-                    ? String(localized: "tracking_state_paused")
-                    : String(localized: "tracking_state_riding"))
+                Text(trackingStatusText)
                     .font(Typography.caption2Semibold)
                     .foregroundStyle(.secondary)
                     .textCase(.uppercase)
@@ -414,7 +421,7 @@ struct ActiveTrackingView: View {
             Button {
                 Task {
                     if trackingService.state == .paused {
-                        await trackingService.resumeTracking()
+                        await trackingService.resumeTracking(unitSystem: unitSystem)
                     } else {
                         await trackingService.pauseTracking()
                     }

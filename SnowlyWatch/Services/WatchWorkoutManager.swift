@@ -245,7 +245,8 @@ final class WatchWorkoutManager: NSObject {
 
         let activity = RunDetectionService.detect(
             point: point,
-            recentPoints: Array(recentPoints.dropLast())
+            recentPoints: Array(recentPoints.dropLast()),
+            previousActivity: lastRunActivity
         )
 
         updateRunCount(activity: activity, at: point.timestamp)
@@ -258,7 +259,7 @@ final class WatchWorkoutManager: NSObject {
                 isInRun = true
                 runCount += 1
                 WatchHapticService.playNewRun()
-            } else if activity == .chairlift || activity == .idle {
+            } else if activity == .lift || activity == .idle || activity == .walk {
                 if isInRun
                     && RunDetectionService.shouldEndRun(
                         lastActivityTime: lastActivityChangeTime,

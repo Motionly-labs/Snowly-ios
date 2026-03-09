@@ -38,9 +38,9 @@ enum ServerEnvironment {
 
 enum CrewAPIError: LocalizedError {
     case unauthorized
-    case forbidden(String)
+    case forbidden(String?)
     case crewNotFound
-    case conflict(String)
+    case conflict(String?)
     case inviteExpired
     case rateLimited
     case httpError(statusCode: Int, message: String?)
@@ -52,21 +52,21 @@ enum CrewAPIError: LocalizedError {
         case .unauthorized:
             return String(localized: "crew_error_unauthorized")
         case .forbidden(let msg):
-            return msg
+            return msg ?? String(localized: "crew_error_forbidden")
         case .crewNotFound:
             return String(localized: "crew_error_not_found")
         case .conflict(let msg):
-            return msg
+            return msg ?? String(localized: "crew_error_conflict")
         case .inviteExpired:
             return String(localized: "crew_error_invite_expired")
         case .rateLimited:
             return String(localized: "crew_error_rate_limited")
         case .httpError(let code, let msg):
-            return "HTTP \(code): \(msg ?? "")"
+            return String(localized: "crew_error_http_format \(code) \(msg ?? "")")
         case .networkUnavailable:
             return String(localized: "crew_error_network")
         case .decodingFailed(let error):
-            return "Decoding: \(error.localizedDescription)"
+            return String(localized: "crew_error_decoding_format \(error.localizedDescription)")
         }
     }
 }

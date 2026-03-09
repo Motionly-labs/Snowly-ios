@@ -52,11 +52,11 @@ struct RouteMapViewTests {
 
     // MARK: - skiingRoutes
 
-    @Test("Only includes skiing runs, excludes chairlift and idle")
+    @Test("Only includes skiing runs, excludes lift and idle")
     func skiingRoutesFiltersActivityType() {
         let session = makeSession(runs: [
             makeRun(activityType: .skiing),
-            makeRun(activityType: .chairlift),
+            makeRun(activityType: .lift),
             makeRun(activityType: .idle),
             makeRun(activityType: .skiing),
         ])
@@ -119,7 +119,7 @@ struct RouteMapViewTests {
 
     @Test("Empty input returns nil")
     func fittedRegionEmpty() {
-        let region = RouteMapView.fittedRegion(for: [])
+        let region = RouteMapView.fittedRegion(for: [] as [[CLLocationCoordinate2D]])
         #expect(region == nil)
     }
 

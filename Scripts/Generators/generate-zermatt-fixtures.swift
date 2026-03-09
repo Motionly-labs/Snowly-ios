@@ -1,6 +1,6 @@
 #!/usr/bin/env swift
 //
-//  generate-zermatt-loop-fixture.swift
+//  generate-zermatt-fixtures.swift
 //  Snowly
 //
 //  Fetches real Zermatt ski trails/lifts from Overpass (OSM) and generates
@@ -8,8 +8,17 @@
 //  lift up + piste down, repeated for multiple laps.
 //
 //  Usage:
-//    swift Scripts/Generators/generate-zermatt-loop-fixture.swift
-//    swift Scripts/Generators/generate-zermatt-loop-fixture.swift /tmp/zermatt.trackpoints.json
+//    # Generate both fixtures (loop + summary)
+//    swift Scripts/Generators/generate-zermatt-fixtures.swift
+//
+//    # Generate only loop fixture
+//    swift Scripts/Generators/generate-zermatt-fixtures.swift --mode loop
+//
+//    # Generate only summary fixture
+//    swift Scripts/Generators/generate-zermatt-fixtures.swift --mode summary
+//
+//    # Generate one mode to custom path
+//    swift Scripts/Generators/generate-zermatt-fixtures.swift --mode summary /tmp/summary.trackpoints.json
 //
 
 import Foundation
@@ -102,6 +111,16 @@ private let zermattAnchor = Coordinate(latitude: 46.0217, longitude: 7.7823)
 private let fetchRadiusMeters: Double = 8500
 private let loopCount = 4
 private let sampleInterval: TimeInterval = 2.0
+private let defaultLoopOutputPath = "Snowly/Debug/Fixtures/ZermattLoop.trackpoints.json"
+private let defaultLoopGPXPath = "Snowly/Debug/Locations/ZermattLoop.gpx"
+private let defaultSummaryOutputPath = "Snowly/Debug/Fixtures/ZermattSkiDay.trackpoints.json"
+private let defaultSummaryGPXPath = "Snowly/Debug/Locations/ZermattSkiDay.gpx"
+
+private enum FixtureMode: String {
+    case loop
+    case summary
+    case both
+}
 
 // MARK: - Geometry helpers
 
@@ -807,66 +826,122 @@ private func generateGPX(from points: [FixtureTrackPoint]) -> String {
     return gpx
 }
 
-// MARK: - Main
+private func resolveElevatedPaths(
+    liftCoordinates: [Coordinate],
+    trailCoordinates: [Coordinate]
+) throws -> (liftPath: [Waypoint], downhillPath: [Waypoint]) {
+    print("Fetching real elevations from DEM (SRTM)...")
+    let allCoordinates = liftCoordinates + trailCoordinates
+    let allElevations = try fetchElevations(for: allCoordinates)
+    let liftElevations = Array(allElevations[0..<liftCoordinates.count])
+    let trailElevations = Array(allElevations[liftCoordinates.count..<allCoordinates.count])
 
-private func main() throws {
-    let outputPath: String
-    if CommandLine.arguments.count > 1 {
-        outputPath = CommandLine.arguments[1]
-    } else {
-        outputPath = "Snowly/Debug/Fixtures/ZermattRothornSunneggaLoop.trackpoints.json"
+    var liftWaypoints = zip(liftCoordinates, liftElevations).map { coord, ele in
+        Waypoint(latitude: coord.latitude, longitude: coord.longitude, altitude: ele)
+    }
+    var trailWaypoints = zip(trailCoordinates, trailElevations).map { coord, ele in
+        Waypoint(latitude: coord.latitude, longitude: coord.longitude, altitude: ele)
     }
 
-    print("Fetching real OSM trails/lifts from Overpass...")
-    let fetched = try fetchOverpassWays(center: zermattAnchor, radiusMeters: fetchRadiusMeters)
-    guard !fetched.lifts.isEmpty else { throw GeneratorError.noLiftFound }
-    guard !fetched.trails.isEmpty else { throw GeneratorError.noTrailFound }
-    print("Fetched: \(fetched.lifts.count) lifts, \(fetched.trails.count) downhill trails")
+    // Orient using real elevation: lift must go uphill, trail must go downhill.
+    if let first = liftWaypoints.first, let last = liftWaypoints.last, first.altitude > last.altitude {
+        liftWaypoints.reverse()
+    }
+    if let first = trailWaypoints.first, let last = trailWaypoints.last, first.altitude < last.altitude {
+        trailWaypoints.reverse()
+    }
 
-    let selection = try chooseLiftTrailPair(lifts: fetched.lifts, trails: fetched.trails, anchor: zermattAnchor)
+    let liftBase = Int(liftWaypoints.first?.altitude ?? 0)
+    let liftTop = Int(liftWaypoints.last?.altitude ?? 0)
+    let trailTop = Int(trailWaypoints.first?.altitude ?? 0)
+    let trailBase = Int(trailWaypoints.last?.altitude ?? 0)
+    print("  Lift: \(liftBase)m → \(liftTop)m  Trail: \(trailTop)m → \(trailBase)m")
+
+    return (liftWaypoints, trailWaypoints)
+}
+
+private func selectDistinctTrailPairs(
+    lifts: [OSMWay],
+    trails: [OSMWay],
+    count: Int
+) throws -> [LiftTrailSelection] {
+    let anchors = [
+        zermattAnchor,
+        Coordinate(latitude: 46.0308, longitude: 7.8010),
+        Coordinate(latitude: 46.0155, longitude: 7.7705),
+        Coordinate(latitude: 46.0413, longitude: 7.7589),
+    ]
+    var selected: [LiftTrailSelection] = []
+    var usedTrailIDs: Set<Int64> = []
+    var usedLiftIDs: Set<Int64> = []
+    var attempts = 0
+
+    while selected.count < count && attempts < 16 {
+        attempts += 1
+        let anchor = anchors[(attempts - 1) % anchors.count]
+        let availableTrails = trails.filter { !usedTrailIDs.contains($0.id) }
+        guard !availableTrails.isEmpty else { break }
+
+        let preferredLifts = lifts.filter { !usedLiftIDs.contains($0.id) }
+        let liftPools = [preferredLifts, lifts]
+        var picked: LiftTrailSelection?
+
+        for pool in liftPools where !pool.isEmpty {
+            if let pair = try? chooseLiftTrailPair(
+                lifts: pool,
+                trails: availableTrails,
+                anchor: anchor
+            ) {
+                picked = pair
+                break
+            }
+        }
+
+        guard let pair = picked else { continue }
+        usedTrailIDs.insert(pair.trailWay.id)
+        usedLiftIDs.insert(pair.liftWay.id)
+        selected.append(pair)
+    }
+
+    guard selected.count >= count else {
+        throw GeneratorError.noTrailFound
+    }
+    return selected
+}
+
+private func writeFixture(points: [FixtureTrackPoint], jsonPath: String, gpxPath: String) throws {
+    let outputURL = URL(fileURLWithPath: jsonPath)
+    try FileManager.default.createDirectory(
+        at: outputURL.deletingLastPathComponent(),
+        withIntermediateDirectories: true
+    )
+
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    let jsonData = try encoder.encode(points)
+    try jsonData.write(to: outputURL)
+
+    let gpxURL = URL(fileURLWithPath: gpxPath)
+    try FileManager.default.createDirectory(
+        at: gpxURL.deletingLastPathComponent(),
+        withIntermediateDirectories: true
+    )
+    try generateGPX(from: points).write(to: gpxURL, atomically: true, encoding: .utf8)
+
+    print("Generated \(points.count) real-trail track points")
+    print("JSON: \(outputURL.path)")
+    print("GPX:  \(gpxURL.path)")
+}
+
+private func buildLoopFixturePoints(selection: LiftTrailSelection) throws -> [FixtureTrackPoint] {
     let liftCoordinates = selection.liftPath
     let trailCoordinates = selection.trailPath
-
-    let liftPath: [Waypoint]
-    let downhillPath: [Waypoint]
-
-    do {
-        print("Fetching real elevations from DEM (SRTM)...")
-        let allCoordinates = liftCoordinates + trailCoordinates
-        let allElevations = try fetchElevations(for: allCoordinates)
-        let liftElevations = Array(allElevations[0..<liftCoordinates.count])
-        let trailElevations = Array(allElevations[liftCoordinates.count..<allCoordinates.count])
-
-        var liftWaypoints = zip(liftCoordinates, liftElevations).map { coord, ele in
-            Waypoint(latitude: coord.latitude, longitude: coord.longitude, altitude: ele)
-        }
-        var trailWaypoints = zip(trailCoordinates, trailElevations).map { coord, ele in
-            Waypoint(latitude: coord.latitude, longitude: coord.longitude, altitude: ele)
-        }
-
-        // Orient using real elevation: lift must go uphill, trail must go downhill.
-        if let first = liftWaypoints.first, let last = liftWaypoints.last, first.altitude > last.altitude {
-            liftWaypoints.reverse()
-        }
-        if let first = trailWaypoints.first, let last = trailWaypoints.last, first.altitude < last.altitude {
-            trailWaypoints.reverse()
-        }
-
-        liftPath = liftWaypoints
-        downhillPath = trailWaypoints
-
-        let liftBase = Int(liftWaypoints.first?.altitude ?? 0)
-        let liftTop = Int(liftWaypoints.last?.altitude ?? 0)
-        let trailTop = Int(trailWaypoints.first?.altitude ?? 0)
-        let trailBase = Int(trailWaypoints.last?.altitude ?? 0)
-        print("  Lift: \(liftBase)m → \(liftTop)m  Trail: \(trailTop)m → \(trailBase)m")
-    } catch {
-        print("Warning: elevation fetch failed (\(error.localizedDescription)), using linear interpolation fallback")
-        let liftBaseAlt = 2300.0
-        let liftTopAlt = 3100.0
-        liftPath = waypoints(from: liftCoordinates, startAltitude: liftBaseAlt, endAltitude: liftTopAlt)
-        downhillPath = waypoints(from: trailCoordinates, startAltitude: liftTopAlt, endAltitude: liftBaseAlt)
-    }
+    let elevated = try resolveElevatedPaths(
+        liftCoordinates: liftCoordinates,
+        trailCoordinates: trailCoordinates
+    )
+    let liftPath = elevated.liftPath
+    let downhillPath = elevated.downhillPath
 
     let startDate = ISO8601DateFormatter().date(from: "2026-02-15T08:30:00Z") ?? Date()
     var currentTime = startDate.timeIntervalSinceReferenceDate
@@ -874,14 +949,36 @@ private func main() throws {
     points.reserveCapacity(loopCount * 450)
 
     for lap in 0..<loopCount {
-        // Keep realistic queue waits from lap 2 onward.
-        if lap > 0, let liftBase = liftPath.first {
+        appendPath(
+            downhillPath,
+            baseSpeed: 14.8,
+            speedJitter: 2.5,
+            baseAccuracy: 5.8,
+            accuracyJitter: 2.0,
+            lateralNoiseMeters: 3.2,
+            sampleInterval: sampleInterval,
+            currentTime: &currentTime,
+            output: &points,
+            includeFirstPoint: lap == 0
+        )
+
+        if let downhillBase = downhillPath.last, let liftBase = liftPath.first {
+            appendConnectorIfNeeded(
+                from: downhillBase,
+                to: liftBase,
+                sampleInterval: sampleInterval,
+                currentTime: &currentTime,
+                output: &points
+            )
+        }
+
+        if let liftBase = liftPath.first {
             appendPause(
                 at: liftBase,
-                duration: 120,
+                duration: lap == 0 ? 25 : 95,
                 sampleInterval: sampleInterval,
-                baseAccuracy: 12,
-                driftMeters: 14,
+                baseAccuracy: 11.5,
+                driftMeters: 16,
                 currentTime: &currentTime,
                 output: &points
             )
@@ -897,7 +994,7 @@ private func main() throws {
             sampleInterval: sampleInterval,
             currentTime: &currentTime,
             output: &points,
-            includeFirstPoint: lap == 0
+            includeFirstPoint: false
         )
 
         if let liftTop = liftPath.last {
@@ -921,23 +1018,32 @@ private func main() throws {
                 output: &points
             )
         }
+    }
 
-        appendPath(
-            downhillPath,
-            baseSpeed: 14.8,
-            speedJitter: 2.5,
-            baseAccuracy: 5.8,
-            accuracyJitter: 2.0,
-            lateralNoiseMeters: 3.2,
-            sampleInterval: sampleInterval,
-            currentTime: &currentTime,
-            output: &points,
-            includeFirstPoint: false
+    return points
+}
+
+private func buildSummaryFixturePoints(selections: [LiftTrailSelection]) throws -> [FixtureTrackPoint] {
+    guard selections.count >= 3 else { throw GeneratorError.noTrailFound }
+    let orderedSelections = [0, 1, 2, 1, 0].compactMap { idx in selections.indices.contains(idx) ? selections[idx] : nil }
+    let startDate = ISO8601DateFormatter().date(from: "2026-02-21T08:42:00Z") ?? Date()
+    var currentTime = startDate.timeIntervalSinceReferenceDate
+    var points: [FixtureTrackPoint] = []
+    points.reserveCapacity(orderedSelections.count * 320)
+
+    var previousDownhillBase: Waypoint?
+    for (idx, selection) in orderedSelections.enumerated() {
+        print("Summary segment \(idx + 1): \(selection.liftWay.name ?? "unnamed lift") + \(selection.trailWay.name ?? "unnamed trail")")
+        let elevated = try resolveElevatedPaths(
+            liftCoordinates: selection.liftPath,
+            trailCoordinates: selection.trailPath
         )
+        let liftPath = elevated.liftPath
+        let downhillPath = elevated.downhillPath
 
-        if let downhillBase = downhillPath.last, let liftBase = liftPath.first {
+        if let previousDownhillBase, let liftBase = liftPath.first {
             appendConnectorIfNeeded(
-                from: downhillBase,
+                from: previousDownhillBase,
                 to: liftBase,
                 sampleInterval: sampleInterval,
                 currentTime: &currentTime,
@@ -948,42 +1054,142 @@ private func main() throws {
         if let liftBase = liftPath.first {
             appendPause(
                 at: liftBase,
-                duration: 95,
+                duration: idx == 0 ? 25 : 65,
                 sampleInterval: sampleInterval,
-                baseAccuracy: 11.5,
-                driftMeters: 16,
+                baseAccuracy: 10.5,
+                driftMeters: 12,
                 currentTime: &currentTime,
                 output: &points
             )
         }
+
+        appendPath(
+            liftPath,
+            baseSpeed: 3.3,
+            speedJitter: 0.35,
+            baseAccuracy: 8.8,
+            accuracyJitter: 2.2,
+            lateralNoiseMeters: 2.8,
+            sampleInterval: sampleInterval,
+            currentTime: &currentTime,
+            output: &points,
+            includeFirstPoint: points.isEmpty
+        )
+
+        if let liftTop = liftPath.last, let downhillTop = downhillPath.first {
+            appendConnectorIfNeeded(
+                from: liftTop,
+                to: downhillTop,
+                sampleInterval: sampleInterval,
+                currentTime: &currentTime,
+                output: &points
+            )
+        }
+
+        appendPath(
+            downhillPath,
+            baseSpeed: 15.3 + Double(idx % 3) * 0.5,
+            speedJitter: 2.2,
+            baseAccuracy: 5.7,
+            accuracyJitter: 1.9,
+            lateralNoiseMeters: 3.0,
+            sampleInterval: sampleInterval,
+            currentTime: &currentTime,
+            output: &points,
+            includeFirstPoint: false
+        )
+
+        if idx == 2, let stop = downhillPath.last {
+            appendPause(
+                at: stop,
+                duration: 260,
+                sampleInterval: sampleInterval,
+                baseAccuracy: 9.0,
+                driftMeters: 8,
+                currentTime: &currentTime,
+                output: &points
+            )
+        }
+
+        previousDownhillBase = downhillPath.last
     }
 
-    let outputURL = URL(fileURLWithPath: outputPath)
-    try FileManager.default.createDirectory(
-        at: outputURL.deletingLastPathComponent(),
-        withIntermediateDirectories: true
-    )
+    return points
+}
 
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    let jsonData = try encoder.encode(points)
-    try jsonData.write(to: outputURL)
-
-    let gpxURL: URL
-    if CommandLine.arguments.count > 1 {
-        gpxURL = outputURL.deletingPathExtension().appendingPathExtension("gpx")
-    } else {
-        gpxURL = URL(fileURLWithPath: "Snowly/Debug/Locations/ZermattRothornSunneggaLoop.gpx")
+private func parseOptions() -> (mode: FixtureMode, outputPath: String?) {
+    var mode: FixtureMode = .both
+    var outputPath: String?
+    var index = 1
+    while index < CommandLine.arguments.count {
+        let arg = CommandLine.arguments[index]
+        if arg == "--mode", index + 1 < CommandLine.arguments.count {
+            mode = FixtureMode(rawValue: CommandLine.arguments[index + 1]) ?? .both
+            index += 2
+        } else if outputPath == nil {
+            outputPath = arg
+            index += 1
+        } else {
+            index += 1
+        }
     }
-    try generateGPX(from: points).write(
-        to: gpxURL,
-        atomically: true,
-        encoding: .utf8
-    )
+    return (mode, outputPath)
+}
 
-    print("Generated \(points.count) real-trail track points")
-    print("JSON: \(outputURL.path)")
-    print("GPX:  \(gpxURL.path)")
+// MARK: - Main
+
+private func main() throws {
+    let options = parseOptions()
+    let mode = options.mode
+
+    print("Fetching real OSM trails/lifts from Overpass...")
+    let fetched = try fetchOverpassWays(center: zermattAnchor, radiusMeters: fetchRadiusMeters)
+    guard !fetched.lifts.isEmpty else { throw GeneratorError.noLiftFound }
+    guard !fetched.trails.isEmpty else { throw GeneratorError.noTrailFound }
+    print("Fetched: \(fetched.lifts.count) lifts, \(fetched.trails.count) downhill trails")
+
+    switch mode {
+    case .loop:
+        let selection = try chooseLiftTrailPair(
+            lifts: fetched.lifts,
+            trails: fetched.trails,
+            anchor: zermattAnchor
+        )
+        let points = try buildLoopFixturePoints(selection: selection)
+        let jsonPath = options.outputPath ?? defaultLoopOutputPath
+        let gpxPath = options.outputPath == nil
+            ? defaultLoopGPXPath
+            : URL(fileURLWithPath: jsonPath).deletingPathExtension().appendingPathExtension("gpx").path
+        try writeFixture(points: points, jsonPath: jsonPath, gpxPath: gpxPath)
+    case .summary:
+        let selections = try selectDistinctTrailPairs(
+            lifts: fetched.lifts,
+            trails: fetched.trails,
+            count: 3
+        )
+        let points = try buildSummaryFixturePoints(selections: selections)
+        let jsonPath = options.outputPath ?? defaultSummaryOutputPath
+        let gpxPath = options.outputPath == nil
+            ? defaultSummaryGPXPath
+            : URL(fileURLWithPath: jsonPath).deletingPathExtension().appendingPathExtension("gpx").path
+        try writeFixture(points: points, jsonPath: jsonPath, gpxPath: gpxPath)
+    case .both:
+        let loopSelection = try chooseLiftTrailPair(
+            lifts: fetched.lifts,
+            trails: fetched.trails,
+            anchor: zermattAnchor
+        )
+        let loopPoints = try buildLoopFixturePoints(selection: loopSelection)
+        try writeFixture(points: loopPoints, jsonPath: defaultLoopOutputPath, gpxPath: defaultLoopGPXPath)
+
+        let summarySelections = try selectDistinctTrailPairs(
+            lifts: fetched.lifts,
+            trails: fetched.trails,
+            count: 3
+        )
+        let summaryPoints = try buildSummaryFixturePoints(selections: summarySelections)
+        try writeFixture(points: summaryPoints, jsonPath: defaultSummaryOutputPath, gpxPath: defaultSummaryGPXPath)
+    }
 }
 
 do {
