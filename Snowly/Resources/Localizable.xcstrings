@@ -7629,28 +7629,6 @@
         }
       }
     },
-    "tracking_goal_progress_format" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "of your %1$lldh ski goal"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "av ditt %1$lld-timmarsmål"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目标 %1$lld 小时"
-          }
-        }
-      }
-    },
     "tracking_metric_peak" : {
       "localizations" : {
         "en" : {

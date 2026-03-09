@@ -174,9 +174,6 @@ struct ActiveTrackingView: View {
     @State private var cachedMaxRunSpeed: Double = 0
     @State private var elapsedTime: TimeInterval = 0
 
-    private var activityGoalMinutes: Double {
-        profiles.first?.dailyGoalMinutes ?? 240
-    }
 
     private var unitSystem: UnitSystem {
         profiles.first?.preferredUnits ?? .metric
@@ -305,19 +302,6 @@ struct ActiveTrackingView: View {
 
     private var elapsedMinutes: Double {
         elapsedTime / 60
-    }
-
-    private var activityProgress: Double {
-        min(max(elapsedMinutes / activityGoalMinutes, 0), 1)
-    }
-
-    private var activityGoalHours: Int64 {
-        max(1, Int64(activityGoalMinutes / 60))
-    }
-
-    private var activityGoalText: String {
-        let format = String(localized: "tracking_goal_progress_format")
-        return String(format: format, locale: Locale.current, activityGoalHours)
     }
 
     private func runTitleText(_ number: Int) -> String {
@@ -649,14 +633,6 @@ struct ActiveTrackingView: View {
 
     private var activeTimeCard: some View {
         HStack(spacing: Spacing.card) {
-            ActivityRingView(
-                targetProgress: activityProgress,
-                size: 52,
-                strokeWidth: 4.5,
-                color: .accentColor,
-                delay: 0.6
-            )
-
             VStack(alignment: .leading, spacing: 3) {
                 Text(String(localized: "common_ski_time"))
                     .font(.caption2)
@@ -675,10 +651,6 @@ struct ActiveTrackingView: View {
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
-
-                Text(activityGoalText)
-                    .font(.caption2)
-                    .foregroundStyle(.quaternary)
             }
 
             Spacer()
