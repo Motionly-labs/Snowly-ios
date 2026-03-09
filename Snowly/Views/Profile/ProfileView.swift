@@ -42,7 +42,7 @@ struct ProfileView: View {
             // Season bests
             if let profile {
                 Section(String(localized: "profile_section_season_bests")) {
-                    bestRow(String(localized: "profile_best_top_speed"),
+                    bestRow(String(localized: "profile_best_peak_speed"),
                             value: Formatters.speed(profile.seasonBestMaxSpeed, unit: unitSystem),
                             icon: "gauge.with.dots.needle.67percent")
                     bestRow(String(localized: "profile_best_most_vertical"),

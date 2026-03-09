@@ -5051,12 +5051,12 @@
         }
       }
     },
-    "profile_best_top_speed" : {
+    "profile_best_peak_speed" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Top Speed"
+            "value" : "Peak Speed"
           }
         },
         "sv" : {
@@ -5068,7 +5068,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最高速度"
+            "value" : "峰值速度"
           }
         }
       }
@@ -7210,28 +7210,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "趟数"
-          }
-        }
-      }
-    },
-    "stat_top_speed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Top Speed"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Topphastighet"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最高速度"
           }
         }
       }

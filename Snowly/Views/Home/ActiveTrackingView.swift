@@ -578,7 +578,7 @@ struct ActiveTrackingView: View {
                     delay: 0.16
                 )
                 statCard(
-                    label: String(localized: "stat_top_speed"),
+                    label: String(localized: "stat_peak_speed"),
                     icon: "bolt.fill",
                     value: speedValue(bestSpeed),
                     decimals: 1,
