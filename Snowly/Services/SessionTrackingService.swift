@@ -80,6 +80,9 @@ private actor TrackingEngine {
     private var totalVertical: Double = 0
     private var currentActivity: DetectedActivity = .idle
 
+    // MARK: - GPS filtering
+    private var gpsFilter = GPSKalmanFilter()
+
     // MARK: - Detection state
     private var recentPoints: [TrackPoint] = []
     private var previousPoint: TrackPoint?
@@ -144,6 +147,7 @@ private actor TrackingEngine {
     }
 
     func ingest(point: TrackPoint) async -> TrackingPointIngestResult {
+        let point = gpsFilter.update(point: point)
         currentSpeed = point.speed
 
         let rawActivity = RunDetectionService.detect(
@@ -263,6 +267,7 @@ private actor TrackingEngine {
     }
 
     func reset() {
+        gpsFilter.reset()
         currentSpeed = 0
         maxSpeed = 0
         totalDistance = 0
@@ -410,6 +415,7 @@ private actor TrackingEngine {
     }
 
     private func clearRealtimeState() {
+        gpsFilter.reset()
         previousPoint = nil
         recentPoints = []
         candidateActivity = nil
