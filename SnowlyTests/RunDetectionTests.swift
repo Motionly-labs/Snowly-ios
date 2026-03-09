@@ -40,7 +40,7 @@ struct RunDetectionTests {
         (0..<count).map { i in
             let fraction = Double(i) / Double(max(1, count - 1))
             let altitude = startAltitude + (endAltitude - startAltitude) * fraction
-            let time = startTime.addingTimeInterval(Double(i) * 3)
+            let time = startTime.addingTimeInterval(Double(i))
             return makePoint(speed: 3.0, altitude: altitude, timestamp: time)
         }
     }
@@ -48,7 +48,7 @@ struct RunDetectionTests {
     // MARK: - GPS Noise Filter
 
     @Test func belowGpsNoiseFloor_isIdle() {
-        let point = makePoint(speed: 0.5) // Below 1.0 m/s noise floor
+        let point = makePoint(speed: 0.5) // Below idle threshold (0.6 m/s)
         let result = RunDetectionService.detect(point: point, recentPoints: [])
         #expect(result == .idle)
     }
@@ -62,7 +62,7 @@ struct RunDetectionTests {
     // MARK: - Idle Detection
 
     @Test func belowIdleThreshold_isIdle() {
-        let point = makePoint(speed: 1.2) // Above noise floor but below 1.5 m/s
+        let point = makePoint(speed: 0.59) // Just below idle threshold (0.6 m/s)
         let result = RunDetectionService.detect(point: point, recentPoints: [])
         #expect(result == .idle)
     }
@@ -85,12 +85,12 @@ struct RunDetectionTests {
 
     @Test func mediumSpeed_altitudeRising_isChairlift() {
         let now = Date()
-        // Recent points showing altitude increase (2000 → 2050) over 30s
+        // Recent points showing altitude increase (2000 → 2050) over ~9s
         let recentPoints = makeRecentPoints(
             count: 10,
             startAltitude: 2000,
             endAltitude: 2050,
-            startTime: now.addingTimeInterval(-30)
+            startTime: now.addingTimeInterval(-9)
         )
         let point = makePoint(speed: 4.0, altitude: 2055, timestamp: now)
 
@@ -102,12 +102,12 @@ struct RunDetectionTests {
 
     @Test func mediumSpeed_altitudeFalling_isSkiing() {
         let now = Date()
-        // Recent points showing altitude decrease (2050 → 2000) over 30s
+        // Recent points showing altitude decrease (2050 → 2000) over ~9s
         let recentPoints = makeRecentPoints(
             count: 10,
             startAltitude: 2050,
             endAltitude: 2000,
-            startTime: now.addingTimeInterval(-30)
+            startTime: now.addingTimeInterval(-9)
         )
         let point = makePoint(speed: 4.0, altitude: 1995, timestamp: now)
 
@@ -123,6 +123,46 @@ struct RunDetectionTests {
             point: point,
             recentPoints: [makePoint(speed: 4.0, altitude: 2000)],
             motion: .automotive
+        )
+        #expect(result == .lift)
+    }
+
+    @Test func automotiveMotion_overridesHighSpeedToLift() {
+        let point = makePoint(speed: 12.0, altitude: 2100)
+        let result = RunDetectionService.detect(
+            point: point,
+            recentPoints: [makePoint(speed: 11.5, altitude: 2101)],
+            motion: .automotive
+        )
+        #expect(result == .lift)
+    }
+
+    @Test func previousLift_slightDescent_keepsLiftContinuity() {
+        let estimate = MotionEstimate(
+            duration: 8,
+            avgHorizontalSpeed: 3.8,
+            avgVerticalSpeed: -0.2,
+            hasReliableAltitudeTrend: true
+        )
+        let result = RunDetectionService.classify(
+            estimate: estimate,
+            previousActivity: .lift,
+            motion: .unknown
+        )
+        #expect(result == .lift)
+    }
+
+    @Test func previousLift_noReliableTrend_keepsLiftContinuity() {
+        let estimate = MotionEstimate(
+            duration: 2,
+            avgHorizontalSpeed: 3.1,
+            avgVerticalSpeed: 0,
+            hasReliableAltitudeTrend: false
+        )
+        let result = RunDetectionService.classify(
+            estimate: estimate,
+            previousActivity: .lift,
+            motion: .unknown
         )
         #expect(result == .lift)
     }
@@ -153,9 +193,9 @@ struct RunDetectionTests {
     }
 
     @Test func exactlyAtIdleThreshold_noAltitudeData_isIdle() {
-        // 1.5 m/s is the idle threshold boundary. Without altitude data,
-        // and below skiingMinSpeed (2.0), it falls through to idle.
-        let point = makePoint(speed: 1.5)
+        // 0.6 m/s is the idle threshold boundary. Without altitude data,
+        // and below skiingMinSpeed (2.8), it falls through to idle.
+        let point = makePoint(speed: 0.6)
         let result = RunDetectionService.detect(point: point, recentPoints: [])
         #expect(result == .idle)
     }
@@ -215,7 +255,7 @@ struct RunDetectionTests {
 
     @Test func gentleSlope_belowThreshold_noTrendDetected() {
         let now = Date()
-        // 10 points with very gentle slope (~0.1 m/s, below ±0.25 threshold)
+        // 10 points with very gentle slope (~0.1 m/s, below ±0.15 threshold)
         let recentPoints = makeRecentPoints(
             count: 10,
             startAltitude: 2000,

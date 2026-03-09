@@ -23,6 +23,7 @@ enum SharedConstants {
     nonisolated static let liftSpeedMin: Double = 1.2               // m/s — minimum horizontal speed for lift
     nonisolated static let liftSpeedMax: Double = 6.5               // m/s — maximum horizontal speed for lift
     nonisolated static let liftVerticalSpeedMin: Double = -0.10     // m/s — allows horizontal and slight-descent lift transport (gondolas)
+    nonisolated static let liftContinuityVerticalSpeedMin: Double = -0.35 // m/s — keep lift through brief downward transfer sections
 
     // MARK: - Segment Validation (run → discard or degrade to walk)
     nonisolated static let skiMinAltitudeLoss: Double = 12          // m — minimum altitude loss for a valid ski run
@@ -31,10 +32,11 @@ enum SharedConstants {
     nonisolated static let liftMinAltitudeGain: Double = 20         // m — minimum altitude gain for a valid lift
     nonisolated static let liftMinAvgVerticalSpeed: Double = 0.10   // m/s — minimum avg vertical speed for a valid lift
     nonisolated static let walkMinSegmentDuration: TimeInterval = 6  // s — walk segments shorter than this are discarded
+    nonisolated static let walkHardMaxSpeed: Double = 8.0           // m/s — physics guard rail: walking above this is impossible on snow
 
     // MARK: - Activity Dwell Time (hysteresis)
     nonisolated static let dwellTimeSkiingToLift: TimeInterval = 25  // conservative — lift confirmation takes longer
-    nonisolated static let dwellTimeLiftToSkiing: TimeInterval = 5
+    nonisolated static let dwellTimeLiftToSkiing: TimeInterval = 8
     nonisolated static let dwellTimeIdleToSkiing: TimeInterval = 3
     nonisolated static let dwellTimeIdleToLift: TimeInterval = 10
     nonisolated static let dwellTimeAnyToWalk: TimeInterval = 4

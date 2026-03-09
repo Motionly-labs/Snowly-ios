@@ -17,7 +17,7 @@ struct DwellTimeTests {
 
     @Test func dwellTimeForTransition_returnsCorrectValues() {
         #expect(SessionTrackingService.dwellTimeForTransition(from: .skiing, to: .lift) == 25)
-        #expect(SessionTrackingService.dwellTimeForTransition(from: .lift, to: .skiing) == 5)
+        #expect(SessionTrackingService.dwellTimeForTransition(from: .lift, to: .skiing) == 8)
         #expect(SessionTrackingService.dwellTimeForTransition(from: .idle, to: .skiing) == 3)
         #expect(SessionTrackingService.dwellTimeForTransition(from: .idle, to: .lift) == 10)
         // Same-state transitions return 0
@@ -149,5 +149,36 @@ struct DwellTimeTests {
         }
 
         #expect(activity == .skiing) // Switches after 3s
+    }
+
+    @Test func liftToSkiing_respectsUpdatedThreshold() {
+        var activity: DetectedActivity = .lift
+        var candidate: DetectedActivity?
+        var candidateStart: Date?
+        let baseTime = Date()
+
+        for i in 0..<8 {
+            let result = SessionTrackingService.applyDwellTime(
+                rawActivity: .skiing,
+                currentActivity: activity,
+                candidateActivity: candidate,
+                candidateStartTime: candidateStart,
+                timestamp: baseTime.addingTimeInterval(Double(i))
+            )
+            activity = result.activity
+            candidate = result.candidate
+            candidateStart = result.candidateStart
+        }
+
+        #expect(activity == .lift)
+
+        let switchResult = SessionTrackingService.applyDwellTime(
+            rawActivity: .skiing,
+            currentActivity: activity,
+            candidateActivity: candidate,
+            candidateStartTime: candidateStart,
+            timestamp: baseTime.addingTimeInterval(8)
+        )
+        #expect(switchResult.activity == .skiing)
     }
 }

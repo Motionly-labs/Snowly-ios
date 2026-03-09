@@ -114,6 +114,22 @@ struct SegmentValidatorTests {
         #expect(result == nil)
     }
 
+    @Test func walkPhysicsGuard_highSpeedRestoresOriginalType() {
+        let base = Date()
+        let first = makePoint(altitude: 2000, timestamp: base)
+        let last  = makePoint(altitude: 2005, timestamp: base.addingTimeInterval(40))
+
+        // Invalid lift by altitude gain/slope, but average speed is too high to classify as walk.
+        let result = SegmentValidator.effectiveType(
+            activityType: .lift,
+            firstPoint: first,
+            lastPoint: last,
+            duration: 40,
+            averageSpeed: SharedConstants.walkHardMaxSpeed + 0.5
+        )
+        #expect(result == .lift)
+    }
+
     // MARK: - verticalDrop
 
     @Test func verticalDrop_skiing_isDescendingDelta() {

@@ -146,14 +146,15 @@ private actor TrackingEngine {
         }
     }
 
-    func ingest(point: TrackPoint) async -> TrackingPointIngestResult {
+    func ingest(point: TrackPoint, motion: MotionHint) async -> TrackingPointIngestResult {
         let point = gpsFilter.update(point: point)
         currentSpeed = point.speed
 
         let rawActivity = RunDetectionService.detect(
             point: point,
             recentPoints: recentPoints,
-            previousActivity: currentActivity
+            previousActivity: currentActivity,
+            motion: motion
         )
 
         recentPoints.append(point)
@@ -520,7 +521,6 @@ final class SessionTrackingService {
     private(set) var pauseStartTime: Date?
     private(set) var totalPausedTime: TimeInterval = 0
     private var speedSampleAccumulator: TimeInterval = 0
-    private var lastProcessedPointTime: Date?
     private var lastSyncedRunsVersion: Int = 0
     private var lastSyncedSamplesVersion: Int = 0
     private var liveActivityUnitSystem: UnitSystem = .metric
@@ -742,7 +742,6 @@ final class SessionTrackingService {
         let clamped = min(max(seconds, 0.5), 30)
         guard trackingUpdateIntervalSeconds != clamped else { return }
         trackingUpdateIntervalSeconds = clamped
-        lastProcessedPointTime = nil
         liveActivityService?.setMinimumUpdateInterval(seconds: clamped)
     }
 
@@ -778,14 +777,8 @@ final class SessionTrackingService {
     private func processTrackPoint(_ point: TrackPoint) async {
         guard state == .tracking else { return }
 
-        // Throttle by configured update interval.
-        if let lastTime = lastProcessedPointTime,
-           point.timestamp.timeIntervalSince(lastTime) < trackingUpdateIntervalSeconds {
-            return
-        }
-        lastProcessedPointTime = point.timestamp
-
-        let ingestResult = await trackingEngine.ingest(point: point)
+        let motionHint: MotionHint = motionService.currentMotion == .automotive ? .automotive : .unknown
+        let ingestResult = await trackingEngine.ingest(point: point, motion: motionHint)
 
         if let previous = ingestResult.previousPoint {
             healthKitCoordinator.forwardPoint(
@@ -1148,7 +1141,6 @@ final class SessionTrackingService {
         pauseStartTime = nil
         idleSinceDate = nil
         speedSampleAccumulator = 0
-        lastProcessedPointTime = nil
         lastSyncedRunsVersion = 0
         lastSyncedSamplesVersion = 0
 

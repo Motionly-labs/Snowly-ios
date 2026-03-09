@@ -181,6 +181,7 @@ struct SessionTrackingIntegrationTests {
 
         let start = Date()
         service.startTracking()
+        try? await Task.sleep(for: .milliseconds(20))
 
         location.emit(TrackPoint(
             timestamp: start,
@@ -214,5 +215,51 @@ struct SessionTrackingIntegrationTests {
         let persisted = TrackingStatePersistence.load()
         #expect((persisted?.totalDistance ?? 0) > 0)
         #expect((persisted?.totalVertical ?? 0) > 0)
+
+        await service.stopTracking()
+    }
+
+    @Test func detectionPipeline_processesEveryPoint_evenWhenUiIntervalIsHigh() async {
+        let location = MockLocationService()
+        let motion = MockMotionService()
+        let battery = MockBatteryService()
+        let service = SessionTrackingService(
+            locationService: location,
+            motionService: motion,
+            batteryService: battery
+        )
+
+        let start = Date()
+        service.startTracking()
+        service.updateTrackingUpdateInterval(seconds: 30)
+        try? await Task.sleep(for: .milliseconds(20))
+
+        location.emit(TrackPoint(
+            timestamp: start,
+            latitude: 46.0,
+            longitude: 7.0,
+            altitude: 2100,
+            speed: 1.0,
+            accuracy: 5,
+            course: 180
+        ))
+        await Task.yield()
+
+        location.emit(TrackPoint(
+            timestamp: start.addingTimeInterval(1),
+            latitude: 46.0005,
+            longitude: 7.0005,
+            altitude: 2095,
+            speed: 9.0,
+            accuracy: 5,
+            course: 180
+        ))
+        await Task.yield()
+        try? await Task.sleep(for: .milliseconds(50))
+
+        await service.pauseTracking()
+        #expect(service.maxSpeed >= 8.0)
+
+        await service.stopTracking()
     }
 }

@@ -35,12 +35,17 @@ struct MotionEstimatorTests {
         startAltitude: Double,
         endAltitude: Double,
         speed: Double = 4.0,
-        startTime: Date
+        startTime: Date,
+        stepSeconds: Double = 3
     ) -> [TrackPoint] {
         (0..<count).map { i in
             let fraction = count > 1 ? Double(i) / Double(count - 1) : 0
             let alt = startAltitude + (endAltitude - startAltitude) * fraction
-            return makePoint(speed: speed, altitude: alt, timestamp: startTime.addingTimeInterval(Double(i) * 3))
+            return makePoint(
+                speed: speed,
+                altitude: alt,
+                timestamp: startTime.addingTimeInterval(Double(i) * stepSeconds)
+            )
         }
     }
 
@@ -65,8 +70,13 @@ struct MotionEstimatorTests {
 
     @Test func estimate_altitudeDelta_positiveForAscent() {
         let now = Date()
-        let recent = makePoints(count: 10, startAltitude: 2000, endAltitude: 2050,
-                                startTime: now.addingTimeInterval(-30))
+        let recent = makePoints(
+            count: 8,
+            startAltitude: 2000,
+            endAltitude: 2050,
+            startTime: now.addingTimeInterval(-8),
+            stepSeconds: 1
+        )
         let current = makePoint(speed: 4.0, altitude: 2055, timestamp: now)
         let estimate = MotionEstimator.estimate(current: current, recentPoints: recent)
         #expect(estimate.avgVerticalSpeed > 0)
@@ -75,8 +85,13 @@ struct MotionEstimatorTests {
 
     @Test func estimate_altitudeDelta_negativeForDescent() {
         let now = Date()
-        let recent = makePoints(count: 10, startAltitude: 2050, endAltitude: 2000,
-                                startTime: now.addingTimeInterval(-30))
+        let recent = makePoints(
+            count: 8,
+            startAltitude: 2050,
+            endAltitude: 2000,
+            startTime: now.addingTimeInterval(-8),
+            stepSeconds: 1
+        )
         let current = makePoint(speed: 4.0, altitude: 1995, timestamp: now)
         let estimate = MotionEstimator.estimate(current: current, recentPoints: recent)
         #expect(estimate.avgVerticalSpeed < 0)
@@ -101,6 +116,26 @@ struct MotionEstimatorTests {
         let recent = makePoints(count: 5, startAltitude: 2000, endAltitude: 2100,
                                 startTime: now.addingTimeInterval(-15))
         let current = makePoint(speed: 4.0, altitude: 2100, timestamp: now)
+        let estimate = MotionEstimator.estimate(current: current, recentPoints: recent)
+        #expect(!estimate.hasReliableAltitudeTrend)
+    }
+
+    @Test func estimate_oldHistoryOutsideWindow_notConsideredReliable() {
+        let now = Date()
+        // Many points exist, but only one falls inside the 8s feature window.
+        let older = makePoints(
+            count: 12,
+            startAltitude: 2100,
+            endAltitude: 2000,
+            speed: 4.0,
+            startTime: now.addingTimeInterval(-80)
+        )
+        let inWindow = [
+            makePoint(speed: 4.0, altitude: 1998, timestamp: now.addingTimeInterval(-6))
+        ]
+        let recent = older + inWindow
+        let current = makePoint(speed: 4.0, altitude: 1990, timestamp: now)
+
         let estimate = MotionEstimator.estimate(current: current, recentPoints: recent)
         #expect(!estimate.hasReliableAltitudeTrend)
     }

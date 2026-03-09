@@ -17,6 +17,10 @@ enum MotionEstimator {
     /// At 1 Hz GPS sampling this equals ~featureWindowSeconds of history.
     private static let minHistoryForAltitudeTrend = 8
 
+    /// Minimum in-window time span (s) required before trusting an altitude slope.
+    /// Prevents low-frequency samples from producing "reliable" trends from only 1-2 points.
+    private static let minAltitudeTrendTimeSpan: TimeInterval = 4
+
     /// Altitude rate (m/s) below which the trend is considered noise and ignored.
     /// Symmetric to |skiVerticalSpeedMax| so that ambiguous flat/gentle slopes fall through
     /// to the speed-only classification path.
@@ -48,7 +52,8 @@ enum MotionEstimator {
     ///    exist, suppressing transient GPS altitude spikes before computing the vertical rate.
     /// 6. Compute `v = (filteredLastAltitude − filteredFirstAltitude) / duration`.
     ///    Positive = ascending (lift direction), negative = descending (ski direction).
-    /// 7. Set `hasReliableAltitudeTrend = (history count ≥ 8) AND (|v| ≥ 0.15 m/s)`.
+    /// 7. Set `hasReliableAltitudeTrend = (window history count ≥ 8) AND (window span ≥ 4 s)
+    ///    AND (|v| ≥ 0.15 m/s)`.
     ///    When false, callers must not apply altitude-sensitive classification rules.
     ///
     /// - Parameters:
@@ -108,8 +113,9 @@ enum MotionEstimator {
         let v = altitudeChange / duration
 
         // Reliable trend requires minimum history AND a clear altitude signal
-        let hasEnoughHistory = recentPoints.count >= minHistoryForAltitudeTrend
-        let hasReliableTrend = hasEnoughHistory && abs(v) >= altitudeTrendMinRate
+        let hasEnoughHistory = windowPoints.count >= minHistoryForAltitudeTrend
+        let hasEnoughTimeSpan = duration >= minAltitudeTrendTimeSpan
+        let hasReliableTrend = hasEnoughHistory && hasEnoughTimeSpan && abs(v) >= altitudeTrendMinRate
 
         return MotionEstimate(
             duration: duration,

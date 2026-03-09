@@ -15,6 +15,7 @@ struct SharedConstantsTests {
         // idle max < skiing min < lift max
         #expect(SharedConstants.idleSpeedMax < SharedConstants.skiMinSpeed)
         #expect(SharedConstants.skiMinSpeed < SharedConstants.liftSpeedMax)
+        #expect(SharedConstants.walkHardMaxSpeed > SharedConstants.skiFastMin)
     }
 
     @Test func stopDuration_isReasonable() {

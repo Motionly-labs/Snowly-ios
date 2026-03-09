@@ -33,7 +33,10 @@ enum SegmentValidator {
     ///
     /// 3. **Walk discard**: if `effective == .walk` AND `duration < 6 s` → return `nil`.
     ///
-    /// 4. Otherwise return `effective`. `.idle` segments bypass all validation unchanged.
+    /// 4. **Physics guard rail**: if `effective == .walk` AND `averageSpeed ≥ 8.0 m/s`,
+    ///    restore the original `activityType` because that speed is not physically plausible for walking.
+    ///
+    /// 5. Otherwise return `effective`. `.idle` segments bypass all validation unchanged.
     ///
     /// - Parameters:
     ///   - activityType: Raw segment type from the classifier (`.skiing`, `.lift`, `.idle`, `.walk`).
@@ -52,6 +55,7 @@ enum SegmentValidator {
     /// * `liftMinAltitudeGain = 20 m` — minimum altitude gain to confirm a ski lift ride.
     /// * `liftMinAvgVerticalSpeed = 0.10 m/s` — distinguishes a lift from slow uphill walking.
     /// * `walkMinSegmentDuration = 6 s` — sub-threshold walk segments add noise to session history.
+    /// * `walkHardMaxSpeed = 8.0 m/s` — hard guard rail: walking above this speed is impossible.
     ///
     /// ## Edge Cases
     ///
@@ -86,6 +90,12 @@ enum SegmentValidator {
 
         if effective == .walk, duration < SharedConstants.walkMinSegmentDuration {
             return nil
+        }
+
+        if effective == .walk,
+           averageSpeed >= SharedConstants.walkHardMaxSpeed,
+           activityType != .walk {
+            effective = activityType
         }
 
         return effective

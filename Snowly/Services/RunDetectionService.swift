@@ -47,14 +47,19 @@ enum RunDetectionService {
     /// - Parameters:
     ///   - point: Current GPS track point.
     ///   - recentPoints: Recent history buffer (chronological, not including `point`).
-    ///   - previousActivity: Kept for API compatibility. Not used in classification.
+    ///   - previousActivity: Previous stable activity, used for lift continuity handling.
     /// - Returns: Raw detected activity. Apply dwell-time hysteresis before acting on it.
     nonisolated static func detect(
         point: TrackPoint,
         recentPoints: [TrackPoint],
         previousActivity: DetectedActivity = .idle
     ) -> DetectedActivity {
-        detect(point: point, recentPoints: recentPoints, motion: .unknown)
+        detect(
+            point: point,
+            recentPoints: recentPoints,
+            previousActivity: previousActivity,
+            motion: .unknown
+        )
     }
 
     /// Overload that accepts a CoreMotion hint for enhanced lift detection.
@@ -63,8 +68,23 @@ enum RunDetectionService {
         recentPoints: [TrackPoint],
         motion: MotionHint
     ) -> DetectedActivity {
+        detect(
+            point: point,
+            recentPoints: recentPoints,
+            previousActivity: .idle,
+            motion: motion
+        )
+    }
+
+    /// Overload that accepts prior activity and CoreMotion hint.
+    nonisolated static func detect(
+        point: TrackPoint,
+        recentPoints: [TrackPoint],
+        previousActivity: DetectedActivity,
+        motion: MotionHint
+    ) -> DetectedActivity {
         let estimate = MotionEstimator.estimate(current: point, recentPoints: recentPoints)
-        return classify(estimate: estimate, motion: motion)
+        return classify(estimate: estimate, previousActivity: previousActivity, motion: motion)
     }
 
     /// Raw-array overload for callers that store timestamps and altitudes separately.
@@ -74,6 +94,7 @@ enum RunDetectionService {
         point: TrackPoint,
         recentTimestamps: [Double],
         recentAltitudes: [Double],
+        previousActivity: DetectedActivity = .idle,
         motion: MotionHint = .unknown
     ) -> DetectedActivity {
         let recentPoints = zip(recentTimestamps, recentAltitudes).map { ts, alt in
@@ -87,7 +108,12 @@ enum RunDetectionService {
                 course: point.course
             )
         }
-        return detect(point: point, recentPoints: recentPoints, motion: motion)
+        return detect(
+            point: point,
+            recentPoints: recentPoints,
+            previousActivity: previousActivity,
+            motion: motion
+        )
     }
 
     /// Whether the current idle period has lasted long enough to end a run.
@@ -111,19 +137,22 @@ enum RunDetectionService {
     /// | # | Condition                                          | Result    |
     /// |---|----------------------------------------------------|-----------|
     /// | 1 | `h < idleSpeedMax` (0.6 m/s)                      | `.idle`   |
-    /// | 2 | `h ≥ skiFastMin` (6.0 m/s)                        | `.skiing` |
-    /// | 3 | `motion == .automotive`                            | `.lift`   |
+    /// | 2 | `motion == .automotive`                            | `.lift`   |
+    /// | 3 | `h ≥ skiFastMin` (6.0 m/s)                        | `.skiing` |
     /// | 4 | reliable trend AND `h ≥ skiMinSpeed` (2.8) AND `v ≤ skiVerticalSpeedMax` (−0.15) | `.skiing` |
-    /// | 5 | reliable trend AND `h ∈ [liftSpeedMin, liftSpeedMax]` [1.2, 6.5] AND `v ≥ liftVerticalSpeedMin` (−0.10) | `.lift` |
-    /// | 6 | `h ≥ skiMinSpeed` (2.8) [no altitude context]     | `.skiing` |
-    /// | 7 | fallthrough                                        | `.idle`   |
+    /// | 5 | previous is lift AND continuity band AND `v ≥ liftContinuityVerticalSpeedMin` | `.lift` |
+    /// | 6 | reliable trend AND `h ∈ [liftSpeedMin, liftSpeedMax]` [1.2, 6.5] AND `v ≥ liftVerticalSpeedMin` (−0.10) | `.lift` |
+    /// | 7 | previous is lift AND speed continuity band (no reliable trend) | `.lift` |
+    /// | 8 | `h ≥ skiMinSpeed` (2.8) [no altitude context]     | `.skiing` |
+    /// | 9 | fallthrough                                        | `.idle`   |
     ///
     /// Rules 4–5 require `estimate.hasReliableAltitudeTrend = true`; when false, the
     /// classifier falls through directly to rule 6/7 (speed-only path).
     ///
     /// - Parameters:
     ///   - estimate: Feature vector from `MotionEstimator.estimate()`. `h` and `v` are in m/s.
-    ///   - motion: Optional CoreMotion hint. `.automotive` short-circuits to `.lift` (rule 3).
+    ///   - previousActivity: Previous stable activity after dwell-time filtering.
+    ///   - motion: Optional CoreMotion hint. `.automotive` short-circuits to `.lift` (rule 2).
     /// - Returns: Raw activity classification. Apply dwell-time hysteresis before surfacing.
     ///
     /// ## Thresholds
@@ -140,10 +169,12 @@ enum RunDetectionService {
     ///
     /// * `hasReliableAltitudeTrend = false` → rules 4 and 5 are skipped entirely; classification
     ///   falls through to speed-only rule 6/7 (speeds in [0.6, 2.8) return `.idle`).
-    /// * `motion == .automotive` short-circuits to `.lift` regardless of speed or altitude (rule 3).
-    /// * Speed between `idleSpeedMax` (0.6) and `skiMinSpeed` (2.8) with no altitude context → `.idle`.
+    /// * `motion == .automotive` short-circuits to `.lift` regardless of speed or altitude (rule 2).
+    /// * When `previousActivity == .lift`, continuity guards prefer `.lift` through flat/brief descent sections.
+    /// * Speed between `idleSpeedMax` (0.6) and `skiMinSpeed` (2.8) with no lift continuity context → `.idle`.
     nonisolated internal static func classify(
         estimate: MotionEstimate,
+        previousActivity: DetectedActivity = .idle,
         motion: MotionHint = .unknown
     ) -> DetectedActivity {
         let h = estimate.avgHorizontalSpeed
@@ -152,23 +183,36 @@ enum RunDetectionService {
         // Barely moving — idle regardless of altitude
         if h < SharedConstants.idleSpeedMax { return .idle }
 
-        // Very fast — definitely skiing regardless of altitude
-        if h >= SharedConstants.skiFastMin { return .skiing }
-
         // Automotive motion hint overrides to lift (motorized transport confirmed)
         if motion == .automotive { return .lift }
 
+        // Very fast — definitely skiing regardless of altitude
+        if h >= SharedConstants.skiFastMin { return .skiing }
+
+        let wasLift = previousActivity == .lift
+        let inLiftSpeedBand = h >= SharedConstants.liftSpeedMin && h <= SharedConstants.liftSpeedMax
+
         if estimate.hasReliableAltitudeTrend {
+            // Preserve lift across horizontal / slight descent transfer sections.
+            if wasLift
+                && inLiftSpeedBand
+                && v >= SharedConstants.liftContinuityVerticalSpeedMin {
+                return .lift
+            }
+
             // Medium-fast + descending — skiing
             if h >= SharedConstants.skiMinSpeed && v <= SharedConstants.skiVerticalSpeedMax {
                 return .skiing
             }
             // Moderate speed + not steeply descending — lift (gondola, chairlift)
-            if h >= SharedConstants.liftSpeedMin
-                && h <= SharedConstants.liftSpeedMax
-                && v >= SharedConstants.liftVerticalSpeedMin {
+            if inLiftSpeedBand && v >= SharedConstants.liftVerticalSpeedMin {
                 return .lift
             }
+        }
+
+        // No reliable trend: keep lift continuity through flat sections.
+        if wasLift && inLiftSpeedBand {
+            return .lift
         }
 
         // No reliable altitude context: classify by speed alone
