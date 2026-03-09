@@ -80,6 +80,9 @@ private actor TrackingEngine {
     private var totalVertical: Double = 0
     private var currentActivity: DetectedActivity = .idle
 
+    // MARK: - GPS filtering
+    private var gpsFilter = GPSKalmanFilter()
+
     // MARK: - Detection state
     private var recentPoints: [TrackPoint] = []
     private var previousPoint: TrackPoint?
@@ -144,6 +147,7 @@ private actor TrackingEngine {
     }
 
     func ingest(point: TrackPoint) async -> TrackingPointIngestResult {
+        let point = gpsFilter.update(point: point)
         currentSpeed = point.speed
 
         let rawActivity = RunDetectionService.detect(
@@ -263,6 +267,7 @@ private actor TrackingEngine {
     }
 
     func reset() {
+        gpsFilter.reset()
         currentSpeed = 0
         maxSpeed = 0
         totalDistance = 0
@@ -410,6 +415,7 @@ private actor TrackingEngine {
     }
 
     private func clearRealtimeState() {
+        gpsFilter.reset()
         previousPoint = nil
         recentPoints = []
         candidateActivity = nil
@@ -519,6 +525,8 @@ final class SessionTrackingService {
     private var lastSyncedSamplesVersion: Int = 0
     private var liveActivityUnitSystem: UnitSystem = .metric
     private var trackingUpdateIntervalSeconds: TimeInterval = 1.0
+    private var autoPauseIdleThreshold: TimeInterval = 0
+    private var idleSinceDate: Date?
 
     private var isDashboardVisible = false
     private var isAppActive = true
@@ -591,6 +599,7 @@ final class SessionTrackingService {
         state = .paused
         pauseStartTime = Date()
         speedSampleAccumulator = 0
+        idleSinceDate = nil
 
         await syncPublishedSnapshot(recordSpeedSample: false)
     }
@@ -614,6 +623,7 @@ final class SessionTrackingService {
             totalPausedTime += Date().timeIntervalSince(pauseStart)
         }
         pauseStartTime = nil
+        idleSinceDate = nil
         state = .tracking
         ensureLiveActivityStarted(unitSystem: unitSystem ?? liveActivityUnitSystem)
 
@@ -736,6 +746,10 @@ final class SessionTrackingService {
         liveActivityService?.setMinimumUpdateInterval(seconds: clamped)
     }
 
+    func updateAutoPauseThreshold(seconds: TimeInterval) {
+        autoPauseIdleThreshold = max(seconds, 0)
+    }
+
     // MARK: - Private
 
     private func startLiveTrackingPipeline() {
@@ -838,6 +852,20 @@ final class SessionTrackingService {
         }
 
         await syncPublishedSnapshot(recordSpeedSample: shouldRecordSpeedSample)
+
+        // Auto-pause when idle exceeds threshold
+        if state == .tracking && autoPauseIdleThreshold > 0 {
+            if currentActivity == .idle {
+                if idleSinceDate == nil {
+                    idleSinceDate = Date()
+                } else if let idleSince = idleSinceDate,
+                          Date().timeIntervalSince(idleSince) >= autoPauseIdleThreshold {
+                    await pauseTracking()
+                }
+            } else {
+                idleSinceDate = nil
+            }
+        }
     }
 
     private func startPeriodicPersistence() {
@@ -1118,6 +1146,7 @@ final class SessionTrackingService {
 
         totalPausedTime = 0
         pauseStartTime = nil
+        idleSinceDate = nil
         speedSampleAccumulator = 0
         lastProcessedPointTime = nil
         lastSyncedRunsVersion = 0

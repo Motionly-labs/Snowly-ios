@@ -8,6 +8,7 @@
 //
 
 import ActivityKit
+import AppIntents
 import SwiftUI
 import WidgetKit
 
@@ -62,6 +63,13 @@ struct SnowlyLiveActivityWidget: Widget {
                         .font(.caption.bold())
                         .foregroundStyle(.secondary)
                 }
+
+                Button(intent: TogglePauseIntent()) {
+                    Image(systemName: state.isPaused ? "play.circle.fill" : "pause.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(state.isPaused ? .green : .orange)
+                }
+                .buttonStyle(.plain)
             }
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 8) {
@@ -108,9 +116,17 @@ struct SnowlyLiveActivityWidget: Widget {
         }
 
         DynamicIslandExpandedRegion(.trailing) {
-            Text(formattedElapsedTime(state.elapsedSeconds))
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                Text(formattedElapsedTime(state.elapsedSeconds))
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                Button(intent: TogglePauseIntent()) {
+                    Image(systemName: state.isPaused ? "play.circle.fill" : "pause.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(state.isPaused ? .green : .orange)
+                }
+                .buttonStyle(.plain)
+            }
         }
 
         DynamicIslandExpandedRegion(.bottom) {
