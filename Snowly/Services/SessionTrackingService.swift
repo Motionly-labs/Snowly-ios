@@ -519,6 +519,8 @@ final class SessionTrackingService {
     private var lastSyncedSamplesVersion: Int = 0
     private var liveActivityUnitSystem: UnitSystem = .metric
     private var trackingUpdateIntervalSeconds: TimeInterval = 1.0
+    private var autoPauseIdleThreshold: TimeInterval = 0
+    private var idleSinceDate: Date?
 
     private var isDashboardVisible = false
     private var isAppActive = true
@@ -591,6 +593,7 @@ final class SessionTrackingService {
         state = .paused
         pauseStartTime = Date()
         speedSampleAccumulator = 0
+        idleSinceDate = nil
 
         await syncPublishedSnapshot(recordSpeedSample: false)
     }
@@ -614,6 +617,7 @@ final class SessionTrackingService {
             totalPausedTime += Date().timeIntervalSince(pauseStart)
         }
         pauseStartTime = nil
+        idleSinceDate = nil
         state = .tracking
         ensureLiveActivityStarted(unitSystem: unitSystem ?? liveActivityUnitSystem)
 
@@ -736,6 +740,10 @@ final class SessionTrackingService {
         liveActivityService?.setMinimumUpdateInterval(seconds: clamped)
     }
 
+    func updateAutoPauseThreshold(seconds: TimeInterval) {
+        autoPauseIdleThreshold = max(seconds, 0)
+    }
+
     // MARK: - Private
 
     private func startLiveTrackingPipeline() {
@@ -838,6 +846,20 @@ final class SessionTrackingService {
         }
 
         await syncPublishedSnapshot(recordSpeedSample: shouldRecordSpeedSample)
+
+        // Auto-pause when idle exceeds threshold
+        if state == .tracking && autoPauseIdleThreshold > 0 {
+            if currentActivity == .idle {
+                if idleSinceDate == nil {
+                    idleSinceDate = Date()
+                } else if let idleSince = idleSinceDate,
+                          Date().timeIntervalSince(idleSince) >= autoPauseIdleThreshold {
+                    await pauseTracking()
+                }
+            } else {
+                idleSinceDate = nil
+            }
+        }
     }
 
     private func startPeriodicPersistence() {
@@ -1118,6 +1140,7 @@ final class SessionTrackingService {
 
         totalPausedTime = 0
         pauseStartTime = nil
+        idleSinceDate = nil
         speedSampleAccumulator = 0
         lastProcessedPointTime = nil
         lastSyncedRunsVersion = 0

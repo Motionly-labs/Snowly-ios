@@ -204,6 +204,17 @@ struct SnowlyApp: App {
                     QuickActionState.shared.pending = false
                     services.trackingService.quickStartPending = true
                 }
+                .onChange(of: TogglePauseState.shared.pending) { _, pending in
+                    guard pending else { return }
+                    TogglePauseState.shared.pending = false
+                    Task {
+                        if services.trackingService.state == .paused {
+                            await services.trackingService.resumeTracking()
+                        } else if services.trackingService.state == .tracking {
+                            await services.trackingService.pauseTracking()
+                        }
+                    }
+                }
                 .task {
                     SnowlyApp.restoreActiveServer(
                         in: modelContainer.mainContext,
