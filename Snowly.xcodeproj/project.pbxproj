@@ -94,6 +94,8 @@
 				Shared/QuickActionState.swift,
 				Shared/SnowlyActivityAttributes.swift,
 				Shared/StartTrackingIntent.swift,
+				Shared/TogglePauseIntent.swift,
+				Shared/TogglePauseState.swift,
 				Shared/UnitSystem.swift,
 				Utilities/Formatters.swift,
 				Utilities/UnitConversion.swift,

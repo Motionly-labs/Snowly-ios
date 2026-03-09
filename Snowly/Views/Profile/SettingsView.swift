@@ -39,6 +39,7 @@ struct SettingsView: View {
             unitsSection
             syncSection
             liveActivitySection
+            autoPauseSection
             serverSection
             dataSection
             aboutSection
@@ -60,6 +61,7 @@ struct SettingsView: View {
             guard !isResettingData else { return }
             ensureSettingsDataIfNeeded()
             applyTrackingIntervalIfNeeded()
+            applyAutoPauseSettingIfNeeded()
         }
         .onChange(of: profiles.count) { _, _ in
             guard !isResettingData else { return }
@@ -72,6 +74,9 @@ struct SettingsView: View {
         }
         .onChange(of: deviceSettings.first?.trackingUpdateIntervalSeconds) { _, _ in
             applyTrackingIntervalIfNeeded()
+        }
+        .onChange(of: deviceSettings.first?.autoPauseIdleSeconds) { _, _ in
+            applyAutoPauseSettingIfNeeded()
         }
         .alert(String(localized: "settings_alert_delete_title"), isPresented: $showingDeleteConfirmation) {
             Button(String(localized: "common_cancel"), role: .cancel) {}
@@ -281,6 +286,28 @@ struct SettingsView: View {
         }
     }
 
+    private var autoPauseSection: some View {
+        Section {
+            if let settings = deviceSettings.first {
+                Picker(
+                    String(localized: "settings_auto_pause_label"),
+                    selection: Binding(
+                        get: { settings.resolvedAutoPause },
+                        set: { settings.autoPauseIdleSeconds = $0.rawValue }
+                    )
+                ) {
+                    ForEach(AutoPauseOption.allCases) { option in
+                        Text(option.displayName).tag(option)
+                    }
+                }
+            }
+        } header: {
+            Label(String(localized: "settings_section_auto_pause"), systemImage: "pause.circle")
+        } footer: {
+            Text(String(localized: "settings_auto_pause_footer"))
+        }
+    }
+
     private var dataSection: some View {
         Section {
             Button {
@@ -341,6 +368,11 @@ struct SettingsView: View {
     private func applyTrackingIntervalIfNeeded() {
         guard let settings = deviceSettings.first else { return }
         trackingService.updateTrackingUpdateInterval(seconds: settings.resolvedTrackingUpdateIntervalSeconds)
+    }
+
+    private func applyAutoPauseSettingIfNeeded() {
+        guard let settings = deviceSettings.first else { return }
+        trackingService.updateAutoPauseThreshold(seconds: TimeInterval(settings.resolvedAutoPause.rawValue))
     }
 
     private func formattedTrackingInterval(_ value: Double) -> String {
@@ -524,6 +556,7 @@ private struct DeviceSettingsSnapshot: Codable {
     let liveActivityRefreshActiveSeconds: Int
     let liveActivityRefreshInactiveSeconds: Int
     let liveActivityRefreshBackgroundSeconds: Int
+    let autoPauseIdleSeconds: Int
     let createdAt: Date
 
     @MainActor init(_ settings: DeviceSettings) {
@@ -535,6 +568,7 @@ private struct DeviceSettingsSnapshot: Codable {
         liveActivityRefreshActiveSeconds = settings.liveActivityRefreshActiveSeconds
         liveActivityRefreshInactiveSeconds = settings.liveActivityRefreshInactiveSeconds
         liveActivityRefreshBackgroundSeconds = settings.liveActivityRefreshBackgroundSeconds
+        autoPauseIdleSeconds = settings.autoPauseIdleSeconds
         createdAt = settings.createdAt
     }
 }
