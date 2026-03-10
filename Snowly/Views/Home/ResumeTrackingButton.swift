@@ -10,8 +10,8 @@ import SwiftUI
 struct ResumeTrackingButton: View {
     let onTap: () -> Void
 
-    private let buttonSize: CGFloat = 188
-    private let ringInset: CGFloat = 6
+    private let buttonSize = Spacing.heroButton
+    private let ringInset = Spacing.gap
 
     var body: some View {
         Button(action: onTap) {
@@ -24,8 +24,8 @@ struct ResumeTrackingButton: View {
                             RadialGradient(
                                 colors: [
                                     Color.white.opacity(0.42),
-                                    ColorTokens.brandGold.opacity(0.3),
-                                    ColorTokens.brandWarmAmber.opacity(0.2)
+                                    ColorTokens.brandGold.opacity(Opacity.moderate),
+                                    ColorTokens.brandWarmAmber.opacity(Opacity.muted)
                                 ],
                                 center: .center,
                                 startRadius: 10,

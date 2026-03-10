@@ -76,11 +76,10 @@ struct StatsServiceTests {
         let profile = UserProfile()
 
         let records = StatsService.checkPersonalBests(session: session, profile: profile)
-        #expect(records.count == 4)
+        #expect(records.count == 3)
         #expect(records.contains("Max Speed"))
         #expect(records.contains("Vertical Drop"))
         #expect(records.contains("Distance"))
-        #expect(records.contains("Run Count"))
     }
 
     @Test func checkPersonalBests_noNew() {
@@ -93,8 +92,7 @@ struct StatsServiceTests {
         let profile = UserProfile(
             seasonBestMaxSpeed: 20.0,
             seasonBestVertical: 2000,
-            seasonBestDistance: 10000,
-            seasonBestRunCount: 15
+            seasonBestDistance: 10000
         )
 
         let records = StatsService.checkPersonalBests(session: session, profile: profile)
@@ -111,8 +109,7 @@ struct StatsServiceTests {
         let profile = UserProfile(
             seasonBestMaxSpeed: 20.0,
             seasonBestVertical: 2000,
-            seasonBestDistance: 10000,
-            seasonBestRunCount: 15
+            seasonBestDistance: 10000
         )
 
         let records = StatsService.checkPersonalBests(session: session, profile: profile)
@@ -126,13 +123,12 @@ struct StatsServiceTests {
             totalDistance: 9000,   // new best
             totalVertical: 1500,   // not a best
             maxSpeed: 30.0,        // new best
-            runCount: 10           // not a best
+            runCount: 10
         )
         let profile = UserProfile(
             seasonBestMaxSpeed: 20.0,
             seasonBestVertical: 2000,
-            seasonBestDistance: 5000,
-            seasonBestRunCount: 15
+            seasonBestDistance: 5000
         )
 
         let update = StatsService.computePersonalBestUpdates(session: session, profile: profile)
@@ -140,7 +136,6 @@ struct StatsServiceTests {
         #expect(update.maxSpeed == 30.0)
         #expect(update.vertical == nil)
         #expect(update.distance == 9000)
-        #expect(update.runCount == nil)
         #expect(update.hasUpdates == true)
     }
 
@@ -148,15 +143,13 @@ struct StatsServiceTests {
         let profile = UserProfile(
             seasonBestMaxSpeed: 20.0,
             seasonBestVertical: 2000,
-            seasonBestDistance: 5000,
-            seasonBestRunCount: 15
+            seasonBestDistance: 5000
         )
 
         let update = StatsService.PersonalBestUpdate(
             maxSpeed: 30.0,
             vertical: nil,
-            distance: 9000,
-            runCount: nil
+            distance: 9000
         )
 
         StatsService.applyPersonalBestUpdate(update, to: profile)
@@ -164,16 +157,28 @@ struct StatsServiceTests {
         #expect(profile.seasonBestMaxSpeed == 30.0)
         #expect(profile.seasonBestVertical == 2000)
         #expect(profile.seasonBestDistance == 9000)
-        #expect(profile.seasonBestRunCount == 15)
     }
 
     @Test func personalBestUpdate_noUpdates() {
         let update = StatsService.PersonalBestUpdate(
             maxSpeed: nil,
             vertical: nil,
-            distance: nil,
-            runCount: nil
+            distance: nil
         )
         #expect(update.hasUpdates == false)
+    }
+
+    @Test func resetPersonalBests_clearsAllFields() {
+        let profile = UserProfile(
+            seasonBestMaxSpeed: 30.0,
+            seasonBestVertical: 2500,
+            seasonBestDistance: 9000
+        )
+
+        StatsService.resetPersonalBests(for: profile)
+
+        #expect(profile.seasonBestMaxSpeed == 0)
+        #expect(profile.seasonBestVertical == 0)
+        #expect(profile.seasonBestDistance == 0)
     }
 }

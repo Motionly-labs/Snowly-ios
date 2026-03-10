@@ -73,7 +73,7 @@ final class SegmentFinalizationService {
 
         let duration = last.timestamp.timeIntervalSince(first.timestamp)
         let avgSpeed = duration > 0 ? runDistance / duration : 0
-        let runMaxSpeed = currentSegmentPoints.map(\.speed).max() ?? 0
+        let runMaxSpeed = derivedMaxSpeed(from: currentSegmentPoints)
 
         let runVertical = SegmentValidator.verticalDrop(
             effectiveType: segmentType,
@@ -140,6 +140,17 @@ final class SegmentFinalizationService {
         currentSegmentPoints = []
         currentSegmentType = nil
         lastActiveTime = nil
+    }
+
+    private func derivedMaxSpeed(from points: [TrackPoint]) -> Double {
+        guard points.count > 1 else { return 0 }
+        var maxSpeed = 0.0
+        for (a, b) in zip(points, points.dropFirst()) {
+            let dt = b.timestamp.timeIntervalSince(a.timestamp)
+            guard dt > 0 else { continue }
+            maxSpeed = max(maxSpeed, a.distance(to: b) / dt)
+        }
+        return maxSpeed
     }
 
     /// Restores finalized runs from persisted crash-recovery state.

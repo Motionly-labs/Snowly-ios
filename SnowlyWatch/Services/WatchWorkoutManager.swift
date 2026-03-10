@@ -28,6 +28,7 @@ enum WatchTrackingMode: Sendable, Equatable {
 @MainActor
 final class WatchWorkoutManager: NSObject {
     private static let trackPointBatchSize = 200
+    private static let heartRatePushInterval: TimeInterval = 2
 
     // MARK: - Published State
 
@@ -56,12 +57,13 @@ final class WatchWorkoutManager: NSObject {
     private var startDate: Date?
     private var pauseDate: Date?
     private var accumulatedPauseTime: TimeInterval = 0
-    private var lastLocation: TrackPoint?
-    private var recentPoints: [TrackPoint] = []
+    private var lastFilteredPoint: FilteredTrackPoint?
+    private var recentPoints: [FilteredTrackPoint] = []
     private var bufferedPoints: [TrackPoint] = []
     private var lastRunActivity: DetectedActivity = .idle
     private var lastActivityChangeTime: Date = .now
     private var isInRun = false
+    private var lastHeartRatePushAt: Date?
 
     // MARK: - Setup
 
@@ -220,37 +222,32 @@ final class WatchWorkoutManager: NSObject {
 
     private func processTrackPoint(_ point: TrackPoint) {
         bufferedPoints.append(point)
-        currentSpeed = point.speed
-        maxSpeed = max(maxSpeed, point.speed)
+        let filteredPoint = makeFilteredPoint(from: point, previous: lastFilteredPoint)
+        currentSpeed = filteredPoint.estimatedSpeed
+        maxSpeed = max(maxSpeed, filteredPoint.estimatedSpeed)
 
         // Incremental distance
-        if let last = lastLocation {
-            let distance = haversineDistance(
-                lat1: last.latitude, lon1: last.longitude,
-                lat2: point.latitude, lon2: point.longitude
-            )
-            totalDistance += distance
+        if let last = lastFilteredPoint {
+            totalDistance += last.distance(to: filteredPoint)
         }
 
         // Vertical drop tracking
-        if let last = lastLocation, point.altitude < last.altitude {
-            totalVertical += last.altitude - point.altitude
+        if let last = lastFilteredPoint, filteredPoint.altitude < last.altitude {
+            totalVertical += last.altitude - filteredPoint.altitude
         }
 
         // Run detection
-        recentPoints.append(point)
-        if recentPoints.count > SharedConstants.recentPointsBufferSize {
-            recentPoints.removeFirst()
-        }
+        recentPoints.append(filteredPoint)
+        RecentTrackWindow.trimFilteredPoints(&recentPoints, relativeTo: filteredPoint.timestamp)
 
         let activity = RunDetectionService.detect(
-            point: point,
+            point: filteredPoint,
             recentPoints: Array(recentPoints.dropLast()),
             previousActivity: lastRunActivity
         )
 
-        updateRunCount(activity: activity, at: point.timestamp)
-        lastLocation = point
+        updateRunCount(activity: activity, at: filteredPoint.timestamp)
+        lastFilteredPoint = filteredPoint
     }
 
     private func updateRunCount(activity: DetectedActivity, at time: Date) {
@@ -379,12 +376,66 @@ final class WatchWorkoutManager: NSObject {
         startDate = nil
         pauseDate = nil
         accumulatedPauseTime = 0
-        lastLocation = nil
+        lastFilteredPoint = nil
         recentPoints = []
         bufferedPoints = []
         lastRunActivity = .idle
         lastActivityChangeTime = .now
         isInRun = false
+        lastHeartRatePushAt = nil
+    }
+
+    private func sendLiveVitalsIfNeeded(force: Bool = false) {
+        guard let connectivityService else { return }
+        switch trackingState {
+        case .active, .paused:
+            break
+        case .idle, .summary:
+            return
+        }
+
+        let now = Date.now
+        if !force, let lastHeartRatePushAt, now.timeIntervalSince(lastHeartRatePushAt) < Self.heartRatePushInterval {
+            return
+        }
+
+        lastHeartRatePushAt = now
+        connectivityService.send(.liveVitals(.init(
+            currentHeartRate: currentHeartRate,
+            averageHeartRate: averageHeartRate
+        )))
+    }
+
+    private func makeFilteredPoint(
+        from point: TrackPoint,
+        previous: FilteredTrackPoint?
+    ) -> FilteredTrackPoint {
+        let estimatedSpeed: Double
+        if let previous {
+            let previousRaw = TrackPoint(
+                timestamp: previous.rawTimestamp,
+                latitude: previous.latitude,
+                longitude: previous.longitude,
+                altitude: previous.altitude,
+                accuracy: previous.accuracy,
+                course: previous.course
+            )
+            let dt = point.timestamp.timeIntervalSince(previous.timestamp)
+            estimatedSpeed = dt > 0 ? max(0, previousRaw.distance(to: point) / dt) : 0
+        } else {
+            estimatedSpeed = 0
+        }
+
+        return FilteredTrackPoint(
+            rawTimestamp: point.timestamp,
+            timestamp: point.timestamp,
+            latitude: point.latitude,
+            longitude: point.longitude,
+            altitude: point.altitude,
+            estimatedSpeed: estimatedSpeed,
+            accuracy: point.accuracy,
+            course: point.course
+        )
     }
 
     private func sendBufferedTrackPointsInBatches() {
@@ -402,20 +453,6 @@ final class WatchWorkoutManager: NSObject {
         }
     }
 
-    /// Haversine distance between two coordinates in meters.
-    private func haversineDistance(
-        lat1: Double, lon1: Double,
-        lat2: Double, lon2: Double
-    ) -> Double {
-        let earthRadius = 6_371_000.0 // meters
-        let dLat = (lat2 - lat1) * .pi / 180
-        let dLon = (lon2 - lon1) * .pi / 180
-        let a = sin(dLat / 2) * sin(dLat / 2)
-            + cos(lat1 * .pi / 180) * cos(lat2 * .pi / 180)
-            * sin(dLon / 2) * sin(dLon / 2)
-        let c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        return earthRadius * c
-    }
 }
 
 // MARK: - HKWorkoutSessionDelegate
@@ -471,6 +508,7 @@ extension WatchWorkoutManager: HKLiveWorkoutBuilderDelegate {
             if let average {
                 self?.averageHeartRate = average
             }
+            self?.sendLiveVitalsIfNeeded()
         }
     }
 }

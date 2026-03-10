@@ -10,6 +10,9 @@ import SwiftData
 
 struct ProfileView: View {
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var showingResetConfirmation = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -29,7 +32,7 @@ struct ProfileView: View {
                     )
 
                     Text(displayName)
-                        .font(.title2.bold())
+                        .font(Typography.primaryTitle)
 
                     Text(memberSinceText)
                         .font(.caption)
@@ -39,9 +42,9 @@ struct ProfileView: View {
                 .padding(.vertical, Spacing.sm)
             }
 
-            // Season bests
+            // All-time personal bests
             if let profile {
-                Section(String(localized: "profile_section_season_bests")) {
+                Section {
                     bestRow(String(localized: "profile_best_peak_speed"),
                             value: Formatters.speed(profile.seasonBestMaxSpeed, unit: unitSystem),
                             icon: "gauge.with.dots.needle.67percent")
@@ -51,9 +54,18 @@ struct ProfileView: View {
                     bestRow(String(localized: "profile_best_longest_distance"),
                             value: Formatters.distance(profile.seasonBestDistance, unit: unitSystem),
                             icon: "point.topleft.down.to.point.bottomright.curvepath")
-                    bestRow(String(localized: "profile_best_most_runs"),
-                            value: "\(profile.seasonBestRunCount)",
-                            icon: "number")
+                    Button(role: .destructive) {
+                        showingResetConfirmation = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.counterclockwise")
+                                .frame(width: Spacing.xl)
+                            Text(String(localized: "profile_reset_personal_bests"))
+                        }
+                        .foregroundStyle(ColorTokens.brandRed)
+                    }
+                } header: {
+                    Text(String(localized: "profile_section_personal_bests"))
                 }
             }
 
@@ -80,12 +92,23 @@ struct ProfileView: View {
         }
         .navigationTitle(String(localized: "profile_nav_title"))
         .navigationBarTitleDisplayMode(.inline)
+        .alert(String(localized: "profile_reset_personal_bests_confirm_title"), isPresented: $showingResetConfirmation) {
+            Button(String(localized: "common_cancel"), role: .cancel) {}
+            Button(String(localized: "common_reset"), role: .destructive) {
+                if let profile {
+                    StatsService.resetPersonalBests(for: profile)
+                    try? modelContext.save()
+                }
+            }
+        } message: {
+            Text(String(localized: "profile_reset_personal_bests_confirm_message"))
+        }
     }
 
     private func bestRow(_ label: String, value: String, icon: String) -> some View {
         HStack {
             Image(systemName: icon)
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(ColorTokens.brandWarmAmber)
                 .frame(width: Spacing.xl)
             Text(label)
             Spacer()

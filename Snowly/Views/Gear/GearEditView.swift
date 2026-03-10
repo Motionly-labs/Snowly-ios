@@ -119,21 +119,21 @@ struct GearEditView: View {
 
     private func addDefaultItems(to setup: GearSetup) {
         let defaults: [(String, GearCategory)] = [
-            ("Ski Jacket", .clothing),
-            ("Ski Pants", .clothing),
-            ("Base Layer Top", .clothing),
-            ("Base Layer Bottom", .clothing),
-            ("Ski Socks", .clothing),
-            ("Helmet", .protection),
-            ("Goggles", .protection),
-            ("Gloves", .accessories),
-            ("Skis", .equipment),
-            ("Poles", .equipment),
-            ("Ski Boots", .footwear),
-            ("Lift Pass", .accessories),
-            ("Sunscreen", .accessories),
-            ("Phone Charger", .electronics),
-            ("Backpack", .backpack),
+            (String(localized: "gear.default_item.ski_jacket"), .clothing),
+            (String(localized: "gear.default_item.ski_pants"), .clothing),
+            (String(localized: "gear.default_item.base_layer_top"), .clothing),
+            (String(localized: "gear.default_item.base_layer_bottom"), .clothing),
+            (String(localized: "gear.default_item.ski_socks"), .clothing),
+            (String(localized: "gear.default_item.helmet"), .protection),
+            (String(localized: "gear.default_item.goggles"), .protection),
+            (String(localized: "gear.default_item.gloves"), .accessories),
+            (String(localized: "gear.default_item.skis"), .equipment),
+            (String(localized: "gear.default_item.poles"), .equipment),
+            (String(localized: "gear.default_item.ski_boots"), .footwear),
+            (String(localized: "gear.default_item.lift_pass"), .accessories),
+            (String(localized: "gear.default_item.sunscreen"), .accessories),
+            (String(localized: "gear.default_item.phone_charger"), .electronics),
+            (String(localized: "gear.default_item.backpack"), .backpack),
         ]
 
         let existingNames = Set(setup.items.map(\.name))

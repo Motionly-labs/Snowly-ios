@@ -69,10 +69,42 @@ enum SegmentValidator {
         duration: TimeInterval,
         averageSpeed: Double
     ) -> RunActivityType? {
+        effectiveType(
+            activityType: activityType,
+            firstAltitude: firstPoint.altitude,
+            lastAltitude: lastPoint.altitude,
+            duration: duration,
+            averageSpeed: averageSpeed
+        )
+    }
+
+    nonisolated static func effectiveType(
+        activityType: RunActivityType,
+        firstPoint: FilteredTrackPoint,
+        lastPoint: FilteredTrackPoint,
+        duration: TimeInterval,
+        averageSpeed: Double
+    ) -> RunActivityType? {
+        effectiveType(
+            activityType: activityType,
+            firstAltitude: firstPoint.altitude,
+            lastAltitude: lastPoint.altitude,
+            duration: duration,
+            averageSpeed: averageSpeed
+        )
+    }
+
+    nonisolated private static func effectiveType(
+        activityType: RunActivityType,
+        firstAltitude: Double,
+        lastAltitude: Double,
+        duration: TimeInterval,
+        averageSpeed: Double
+    ) -> RunActivityType? {
         var effective = activityType
 
         if activityType == .skiing {
-            let altitudeLoss = firstPoint.altitude - lastPoint.altitude
+            let altitudeLoss = firstAltitude - lastAltitude
             let valid = duration >= SharedConstants.minSkiRunDuration
                      && altitudeLoss >= SharedConstants.skiMinAltitudeLoss
                      && averageSpeed >= SharedConstants.skiMinAvgSpeed
@@ -80,7 +112,7 @@ enum SegmentValidator {
         }
 
         if activityType == .lift {
-            let altitudeGain = lastPoint.altitude - firstPoint.altitude
+            let altitudeGain = lastAltitude - firstAltitude
             let avgVerticalSpeed = altitudeGain / max(duration, 1)
             let valid = duration >= SharedConstants.liftMinSegmentDuration
                      && altitudeGain >= SharedConstants.liftMinAltitudeGain

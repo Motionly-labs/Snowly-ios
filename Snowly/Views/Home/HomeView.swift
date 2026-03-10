@@ -122,6 +122,19 @@ struct HomeView: View {
                 .animation(AnimationTokens.moderateEaseInOut, value: currentPage)
             }
             .overlay(alignment: .top) {
+                if trackingService.didRecoverSession {
+                    sessionRecoveredBanner
+                        .padding(.top, 90)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+            .animation(AnimationTokens.moderateEaseInOut, value: trackingService.didRecoverSession)
+            .task(id: trackingService.didRecoverSession) {
+                guard trackingService.didRecoverSession else { return }
+                try? await Task.sleep(for: .seconds(4))
+                trackingService.dismissRecoveryNotification()
+            }
+            .overlay(alignment: .top) {
                 if let pin = pinNotificationService.currentBanner {
                     CrewPinBanner(pin: pin) {
                         withAnimation { pinNotificationService.dismissBanner() }
@@ -896,6 +909,24 @@ struct HomeView: View {
         Label(text, systemImage: systemImage)
             .font(Typography.subheadlineMedium)
             .foregroundStyle(.secondary)
+    }
+
+    // MARK: - Session Recovery Banner
+
+    private var sessionRecoveredBanner: some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "arrow.clockwise.circle.fill")
+                .foregroundStyle(ColorTokens.info)
+            Text(String(localized: "record.session_recovered_banner"))
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
+            Spacer()
+        }
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.md)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .padding(.horizontal, Spacing.xl)
+        .shadowStyle(.subtle)
     }
 }
 

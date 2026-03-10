@@ -17,7 +17,7 @@ struct LongPressStartButton: View {
     private let duration: TimeInterval = ProcessInfo.processInfo.arguments.contains("-ui_testing_fast_start")
         ? 0.2
         : 1.0
-    private let buttonSize: CGFloat = 188
+    private let buttonSize = Spacing.heroButton
 
     var body: some View {
         let buttonTitle = String(localized: "home_start_button_title")
@@ -26,13 +26,15 @@ struct LongPressStartButton: View {
             .fill(.ultraThinMaterial)
             .frame(width: buttonSize, height: buttonSize)
             .overlay {
+                // Glass gradient — non-pressing values are aligned with ResumeTrackingButton
+                // for visual consistency across all hero buttons.
                 Circle()
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color.white.opacity(isPressing ? 0.44 : 0.38),
-                                ColorTokens.brandGold.opacity(isPressing ? 0.34 : 0.28),
-                                ColorTokens.brandWarmAmber.opacity(isPressing ? 0.24 : 0.18)
+                                Color.white.opacity(isPressing ? 0.44 : 0.42),
+                                ColorTokens.brandGold.opacity(isPressing ? 0.34 : Opacity.moderate),
+                                ColorTokens.brandWarmAmber.opacity(isPressing ? 0.24 : Opacity.muted)
                             ],
                             center: .center,
                             startRadius: 10,
@@ -53,7 +55,7 @@ struct LongPressStartButton: View {
                         style: StrokeStyle(lineWidth: 5, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
-                    .padding(5)
+                    .padding(Spacing.gap)
             }
             .overlay {
                 Text(buttonTitle)
@@ -66,12 +68,7 @@ struct LongPressStartButton: View {
             }
         .scaleEffect(isPressing ? 0.95 : 1.0)
         .animation(AnimationTokens.quickEaseInOut, value: isPressing)
-        .shadow(
-            color: ColorTokens.brandWarmAmber.opacity(isPressing ? Opacity.soft : Opacity.gentle),
-            radius: isPressing ? 16 : 22,
-            x: 0,
-            y: isPressing ? 8 : 12
-        )
+        .shadowStyle(isPressing ? .brandGlowPressed : .brandGlow)
         .contentShape(Circle())
         .gesture(
             DragGesture(minimumDistance: 0)
@@ -138,7 +135,7 @@ struct LongPressStartButton: View {
         pressTask?.cancel()
         pressTask = nil
         isPressing = false
-        withAnimation(.easeOut(duration: 0.18)) {
+        withAnimation(AnimationTokens.quickEaseOut) {
             progress = 0
         }
     }

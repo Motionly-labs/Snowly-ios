@@ -638,8 +638,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Snowly can open Apple Music now playing when you tap the music button.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Snowly needs background location access to track your ski runs while the app is in the background.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Snowly uses your location to record ski tracks, measure speed, and detect runs automatically.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Your phone is in your pocket while you ski — this keeps tracking active when the screen locks.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Snowly tracks your position to record runs and measure speed. One more prompt will follow for background access.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Snowly uses motion sensors to automatically detect when you're skiing or riding a chairlift.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Snowly needs access to save your ski day share card to Photos.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
@@ -683,8 +683,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Snowly can open Apple Music now playing when you tap the music button.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Snowly needs background location access to track your ski runs while the app is in the background.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Snowly uses your location to record ski tracks, measure speed, and detect runs automatically.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Your phone is in your pocket while you ski — this keeps tracking active when the screen locks.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Snowly tracks your position to record runs and measure speed. One more prompt will follow for background access.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Snowly uses motion sensors to automatically detect when you're skiing or riding a chairlift.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Snowly needs access to save your ski day share card to Photos.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;

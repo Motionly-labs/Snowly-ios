@@ -131,6 +131,7 @@ struct GPSKalmanFilter: Sendable {
     private var cosOriginLat: Double    // cached cos(originLat)
 
     private var lastTimestamp: Date?
+    private var previousRawPoint: TrackPoint?
     private var isInitialized: Bool
 
     // MARK: - Tuning Constants
@@ -139,14 +140,14 @@ struct GPSKalmanFilter: Sendable {
     nonisolated private static let horizontalProcessNoise: Double = 3.0
     /// Vertical acceleration noise (m/s²). Altitude changes are smoother than horizontal.
     nonisolated private static let verticalProcessNoise: Double = 1.0
-    /// Base GPS Doppler velocity noise (m/s) for good signal conditions.
+    /// Base horizontal velocity noise (m/s) for good signal conditions.
     nonisolated private static let baseVelocityNoise: Double = 0.3
     /// GPS altitude accuracy is typically this factor worse than horizontal.
     nonisolated private static let altitudeAccuracyFactor: Double = 2.5
     /// Maximum time step before capping (seconds). Prevents covariance explosion on GPS gaps.
     nonisolated private static let maxDt: Double = 10.0
-    /// Minimum GPS speed (m/s) for Doppler velocity to be usable.
-    nonisolated private static let minDopplerSpeed: Double = 0.1
+    /// Minimum measured speed (m/s) before velocity update is considered usable.
+    nonisolated private static let minMeasuredSpeed: Double = 0.1
 
     /// Meters per degree of latitude (WGS-84 mean).
     nonisolated private static let metersPerDegree: Double = 111_320
@@ -160,23 +161,38 @@ struct GPSKalmanFilter: Sendable {
         originLon = 0
         cosOriginLat = 1
         lastTimestamp = nil
+        previousRawPoint = nil
         isInitialized = false
     }
 
-    /// Filters a raw GPS point and returns a smoothed `TrackPoint`.
+    /// Filters a raw GPS point and returns a smoothed `FilteredTrackPoint`.
     ///
     /// On the first call, initializes the filter state and returns the point unmodified.
     /// Subsequent calls run predict→update and produce a filtered output.
     ///
     /// - Parameter point: Raw GPS track point from `LocationTrackingService`.
-    /// - Returns: Filtered track point with smoothed position, speed, and course.
-    nonisolated mutating func update(point: TrackPoint) -> TrackPoint {
+    /// - Returns: Filtered track point with smoothed position, estimated speed, and course.
+    nonisolated mutating func update(point: TrackPoint) -> FilteredTrackPoint {
         guard isInitialized else {
             initialize(from: point)
-            return point
+            // Return the raw point verbatim on first call — the filter has no history yet.
+            // initialize() seeds filter velocities from point.speed/course so subsequent
+            // points start from a good state.
+            let speed = point.speed >= 0 ? point.speed : 0
+            let course = point.course >= 0 ? point.course : 0
+            return FilteredTrackPoint(
+                rawTimestamp: point.timestamp,
+                timestamp: point.timestamp,
+                latitude: point.latitude,
+                longitude: point.longitude,
+                altitude: point.altitude,
+                estimatedSpeed: speed,
+                accuracy: point.accuracy,
+                course: course
+            )
         }
 
-        guard let prevTime = lastTimestamp else { return point }
+        guard let prevTime = lastTimestamp else { return buildFilteredPoint(from: point) }
         let rawDt = point.timestamp.timeIntervalSince(prevTime)
         guard rawDt > 0 else { return buildFilteredPoint(from: point) }
 
@@ -200,12 +216,13 @@ struct GPSKalmanFilter: Sendable {
         northFilter.updatePosition(measurement: north, noise: posNoise)
         altFilter.updatePosition(measurement: point.altitude, noise: posNoise * Self.altitudeAccuracyFactor)
 
-        // — Update: horizontal velocity from GPS Doppler —
-        let gpsSpeed = max(0, point.speed)
-        if gpsSpeed > Self.minDopplerSpeed {
-            let courseRad = point.course * .pi / 180
-            let vEast = gpsSpeed * sin(courseRad)
-            let vNorth = gpsSpeed * cos(courseRad)
+        // — Update: horizontal velocity from raw displacement —
+        let measuredSpeed = measuredSpeed(from: previousRawPoint, to: point, dt: rawDt)
+        if measuredSpeed > Self.minMeasuredSpeed {
+            let measuredCourse = measuredCourse(from: previousRawPoint, to: point)
+            let courseRad = measuredCourse * .pi / 180
+            let vEast = measuredSpeed * sin(courseRad)
+            let vNorth = measuredSpeed * cos(courseRad)
             let velNoise = Self.baseVelocityNoise * max(1, posNoise / 10)
 
             eastFilter.updateVelocity(measurement: vEast, noise: velNoise)
@@ -213,6 +230,7 @@ struct GPSKalmanFilter: Sendable {
         }
 
         lastTimestamp = point.timestamp
+        previousRawPoint = point
         return buildFilteredPoint(from: point)
     }
 
@@ -226,6 +244,7 @@ struct GPSKalmanFilter: Sendable {
         originLon = 0
         cosOriginLat = 1
         lastTimestamp = nil
+        previousRawPoint = nil
         isInitialized = false
     }
 
@@ -239,12 +258,18 @@ struct GPSKalmanFilter: Sendable {
         let initialPosVariance = max(point.accuracy * point.accuracy, 1.0)
         let initialVelVariance = 100.0  // 10 m/s uncertainty squared
 
+        // Seed velocity from GPS Doppler so the first returned point is unmodified.
+        let courseRad = point.course >= 0 ? point.course * .pi / 180 : 0
+        let seededSpeed = point.speed >= 0 ? point.speed : 0
+        let vEast  = seededSpeed * sin(courseRad)
+        let vNorth = seededSpeed * cos(courseRad)
+
         eastFilter = KalmanFilter1D(
-            position: 0, velocity: 0,
+            position: 0, velocity: vEast,
             p00: initialPosVariance, p01: 0, p11: initialVelVariance
         )
         northFilter = KalmanFilter1D(
-            position: 0, velocity: 0,
+            position: 0, velocity: vNorth,
             p00: initialPosVariance, p01: 0, p11: initialVelVariance
         )
         altFilter = KalmanFilter1D(
@@ -255,6 +280,7 @@ struct GPSKalmanFilter: Sendable {
         )
 
         lastTimestamp = point.timestamp
+        previousRawPoint = point
         isInitialized = true
     }
 
@@ -272,7 +298,7 @@ struct GPSKalmanFilter: Sendable {
         return (latRad * 180 / .pi, lonRad * 180 / .pi)
     }
 
-    nonisolated private func buildFilteredPoint(from original: TrackPoint) -> TrackPoint {
+    nonisolated private func buildFilteredPoint(from original: TrackPoint) -> FilteredTrackPoint {
         let (lat, lon) = localToGeo(east: eastFilter.position, north: northFilter.position)
         let speed = sqrt(
             eastFilter.velocity * eastFilter.velocity
@@ -282,14 +308,45 @@ struct GPSKalmanFilter: Sendable {
         let courseDeg = courseRad * 180 / .pi
         let normalizedCourse = courseDeg >= 0 ? courseDeg : courseDeg + 360
 
-        return TrackPoint(
+        return FilteredTrackPoint(
+            rawTimestamp: original.timestamp,
             timestamp: original.timestamp,
             latitude: lat,
             longitude: lon,
             altitude: altFilter.position,
-            speed: max(0, speed),
+            estimatedSpeed: max(0, speed),
             accuracy: original.accuracy,
             course: normalizedCourse
         )
+    }
+
+    nonisolated private func measuredSpeed(
+        from previous: TrackPoint?,
+        to current: TrackPoint,
+        dt: TimeInterval
+    ) -> Double {
+        // Prefer GPS Doppler speed when valid (speed < 0 means CLLocation has no fix).
+        if current.speed >= 0 {
+            return current.speed
+        }
+        // Doppler unavailable — fall back to position-displacement velocity.
+        guard dt > 0, let previous else { return 0 }
+        return max(0, previous.distance(to: current) / dt)
+    }
+
+    nonisolated private func measuredCourse(
+        from previous: TrackPoint?,
+        to current: TrackPoint
+    ) -> Double {
+        if current.course >= 0 { return current.course }
+        guard let previous else { return 0 }
+        let lat1 = previous.latitude * .pi / 180
+        let lat2 = current.latitude * .pi / 180
+        let dLon = (current.longitude - previous.longitude) * .pi / 180
+        let y = sin(dLon) * cos(lat2)
+        let x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
+        let angle = atan2(y, x) * 180 / .pi
+        let normalized = angle.truncatingRemainder(dividingBy: 360)
+        return normalized >= 0 ? normalized : normalized + 360
     }
 }

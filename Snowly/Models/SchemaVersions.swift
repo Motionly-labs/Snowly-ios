@@ -30,7 +30,5 @@ enum SnowlyMigrationPlan: SchemaMigrationPlan {
         [SchemaV1.self]
     }
 
-    static var stages: [MigrationStage] {
-        []
-    }
+    static var stages: [MigrationStage] { [] }
 }

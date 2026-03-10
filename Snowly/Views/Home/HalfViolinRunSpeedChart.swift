@@ -245,6 +245,7 @@ struct HalfViolinRunSpeedChart: View {
         let maxHalfWidth = min(24, slotWidth * 0.44)
         let alpha: Double = isActive ? ChartTokens.HalfViolin.selectedAlpha : ChartTokens.HalfViolin.dimmedAlpha
         let runColor = RunColorPalette.color(forRunIndex: index, totalRuns: total)
+        let gradient = RunColorPalette.chartGradientColors(forRunIndex: index, totalRuns: total)
 
         let minY = yPosition(for: run.min, in: rect)
         let maxY = yPosition(for: run.max, in: rect)
@@ -275,8 +276,8 @@ struct HalfViolinRunSpeedChart: View {
             violinPath,
             with: .linearGradient(
                 Gradient(colors: [
-                    runColor.opacity(ChartTokens.HalfViolin.violinFillTopOpacity * alpha),
-                    runColor.opacity(ChartTokens.HalfViolin.violinFillBottomOpacity * alpha),
+                    gradient.top.opacity(ChartTokens.HalfViolin.violinFillTopOpacity * alpha),
+                    gradient.bottom.opacity(ChartTokens.HalfViolin.violinFillBottomOpacity * alpha),
                 ]),
                 startPoint: CGPoint(x: axisX, y: maxY),
                 endPoint: CGPoint(x: axisX + maxHalfWidth, y: minY)
@@ -410,7 +411,12 @@ enum MockRunSpeedGenerator {
     static func distributions(from runs: [SkiRun], unitSystem: UnitSystem) -> [HalfViolinRunSpeedChart.RunDistribution] {
         var runNumber = 0
         return runs.compactMap { run in
-            let samplesMs = run.trackPoints.map(\.speed)
+            let points = run.trackPoints
+            let samplesMs = zip(points, points.dropFirst()).compactMap { a, b -> Double? in
+                let dt = b.timestamp.timeIntervalSince(a.timestamp)
+                guard dt > 0 else { return nil }
+                return max(0, a.distance(to: b) / dt)
+            }
             // Require at least 10 GPS samples — aligned with the 15s minimum run duration
             // at ~1 Hz, with headroom for GPS dropouts.
             guard samplesMs.count >= 10 else { return nil }

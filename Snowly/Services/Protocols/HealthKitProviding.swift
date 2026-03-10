@@ -28,4 +28,8 @@ protocol HealthKitProviding: AnyObject, Sendable {
         totalVerticalAscent: Double,
         totalVerticalDescent: Double
     ) async throws -> UUID
+
+    /// Discard an in-progress workout builder without saving to HealthKit.
+    /// Call when the user cancels a session that had already begun collection.
+    func cancelWorkout() async
 }

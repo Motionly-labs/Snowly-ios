@@ -44,7 +44,7 @@ enum StatsService {
         )
     }
 
-    /// Check if a session sets any new personal bests.
+    /// Check if a session sets any new all-time personal bests.
     static func checkPersonalBests(
         session: SkiSession,
         profile: UserProfile
@@ -60,9 +60,6 @@ enum StatsService {
         if session.totalDistance > profile.seasonBestDistance {
             newRecords.append(String(localized: "common_distance"))
         }
-        if session.runCount > profile.seasonBestRunCount {
-            newRecords.append(String(localized: "stat_run_count"))
-        }
 
         return newRecords
     }
@@ -72,10 +69,9 @@ enum StatsService {
         let maxSpeed: Double?
         let vertical: Double?
         let distance: Double?
-        let runCount: Int?
 
         var hasUpdates: Bool {
-            maxSpeed != nil || vertical != nil || distance != nil || runCount != nil
+            maxSpeed != nil || vertical != nil || distance != nil
         }
     }
 
@@ -87,8 +83,7 @@ enum StatsService {
         PersonalBestUpdate(
             maxSpeed: session.maxSpeed > profile.seasonBestMaxSpeed ? session.maxSpeed : nil,
             vertical: session.totalVertical > profile.seasonBestVertical ? session.totalVertical : nil,
-            distance: session.totalDistance > profile.seasonBestDistance ? session.totalDistance : nil,
-            runCount: session.runCount > profile.seasonBestRunCount ? session.runCount : nil
+            distance: session.totalDistance > profile.seasonBestDistance ? session.totalDistance : nil
         )
     }
 
@@ -104,8 +99,13 @@ enum StatsService {
         if let distance = update.distance {
             profile.seasonBestDistance = distance
         }
-        if let runCount = update.runCount {
-            profile.seasonBestRunCount = runCount
-        }
+    }
+
+    /// Reset all personal bests to zero.
+    /// Note: Mutates the @Model directly — this is intentional for SwiftData persistence.
+    static func resetPersonalBests(for profile: UserProfile) {
+        profile.seasonBestMaxSpeed = 0
+        profile.seasonBestVertical = 0
+        profile.seasonBestDistance = 0
     }
 }

@@ -112,9 +112,13 @@ struct MotionEstimatorTests {
 
     @Test func estimate_insufficientHistory_hasNoReliableTrend() {
         let now = Date()
-        // Only 5 recent points — below the minimum (8) for reliable altitude trend
-        let recent = makePoints(count: 5, startAltitude: 2000, endAltitude: 2100,
-                                startTime: now.addingTimeInterval(-15))
+        // Only one recent point and <4s span — still too little for a reliable trend.
+        let recent = makePoints(
+            count: 1,
+            startAltitude: 2000,
+            endAltitude: 2000,
+            startTime: now.addingTimeInterval(-3)
+        )
         let current = makePoint(speed: 4.0, altitude: 2100, timestamp: now)
         let estimate = MotionEstimator.estimate(current: current, recentPoints: recent)
         #expect(!estimate.hasReliableAltitudeTrend)

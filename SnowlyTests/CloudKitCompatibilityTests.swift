@@ -24,6 +24,8 @@ struct CloudKitCompatibilityTests {
     }
 
     private func makeDualStoreContainer(cloudEnabled: Bool) throws -> ModelContainer {
+        let bundleID = Bundle.main.bundleIdentifier ?? "Snowly"
+        let cloudContainerID = "iCloud.\(bundleID)"
         let syncedConfig = ModelConfiguration(
             "Synced",
             schema: Schema([
@@ -31,7 +33,7 @@ struct CloudKitCompatibilityTests {
                 GearSetup.self, GearItem.self, UserProfile.self,
             ]),
             isStoredInMemoryOnly: true,
-            cloudKitDatabase: cloudEnabled ? .private("iCloud.Roy-Kid.Snowly") : .none
+            cloudKitDatabase: cloudEnabled ? .private(cloudContainerID) : .none
         )
 
         let localConfig = ModelConfiguration(

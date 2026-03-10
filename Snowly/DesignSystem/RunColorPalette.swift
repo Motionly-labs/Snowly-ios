@@ -9,33 +9,56 @@ import SwiftUI
 import UIKit
 
 enum RunColorPalette {
-    // Bright, clean, low-mud Apple-like rainbow stops.
-    static let rainbow: [Color] = [
-        Color(red: 1.00, green: 0.23, blue: 0.30), // vivid red
-        Color(red: 1.00, green: 0.50, blue: 0.12), // punchy orange
-        Color(red: 1.00, green: 0.82, blue: 0.16), // bright yellow
-        Color(red: 0.33, green: 0.89, blue: 0.31), // fresh green
-        Color(red: 0.00, green: 0.84, blue: 0.95), // electric cyan
-        Color(red: 0.15, green: 0.47, blue: 1.00), // clean blue
-        Color(red: 0.45, green: 0.34, blue: 0.98), // vivid indigo
-        Color(red: 0.94, green: 0.24, blue: 0.74), // bright magenta
+    private struct Stop {
+        let position: Double
+        let color: Color
+    }
+
+    // Ordered "warm -> cool" ramp for run sequencing across map + charts.
+    // This keeps ordering intuitive while preserving contrast on satellite imagery.
+    private static let sequentialStops: [Stop] = [
+        Stop(position: 0.00, color: ColorTokens.brandRed),
+        Stop(position: 0.24, color: ColorTokens.brandWarmAmber),
+        Stop(position: 0.50, color: Color(red: 0.22, green: 0.83, blue: 0.52)),
+        Stop(position: 0.76, color: ColorTokens.brandIceBlue),
+        Stop(position: 1.00, color: Color(red: 0.56, green: 0.43, blue: 0.96)),
     ]
 
-    /// Evenly samples the palette based on run count.
+    /// Returns the base color for a run index.
+    /// Colors are sampled from a continuous, directional ramp to emphasize run order.
     static func color(forRunIndex index: Int, totalRuns: Int) -> Color {
-        guard totalRuns > 1 else { return rainbow[0] }
+        guard totalRuns > 1 else { return sequentialStops[0].color }
         let clampedIndex = max(0, min(index, totalRuns - 1))
         let position = Double(clampedIndex) / Double(totalRuns - 1)
         return interpolatedColor(at: position)
     }
 
+    /// Gradient pair used by chart fills (top highlight + bottom depth) while
+    /// keeping the same base hue as `color(forRunIndex:totalRuns:)`.
+    static func chartGradientColors(forRunIndex index: Int, totalRuns: Int) -> (top: Color, bottom: Color) {
+        let base = color(forRunIndex: index, totalRuns: totalRuns)
+        let top = mix(base, .white, by: 0.22)
+        let bottom = mix(base, .black, by: 0.18)
+        return (top, bottom)
+    }
+
     private static func interpolatedColor(at position: Double) -> Color {
         let clamped = max(0, min(position, 1))
-        let scaled = clamped * Double(rainbow.count - 1)
-        let lower = Int(floor(scaled))
-        let upper = min(lower + 1, rainbow.count - 1)
-        let t = scaled - Double(lower)
-        return mix(rainbow[lower], rainbow[upper], by: t)
+        guard let first = sequentialStops.first else { return .red }
+        guard let last = sequentialStops.last else { return first.color }
+        if clamped <= first.position { return first.color }
+        if clamped >= last.position { return last.color }
+
+        for idx in 0..<(sequentialStops.count - 1) {
+            let lower = sequentialStops[idx]
+            let upper = sequentialStops[idx + 1]
+            guard clamped >= lower.position, clamped <= upper.position else { continue }
+            let span = max(upper.position - lower.position, 1e-6)
+            let t = (clamped - lower.position) / span
+            return mix(lower.color, upper.color, by: t)
+        }
+
+        return last.color
     }
 
     private static func mix(_ a: Color, _ b: Color, by t: Double) -> Color {

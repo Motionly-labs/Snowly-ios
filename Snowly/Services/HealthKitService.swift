@@ -239,4 +239,13 @@ final class HealthKitService: HealthKitProviding {
 
         return workout.uuid
     }
+
+    func cancelWorkout() async {
+        guard let builder = workoutBuilder else { return }
+        builder.discardWorkout()
+        self.workoutBuilder = nil
+        self.routeBuilder = nil
+        self.routePointBuffer = []
+        self.isRecording = false
+    }
 }

@@ -10,6 +10,8 @@ import SwiftUI
 enum Opacity {
     static let invisible: Double = 0.01
     static let faint: Double = 0.06
+    /// Hairline separators and very subtle dividers on adaptive backgrounds.
+    static let hairline: Double = 0.08
     static let subtle: Double = 0.1
     static let light: Double = 0.12
     static let gentle: Double = 0.15

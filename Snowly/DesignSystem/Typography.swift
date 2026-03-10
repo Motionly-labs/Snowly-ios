@@ -19,6 +19,8 @@ enum Typography {
     // MARK: - Metric
     static let temperatureHero = Font.system(size: 76, weight: .semibold, design: .rounded)
     static let metricHero = Font.system(size: 72, weight: .bold, design: .rounded)
+    /// Full-screen landscape hero metric (e.g. current speed in landscape dashboard).
+    static let metricDisplay = Font.system(size: 56, weight: .bold, design: .rounded)
     static let metricLarge = Font.system(size: 48, weight: .bold, design: .rounded)
     static let metricMedium = Font.system(size: 44, weight: .bold, design: .rounded)
     static let metricSmall = Font.system(size: 36, weight: .bold, design: .rounded)
@@ -28,6 +30,8 @@ enum Typography {
     // MARK: - Heading
     static let onboardingTitle = Font.title.weight(.bold)
     static let primaryTitle = Font.title2.weight(.semibold)
+    /// Unit labels adjacent to hero metric values (e.g. "km/h" beside speed display).
+    static let title3Medium = Font.title3.weight(.medium)
     static let headingLarge = Font.system(size: 28, weight: .semibold)
     static let headingMedium = Font.system(size: 22, weight: .semibold)
     static let settingsIcon = Font.system(size: 22)
@@ -52,6 +56,7 @@ enum Typography {
 
     // MARK: - System Weighted
     static let subheadlineMedium = Font.subheadline.weight(.medium)
+    static let subheadlineSemibold = Font.subheadline.weight(.semibold)
     static let captionSemibold = Font.caption.weight(.semibold)
     static let caption2Semibold = Font.caption2.weight(.semibold)
 }

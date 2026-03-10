@@ -9,6 +9,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import WidgetKit
 
 /// Holds all app-level services with stable identity.
 /// Using a class (not @State in App struct) ensures services
@@ -84,12 +85,19 @@ struct SnowlyApp: App {
 
     let modelContainer: ModelContainer
     @State private var services = AppServices()
+    @State private var deepLinkJoinError: String?
     @Environment(\.scenePhase) private var scenePhase
-    private static let cloudContainerIdentifier = "iCloud.Roy-Kid.Snowly"
+    private static var cloudContainerIdentifier: String {
+        if let bundleIdentifier = Bundle.main.bundleIdentifier, !bundleIdentifier.isEmpty {
+            return "iCloud.\(bundleIdentifier)"
+        }
+        return "iCloud.Snowly"
+    }
 
     init() {
-        let launchArguments = Set(ProcessInfo.processInfo.arguments)
-        let isUITesting = launchArguments.contains("-ui_testing")
+        let launchArguments = ProcessInfo.processInfo.arguments
+        let launchArgumentSet = Set(launchArguments)
+        let isUITesting = launchArgumentSet.contains("-ui_testing")
         let isTesting = isUITesting
             || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 
@@ -120,9 +128,9 @@ struct SnowlyApp: App {
 
             SnowlyApp.seedUITestDataIfNeeded(
                 in: container,
-                launchArguments: launchArguments
+                launchArguments: launchArgumentSet
             )
-            SnowlyApp.seedSummaryMockDataIfNeeded(
+            FixtureReplayService.replayFixtureDataIfNeeded(
                 in: container,
                 launchArguments: launchArguments
             )
@@ -145,9 +153,9 @@ struct SnowlyApp: App {
                 )
                 SnowlyApp.seedUITestDataIfNeeded(
                     in: inMemoryContainer,
-                    launchArguments: launchArguments
+                    launchArguments: launchArgumentSet
                 )
-                SnowlyApp.seedSummaryMockDataIfNeeded(
+                FixtureReplayService.replayFixtureDataIfNeeded(
                     in: inMemoryContainer,
                     launchArguments: launchArguments
                 )
@@ -204,6 +212,27 @@ struct SnowlyApp: App {
                     QuickActionState.shared.pending = false
                     services.trackingService.quickStartPending = true
                 }
+                .onChange(of: TrackingEnabledIntentState.shared.pendingValue) { _, pendingValue in
+                    guard let shouldTrack = pendingValue else { return }
+                    TrackingEnabledIntentState.shared.pendingValue = nil
+
+                    if shouldTrack {
+                        services.trackingService.quickStartPending = true
+                        return
+                    }
+
+                    guard services.trackingService.state != .idle else { return }
+
+                    Task { @MainActor in
+                        await services.trackingService.stopTracking()
+                        await services.trackingService.finalizeHealthKitWorkout()
+                        let resort = ResortResolver.resolveCurrentResort(
+                            from: services.skiMapCacheService,
+                            in: modelContainer.mainContext
+                        )
+                        await services.trackingService.saveSession(to: modelContainer.mainContext, resort: resort)
+                    }
+                }
                 .onChange(of: TogglePauseState.shared.pending) { _, pending in
                     guard pending else { return }
                     TogglePauseState.shared.pending = false
@@ -213,6 +242,11 @@ struct SnowlyApp: App {
                         } else if services.trackingService.state == .tracking {
                             await services.trackingService.pauseTracking()
                         }
+                    }
+                }
+                .onChange(of: services.trackingService.state) { _, _ in
+                    if #available(iOS 18.0, *) {
+                        ControlCenter.shared.reloadControls(ofKind: "com.snowly.start-tracking-control")
                     }
                 }
                 .task {
@@ -229,11 +263,23 @@ struct SnowlyApp: App {
                             do {
                                 try await services.crewService.joinCrew(token: token)
                             } catch {
-                                print("[DeepLink] Failed to join crew: \(error)")
+                                deepLinkJoinError = error.localizedDescription
                             }
                         }
                     case .startTracking:
                         services.trackingService.quickStartPending = true
+                    }
+                }
+                .alert(String(localized: "alert.crew_join_failed_title"), isPresented: Binding(
+                    get: { deepLinkJoinError != nil },
+                    set: { if !$0 { deepLinkJoinError = nil } }
+                )) {
+                    Button(String(localized: "common_ok"), role: .cancel) {
+                        deepLinkJoinError = nil
+                    }
+                } message: {
+                    if let message = deepLinkJoinError {
+                        Text(message)
                     }
                 }
         }
@@ -266,10 +312,11 @@ struct SnowlyApp: App {
     private static func attemptPersistentStoreRecoveryIfNeeded(
         after error: Error,
         isTesting: Bool,
-        launchArguments: Set<String>
+        launchArguments: [String]
     ) -> ModelContainer? {
 #if targetEnvironment(simulator)
         guard !isTesting else { return nil }
+        let launchArgumentSet = Set(launchArguments)
 
         do {
             print("Simulator persistent store load failed. Attempting store reset recovery: \(error)")
@@ -280,9 +327,9 @@ struct SnowlyApp: App {
             )
             seedUITestDataIfNeeded(
                 in: recoveredContainer,
-                launchArguments: launchArguments
+                launchArguments: launchArgumentSet
             )
-            seedSummaryMockDataIfNeeded(
+            FixtureReplayService.replayFixtureDataIfNeeded(
                 in: recoveredContainer,
                 launchArguments: launchArguments
             )
@@ -375,16 +422,21 @@ struct SnowlyApp: App {
         }
 
         let completedRuns = buildCompletedRuns(from: workout.trackPoints)
+        let skiingRuns = completedRuns.filter { $0.activityType == .skiing }
+        let skiingDistance = skiingRuns.reduce(0.0) { $0 + $1.distance }
+        let skiingVertical = skiingRuns.reduce(0.0) { $0 + $1.verticalDrop }
+        let skiingMaxSpeed = skiingRuns.map(\.maxSpeed).max() ?? 0
+        let skiingRunCount = skiingRuns.count
         let session = SkiSession(
             id: sessionId,
             startDate: workout.summary.startDate,
             endDate: workout.summary.endDate,
-            totalDistance: workout.summary.totalDistance,
-            totalVertical: workout.summary.totalVertical,
-            maxSpeed: workout.summary.maxSpeed,
+            totalDistance: skiingDistance,
+            totalVertical: skiingVertical,
+            maxSpeed: skiingMaxSpeed,
             runCount: max(
                 workout.summary.runCount,
-                completedRuns.filter { $0.activityType == .skiing }.count
+                skiingRunCount
             )
         )
         context.insert(session)
@@ -425,40 +477,59 @@ struct SnowlyApp: App {
         let sortedPoints = trackPoints.sorted { $0.timestamp < $1.timestamp }
         guard !sortedPoints.isEmpty else { return [] }
 
-        var recentPoints = CircularBuffer<TrackPoint>(capacity: SharedConstants.recentPointsBufferSize)
+        var gpsFilter = GPSKalmanFilter()
+        var recentPoints: [FilteredTrackPoint] = []
         var currentActivity: DetectedActivity = .idle
         var candidateActivity: DetectedActivity?
         var candidateStartTime: Date?
 
         var currentSegmentType: RunActivityType?
-        var currentSegmentPoints: [TrackPoint] = []
+        var currentSegmentFilteredPoints: [FilteredTrackPoint] = []
+        var currentSegmentRawPoints: [TrackPoint] = []
         var lastActiveTime: Date?
         var result: [CompletedRunData] = []
 
         func finalizeSegment() {
-            guard let segType = currentSegmentType, !currentSegmentPoints.isEmpty else { return }
-            if let run = buildCompletedRunData(activityType: segType, points: currentSegmentPoints) {
-                result.append(run)
+            guard let segType = currentSegmentType, !currentSegmentFilteredPoints.isEmpty else { return }
+            if let filteredRun = FixtureReplayService.buildCompletedRunData(
+                activityType: segType,
+                points: currentSegmentFilteredPoints
+            ) {
+                let rawTrackData = try? JSONEncoder().encode(currentSegmentRawPoints)
+                result.append(
+                    CompletedRunData(
+                        startDate: filteredRun.startDate,
+                        endDate: filteredRun.endDate,
+                        distance: filteredRun.distance,
+                        verticalDrop: filteredRun.verticalDrop,
+                        maxSpeed: filteredRun.maxSpeed,
+                        averageSpeed: filteredRun.averageSpeed,
+                        activityType: filteredRun.activityType,
+                        trackData: rawTrackData
+                    )
+                )
             }
             currentSegmentType = nil
-            currentSegmentPoints = []
+            currentSegmentFilteredPoints = []
+            currentSegmentRawPoints = []
             lastActiveTime = nil
         }
 
-        for point in sortedPoints {
-            recentPoints.append(point)
-
+        for rawPoint in sortedPoints {
+            let filteredPoint = gpsFilter.update(point: rawPoint)
             let rawActivity = RunDetectionService.detect(
-                point: point,
-                recentPoints: recentPoints.elements,
+                point: filteredPoint,
+                recentPoints: recentPoints,
                 previousActivity: currentActivity
             )
+            recentPoints.append(filteredPoint)
+            RecentTrackWindow.trimFilteredPoints(&recentPoints, relativeTo: filteredPoint.timestamp)
             let dwellResult = SessionTrackingService.applyDwellTime(
                 rawActivity: rawActivity,
                 currentActivity: currentActivity,
                 candidateActivity: candidateActivity,
                 candidateStartTime: candidateStartTime,
-                timestamp: point.timestamp
+                timestamp: filteredPoint.timestamp
             )
             currentActivity = dwellResult.activity
             candidateActivity = dwellResult.candidate
@@ -476,229 +547,22 @@ struct SnowlyApp: App {
                 if currentSegmentType != targetType {
                     finalizeSegment()
                     currentSegmentType = targetType
-                    currentSegmentPoints = [point]
+                    currentSegmentFilteredPoints = [filteredPoint]
+                    currentSegmentRawPoints = [rawPoint]
                 } else {
-                    currentSegmentPoints.append(point)
+                    currentSegmentFilteredPoints.append(filteredPoint)
+                    currentSegmentRawPoints.append(rawPoint)
                 }
-                lastActiveTime = point.timestamp
-            } else if !currentSegmentPoints.isEmpty,
+                lastActiveTime = filteredPoint.timestamp
+            } else if !currentSegmentFilteredPoints.isEmpty,
                       let lastActive = lastActiveTime,
-                      RunDetectionService.shouldEndRun(lastActivityTime: lastActive, now: point.timestamp) {
+                      RunDetectionService.shouldEndRun(lastActivityTime: lastActive, now: filteredPoint.timestamp) {
                 finalizeSegment()
             }
         }
 
         finalizeSegment()
         return result
-    }
-
-    private static func seedSummaryMockDataIfNeeded(
-        in container: ModelContainer,
-        launchArguments: Set<String>
-    ) {
-        guard launchArguments.contains("-seed_summary_mock") else { return }
-
-        let context = container.mainContext
-        let shouldReset = launchArguments.contains("-seed_summary_mock_reset")
-        let mockSessionID = UUID(uuidString: "6E99CF0E-4E4A-4C06-8F15-8E0F9FF1DF00")!
-        let mockResortID = UUID(uuidString: "F1AE37A3-22AC-4B70-8C69-A4CF0D3566F7")!
-
-        if shouldReset {
-            deleteAll(SkiRun.self, in: context)
-            deleteAll(SkiSession.self, in: context)
-            deleteAll(Resort.self, in: context)
-        }
-
-        var existingSessionDescriptor = FetchDescriptor<SkiSession>(
-            predicate: #Predicate<SkiSession> { $0.id == mockSessionID }
-        )
-        existingSessionDescriptor.fetchLimit = 1
-        if let existing = try? context.fetch(existingSessionDescriptor), !existing.isEmpty {
-            return
-        }
-
-        let resort: Resort = {
-            var descriptor = FetchDescriptor<Resort>(
-                predicate: #Predicate<Resort> { $0.id == mockResortID }
-            )
-            descriptor.fetchLimit = 1
-            if let existing = try? context.fetch(descriptor), let found = existing.first {
-                return found
-            }
-            let newResort = Resort(
-                id: mockResortID,
-                name: "Zermatt",
-                latitude: 46.0207,
-                longitude: 7.7491,
-                country: "CH"
-            )
-            context.insert(newResort)
-            return newResort
-        }()
-
-        var profileDescriptor = FetchDescriptor<UserProfile>(sortBy: [SortDescriptor(\.createdAt)])
-        profileDescriptor.fetchLimit = 1
-        let profile: UserProfile = {
-            if let existing = try? context.fetch(profileDescriptor), let found = existing.first {
-                if found.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    found.displayName = "Summary Mock Rider"
-                }
-                return found
-            }
-            let created = UserProfile(displayName: "Summary Mock Rider", preferredUnits: .metric)
-            context.insert(created)
-            return created
-        }()
-
-        var settingsDescriptor = FetchDescriptor<DeviceSettings>(sortBy: [SortDescriptor(\.createdAt)])
-        settingsDescriptor.fetchLimit = 1
-        if let existing = try? context.fetch(settingsDescriptor), let settings = existing.first {
-            settings.hasCompletedOnboarding = true
-        } else {
-            context.insert(DeviceSettings(hasCompletedOnboarding: true))
-        }
-
-        // Keep seeded session near "now" so SessionSummaryView (sorted by latest)
-        // always picks this fixture even if stale sessions remain in storage.
-        let startDate = Date().addingTimeInterval(-90 * 60)
-        guard let mockRuns = buildSummaryMockRunsFromFixture(startDate: startDate) else {
-            print("seed_summary_mock skipped: missing or invalid ZermattSkiDay.trackpoints fixture")
-            return
-        }
-        guard let endDate = mockRuns.last?.endDate else { return }
-
-        let skiingRuns = mockRuns.filter { $0.activityType == .skiing }
-        let totalDistance = skiingRuns.reduce(0.0) { $0 + $1.distance }
-        let totalVertical = skiingRuns.reduce(0.0) { $0 + $1.verticalDrop }
-        let maxSpeed = mockRuns.map(\.maxSpeed).max() ?? 0
-        let runCount = skiingRuns.count
-
-        let session = SkiSession(
-            id: mockSessionID,
-            startDate: startDate,
-            endDate: endDate,
-            totalDistance: totalDistance,
-            totalVertical: totalVertical,
-            maxSpeed: maxSpeed,
-            runCount: runCount,
-            resort: resort
-        )
-        context.insert(session)
-
-        for runData in mockRuns {
-            let run = SkiRun(
-                startDate: runData.startDate,
-                endDate: runData.endDate,
-                distance: runData.distance,
-                verticalDrop: runData.verticalDrop,
-                maxSpeed: runData.maxSpeed,
-                averageSpeed: runData.averageSpeed,
-                activityType: runData.activityType,
-                trackData: runData.trackData
-            )
-            run.session = session
-            context.insert(run)
-        }
-
-        let update = StatsService.computePersonalBestUpdates(session: session, profile: profile)
-        if update.hasUpdates {
-            StatsService.applyPersonalBestUpdate(update, to: profile)
-        }
-
-        try? context.save()
-    }
-
-    private static func deleteAll<T: PersistentModel>(
-        _: T.Type,
-        in context: ModelContext
-    ) {
-        let descriptor = FetchDescriptor<T>()
-        guard let models = try? context.fetch(descriptor), !models.isEmpty else { return }
-        for model in models {
-            context.delete(model)
-        }
-        try? context.save()
-    }
-
-    private struct SummaryMockFixtureTrackPoint: Codable {
-        let timestamp: TimeInterval
-        let latitude: Double
-        let longitude: Double
-        let altitude: Double
-        let speed: Double
-        let accuracy: Double
-        let course: Double
-    }
-
-    private static func buildSummaryMockRunsFromFixture(startDate: Date) -> [CompletedRunData]? {
-        guard let url = Bundle.main.url(forResource: "ZermattSkiDay.trackpoints", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let source = try? JSONDecoder().decode([SummaryMockFixtureTrackPoint].self, from: data),
-              !source.isEmpty else {
-            return nil
-        }
-
-        let anchor = source.first?.timestamp ?? 0
-        let anchoredPoints = source.map { point in
-            TrackPoint(
-                timestamp: startDate.addingTimeInterval(point.timestamp - anchor),
-                latitude: point.latitude,
-                longitude: point.longitude,
-                altitude: point.altitude,
-                speed: point.speed,
-                accuracy: point.accuracy,
-                course: point.course
-            )
-        }
-
-        let completed = buildCompletedRuns(from: anchoredPoints)
-            .filter { $0.activityType == .skiing || $0.activityType == .lift || $0.activityType == .walk }
-        if !completed.isEmpty {
-            print("seed_summary_mock loaded fixture: ZermattSkiDay.trackpoints.json, runs=\(completed.count)")
-            return completed
-        }
-        return nil
-    }
-
-    private static func buildCompletedRunData(
-        activityType: RunActivityType,
-        points: [TrackPoint]
-    ) -> CompletedRunData? {
-        guard let first = points.first, let last = points.last, points.count >= 2 else { return nil }
-
-        let distance = zip(points, points.dropFirst()).reduce(0.0) { acc, pair in
-            acc + pair.0.distance(to: pair.1)
-        }
-        let duration = max(last.timestamp.timeIntervalSince(first.timestamp), 1)
-        let avgSpeed = distance / duration
-        let maxSpeed = points.map(\.speed).max() ?? 0
-
-        guard let effectiveType = SegmentValidator.effectiveType(
-            activityType: activityType,
-            firstPoint: first,
-            lastPoint: last,
-            duration: duration,
-            averageSpeed: avgSpeed
-        ) else { return nil }
-
-        let verticalDrop = SegmentValidator.verticalDrop(
-            effectiveType: effectiveType,
-            firstAltitude: first.altitude,
-            lastAltitude: last.altitude
-        )
-
-        let trackData = try? JSONEncoder().encode(points)
-
-        return CompletedRunData(
-            startDate: first.timestamp,
-            endDate: last.timestamp,
-            distance: distance,
-            verticalDrop: verticalDrop,
-            maxSpeed: maxSpeed,
-            averageSpeed: avgSpeed,
-            activityType: effectiveType,
-            trackData: trackData
-        )
     }
 
     private static func seedUITestDataIfNeeded(

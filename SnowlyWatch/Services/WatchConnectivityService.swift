@@ -7,11 +7,13 @@
 
 import Foundation
 import WatchConnectivity
+import os
 
 @Observable
 @MainActor
 final class WatchConnectivityService: NSObject {
     private static let maxPendingPayloads = 500
+    private static let logger = Logger(subsystem: "com.Snowly", category: "WatchConnectivity")
 
     var isPhoneReachable = false
     var phoneTrackingState: String = "idle"
@@ -42,7 +44,7 @@ final class WatchConnectivityService: NSObject {
             if pendingPayloads.count > Self.maxPendingPayloads {
                 let overflow = pendingPayloads.count - Self.maxPendingPayloads
                 pendingPayloads.removeFirst(overflow)
-                print("WatchConnectivity dropped \(overflow) queued payloads")
+                Self.logger.warning("WatchConnectivity dropped \(overflow, privacy: .public) queued payloads")
             }
             return
         }
@@ -60,8 +62,10 @@ final class WatchConnectivityService: NSObject {
         guard let session else { return }
         if session.isReachable {
             session.sendMessage(payload, replyHandler: nil) { [weak self] error in
-                print("WatchConnectivity send error: \(error.localizedDescription)")
-                self?.transferAsUserInfo(payload: payload)
+                Self.logger.warning("WatchConnectivity send error: \(error.localizedDescription, privacy: .public)")
+                Task { @MainActor [weak self] in
+                    self?.transferAsUserInfo(payload: payload)
+                }
             }
         } else {
             transferAsUserInfo(payload: payload)

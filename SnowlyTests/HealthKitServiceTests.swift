@@ -79,6 +79,13 @@ final class MockHealthKitService: HealthKitProviding {
         isRecording = false
         return id
     }
+
+    var cancelWorkoutCallCount = 0
+
+    func cancelWorkout() async {
+        cancelWorkoutCallCount += 1
+        isRecording = false
+    }
 }
 
 @Suite("HealthKit Mock Service Tests")

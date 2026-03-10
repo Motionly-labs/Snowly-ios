@@ -9,7 +9,9 @@ import Foundation
 
 enum SharedConstants {
     // MARK: - Feature Window
-    nonisolated static let featureWindowSeconds: TimeInterval = 8   // seconds of history used for classification
+    nonisolated static let transitionFeatureWindowSeconds: TimeInterval = 4
+    nonisolated static let steadyFeatureWindowSeconds: TimeInterval = 12
+    nonisolated static let historyRetentionSeconds: TimeInterval = 45
 
     // MARK: - Idle Detection
     nonisolated static let idleSpeedMax: Double = 0.6               // m/s — below = idle
@@ -21,7 +23,7 @@ enum SharedConstants {
 
     // MARK: - Lift Detection
     nonisolated static let liftSpeedMin: Double = 1.2               // m/s — minimum horizontal speed for lift
-    nonisolated static let liftSpeedMax: Double = 6.5               // m/s — maximum horizontal speed for lift
+    nonisolated static let liftSpeedMax: Double = 5.8               // m/s — must be below skiFastMin (6.0) to be reachable
     nonisolated static let liftVerticalSpeedMin: Double = -0.10     // m/s — allows horizontal and slight-descent lift transport (gondolas)
     nonisolated static let liftContinuityVerticalSpeedMin: Double = -0.35 // m/s — keep lift through brief downward transfer sections
 
@@ -35,7 +37,7 @@ enum SharedConstants {
     nonisolated static let walkHardMaxSpeed: Double = 8.0           // m/s — physics guard rail: walking above this is impossible on snow
 
     // MARK: - Activity Dwell Time (hysteresis)
-    nonisolated static let dwellTimeSkiingToLift: TimeInterval = 25  // conservative — lift confirmation takes longer
+    nonisolated static let dwellTimeSkiingToLift: TimeInterval = 25
     nonisolated static let dwellTimeLiftToSkiing: TimeInterval = 8
     nonisolated static let dwellTimeIdleToSkiing: TimeInterval = 3
     nonisolated static let dwellTimeIdleToLift: TimeInterval = 10
@@ -50,8 +52,10 @@ enum SharedConstants {
     nonisolated static let highSpeedThreshold: Double = 5.0         // m/s
     nonisolated static let mediumSpeedThreshold: Double = 2.0       // m/s
 
-    // MARK: - Buffer
-    nonisolated static let recentPointsBufferSize: Int = 15         // ~15–20s of GPS points @1Hz
+    // MARK: - Detection Tuning
+    nonisolated static let transitionOverrideConfidence: Double = 0.72
+    nonisolated static let transitionStrongOverrideConfidence: Double = 0.85
+    nonisolated static let acceleratedDwellConfidence: Double = 0.80
 
     // MARK: - Stop Detection
     nonisolated static let stopDurationThreshold: TimeInterval = 75 // seconds before ending a run
@@ -68,4 +72,12 @@ enum SharedConstants {
 
     // MARK: - WCSession
     nonisolated static let watchSessionKey = "snowly.watch.message"
+
+    // MARK: - Dashboard Time-Series Windows
+    nonisolated static let speedSampleWindowSeconds:    TimeInterval = 600  // 10 min
+    nonisolated static let altitudeSampleWindowSeconds: TimeInterval = 3600 // 1 hr
+    nonisolated static let profileViewWindowCount:      Int          = 180  // samples shown in SyncedActivityProfileView
+    nonisolated static let speedCurveMaxPoints:         Int          = 300  // max points in LiveSpeedCurveView
+    nonisolated static let heartRateSampleWindowSeconds: TimeInterval = 3600 // 1 hr
+    nonisolated static let heartRateCurveMaxPoints:      Int          = 3600 // 1 sample/s × 1 hr
 }

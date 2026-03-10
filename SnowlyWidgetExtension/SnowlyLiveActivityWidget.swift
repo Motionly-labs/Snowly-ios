@@ -22,9 +22,7 @@ struct SnowlyLiveActivityWidget: Widget {
             } compactLeading: {
                 snowlyLogo(size: 16)
             } compactTrailing: {
-                Text(formattedSpeed(context.state.currentSpeed, unit: context.attributes.unitSystem))
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.white)
+                compactTrailingView(context: context)
             } minimal: {
                 Image(systemName: playbackIconName(isPaused: context.state.isPaused))
                     .font(.caption)
@@ -149,6 +147,47 @@ struct SnowlyLiveActivityWidget: Widget {
     }
 
     // MARK: - Helpers
+
+    private struct CompactCarouselItem {
+        let symbolName: String
+        let value: String
+    }
+
+    private func compactTrailingView(context: ActivityViewContext<SnowlyActivityAttributes>) -> some View {
+        TimelineView(.periodic(from: context.attributes.startDate, by: 4)) { timeline in
+            let item = compactCarouselItem(context: context, at: timeline.date)
+
+            HStack(spacing: 3) {
+                Image(systemName: item.symbolName)
+                    .font(.caption2)
+                Text(item.value)
+                    .font(.caption.monospacedDigit())
+            }
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .contentTransition(.numericText())
+        }
+    }
+
+    private func compactCarouselItem(
+        context: ActivityViewContext<SnowlyActivityAttributes>,
+        at date: Date
+    ) -> CompactCarouselItem {
+        let state = context.state
+        let unit = context.attributes.unitSystem
+        let items = [
+            CompactCarouselItem(symbolName: "speedometer", value: formattedSpeed(state.currentSpeed, unit: unit)),
+            CompactCarouselItem(symbolName: "hare.fill", value: formattedSpeed(state.maxSpeed, unit: unit)),
+            CompactCarouselItem(symbolName: "arrow.up.and.down", value: "\(formattedVertical(state.totalVertical, unit: unit))\(verticalUnitLabel(unit: unit))"),
+            CompactCarouselItem(symbolName: "flag.checkered", value: "\(state.runCount)"),
+            CompactCarouselItem(symbolName: "timer", value: formattedElapsedTime(state.elapsedSeconds))
+        ]
+
+        let secondsSinceStart = max(0, Int(date.timeIntervalSince(context.attributes.startDate)))
+        let index = (secondsSinceStart / 4) % items.count
+        return items[index]
+    }
 
     private func statChip(label: String, value: String, align: HorizontalAlignment) -> some View {
         VStack(alignment: align, spacing: 1) {

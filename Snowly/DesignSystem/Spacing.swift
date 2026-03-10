@@ -21,4 +21,11 @@ enum Spacing {
     static let xxl: CGFloat = 32
     static let xxxl: CGFloat = 40
     static let section: CGFloat = 48
+
+    // MARK: - Component Sizes
+    /// Diameter of the primary circular hero button (Start / Resume).
+    /// Shared by LongPressStartButton and ResumeTrackingButton.
+    static let heroButton: CGFloat = 188
+    /// Width of the left stats panel in the landscape tracking dashboard.
+    static let landscapeStatPanel: CGFloat = 210
 }

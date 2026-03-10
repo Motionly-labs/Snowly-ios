@@ -20,16 +20,54 @@ enum TrackingState: Sendable, Equatable {
     case paused
 }
 
+/// Aggregated session metrics that only count validated skiing activity.
+struct SessionSkiingMetrics: Sendable, Equatable {
+    let totalDistance: Double
+    let totalVertical: Double
+    let maxSpeed: Double
+    let runCount: Int
+
+    static let zero = SessionSkiingMetrics(
+        totalDistance: 0,
+        totalVertical: 0,
+        maxSpeed: 0,
+        runCount: 0
+    )
+}
+
+/// Coarse state used by the live speed curve coloring.
+enum SpeedCurveState: String, Codable, Sendable, Equatable {
+    case skiing
+    case lift
+    case others
+}
+
 /// A time-stamped speed reading for the live speed curve.
 struct SpeedSample: Sendable, Equatable {
     let time: Date
     let speed: Double // m/s
+    let state: SpeedCurveState
+}
+
+/// A time-stamped altitude reading for the altitude curve widget.
+/// Altitude is pre-converted to the user's display unit before storing.
+struct AltitudeSample: Sendable, Equatable {
+    let time: Date
+    let altitude: Double        // display units (m or ft)
+    let state: SpeedCurveState  // activity phase for per-segment coloring
+}
+
+/// A time-stamped heart rate reading for the heart rate curve hero card.
+struct HeartRateSample: Sendable, Equatable {
+    let time: Date
+    let bpm: Double
 }
 
 private struct TrackingPointIngestResult: Sendable {
     let previousPoint: TrackPoint?
     let distance: Double
     let activity: DetectedActivity
+    let scalar: ScalarSnapshot
 }
 
 private struct CompletedRunStorage: Sendable {
@@ -47,6 +85,7 @@ private struct ScalarSnapshot: Sendable {
     let maxSpeed: Double
     let totalDistance: Double
     let totalVertical: Double
+    let skiingMetrics: SessionSkiingMetrics
     let currentActivity: DetectedActivity
     let runCount: Int
     let completedRunsVersion: Int
@@ -58,12 +97,49 @@ private struct TrackingEngineSnapshot: Sendable {
     let maxSpeed: Double
     let totalDistance: Double
     let totalVertical: Double
+    let skiingMetrics: SessionSkiingMetrics
     let currentActivity: DetectedActivity
     let runCount: Int
     let completedRuns: [CompletedRunData]
     let speedSamples: [SpeedSample]
 }
 
+private extension DetectedActivity {
+    nonisolated var speedCurveState: SpeedCurveState {
+        switch self {
+        case .skiing:
+            return .skiing
+        case .lift:
+            return .lift
+        case .idle, .walk:
+            return .others
+        }
+    }
+}
+
+/// Core runtime engine for motion estimation, activity detection, segmenting,
+/// and run materialization.
+///
+/// Dependency graph of the tracking pipeline:
+/// ```mermaid
+/// graph TD
+/// A[LocationTrackingService] --> B[SessionTrackingService]
+/// B --> C[TrackingEngine]
+/// C --> D[GPSKalmanFilter]
+/// C --> E[RunDetectionService]
+/// E --> F[MotionEstimator]
+/// C --> G[Dwell/Hysteresis]
+/// C --> H[SegmentProcessor]
+/// H --> I[SegmentValidator]
+/// H --> J[Raw TrackFile Writer]
+/// J --> K[materializeTrackFileIfNeeded]
+/// K --> L[SkiRun.trackData]
+/// L --> M[SessionSummary Export]
+/// B --> N[HealthKitCoordinator]
+/// O[SharedConstants] --> F
+/// O --> E
+/// O --> I
+/// ```
 private actor TrackingEngine {
     struct Seed: Sendable {
         let totalDistance: Double
@@ -84,10 +160,14 @@ private actor TrackingEngine {
     private var gpsFilter = GPSKalmanFilter()
 
     // MARK: - Detection state
-    private var recentPoints: [TrackPoint] = []
-    private var previousPoint: TrackPoint?
+    private var recentPoints: [FilteredTrackPoint] = []
+    private var previousFilteredPoint: FilteredTrackPoint?
+    private var previousRawPoint: TrackPoint?
     private var candidateActivity: DetectedActivity?
     private var candidateStartTime: Date?
+    /// Timestamp of the last point seeded via primeRecentWindow. Points with timestamp ≤ this
+    /// are skipped in ingest() to prevent double-processing through the Kalman filter.
+    private var primeEndTimestamp: Date?
 
     // MARK: - Completed runs
     private var completedRuns: [CompletedRunData] = []
@@ -96,7 +176,7 @@ private actor TrackingEngine {
 
     // MARK: - Speed curve
     private var speedSamples: [SpeedSample] = []
-    private static let speedSampleWindow: TimeInterval = 600 // 10 minutes
+    private static let speedSampleWindow: TimeInterval = SharedConstants.speedSampleWindowSeconds
 
     // MARK: - Version counters
     private var completedRunsVersion: Int = 0
@@ -104,8 +184,8 @@ private actor TrackingEngine {
 
     // MARK: - Active segment (streamed to temp file)
     private var currentSegmentType: RunActivityType?
-    private var segmentStartPoint: TrackPoint?
-    private var segmentLastPoint: TrackPoint?
+    private var segmentStartPoint: FilteredTrackPoint?
+    private var segmentLastPoint: FilteredTrackPoint?
     private var segmentDistance: Double = 0
     private var segmentMaxSpeed: Double = 0
     private var segmentPointCount: Int = 0
@@ -146,41 +226,89 @@ private actor TrackingEngine {
         }
     }
 
-    func ingest(point: TrackPoint, motion: MotionHint) async -> TrackingPointIngestResult {
-        let point = gpsFilter.update(point: point)
-        currentSpeed = point.speed
+    func primeRecentWindow(with points: [TrackPoint]) {
+        guard !points.isEmpty else { return }
 
-        let rawActivity = RunDetectionService.detect(
-            point: point,
+        let sortedPoints = points.sorted { $0.timestamp < $1.timestamp }
+        for point in sortedPoints {
+            let filteredPoint = gpsFilter.update(point: point)
+            recentPoints.append(filteredPoint)
+            RecentTrackWindow.trimFilteredPoints(
+                &recentPoints,
+                relativeTo: filteredPoint.timestamp
+            )
+        }
+
+        // Record cutoff so ingest() skips any live-stream points that overlap with
+        // the seeded history, preventing double-processing through the Kalman filter.
+        primeEndTimestamp = sortedPoints.last?.timestamp
+
+        previousFilteredPoint = nil
+        previousRawPoint = nil
+        candidateActivity = nil
+        candidateStartTime = nil
+        currentActivity = .idle
+        currentSpeed = 0
+    }
+
+    func ingest(point: TrackPoint, motion: MotionHint) -> TrackingPointIngestResult {
+        // Skip points already fed through the Kalman filter during primeRecentWindow.
+        // Prevents double-processing at session start and after resume when the live
+        // stream overlaps with seeded history.
+        if let cutoff = primeEndTimestamp {
+            if point.timestamp <= cutoff {
+                return TrackingPointIngestResult(
+                    previousPoint: nil, distance: 0,
+                    activity: currentActivity, scalar: scalarSnapshot()
+                )
+            }
+            primeEndTimestamp = nil
+        }
+
+        let rawPoint = point
+        let filteredPoint = gpsFilter.update(point: rawPoint)
+        currentSpeed = filteredPoint.estimatedSpeed
+
+        // Consumer pattern invariant: filteredPoint is NOT in recentPoints here.
+        // Detection reads history before append so the current point cannot bias its own
+        // classification. recentPoints.append() happens below, AFTER detection.
+        // Do not move the append call above this block.
+        let detectionDecision = RunDetectionService.analyze(
+            point: filteredPoint,
             recentPoints: recentPoints,
             previousActivity: currentActivity,
             motion: motion
         )
+        let rawActivity = detectionDecision.activity
 
-        recentPoints.append(point)
-        if recentPoints.count > SharedConstants.recentPointsBufferSize {
-            recentPoints.removeFirst(recentPoints.count - SharedConstants.recentPointsBufferSize)
-        }
+        recentPoints.append(filteredPoint)
+        RecentTrackWindow.trimFilteredPoints(&recentPoints, relativeTo: filteredPoint.timestamp)
 
-        let dwellResult = await SessionTrackingService.applyDwellTime(
+        // applyDwellTime is nonisolated — no MainActor hop needed.
+        let dwellResult = SessionTrackingService.applyDwellTime(
             rawActivity: rawActivity,
             currentActivity: currentActivity,
             candidateActivity: candidateActivity,
             candidateStartTime: candidateStartTime,
-            timestamp: point.timestamp
+            timestamp: filteredPoint.timestamp,
+            accelerated: detectionDecision.shouldAccelerateDwell
         )
         currentActivity = dwellResult.activity
         candidateActivity = dwellResult.candidate
         candidateStartTime = dwellResult.candidateStart
 
+        // Accumulate session metrics against rawActivity (pre-dwell), not currentActivity.
+        // This prevents lift travel distance from being credited to skiing during the dwell
+        // window (e.g. 14s skiing→lift at ~3 m/s = ~42m that would otherwise be miscounted).
+        // Segment boundaries still use currentActivity for stability.
         var distance = 0.0
-        let previousForHealthKit = previousPoint
-        if let prev = previousPoint {
-            distance = prev.distance(to: point)
-            switch currentActivity {
+        let previousForHealthKit = previousRawPoint
+        if let prev = previousFilteredPoint {
+            distance = prev.distance(to: filteredPoint)
+            switch rawActivity {
             case .skiing:
                 totalDistance += distance
-                let verticalDrop = prev.altitude - point.altitude
+                let verticalDrop = prev.altitude - filteredPoint.altitude
                 if verticalDrop > 0 {
                     totalVertical += verticalDrop
                 }
@@ -189,17 +317,19 @@ private actor TrackingEngine {
             }
         }
 
-        if point.speed > maxSpeed {
-            maxSpeed = point.speed
+        if case .skiing = rawActivity, filteredPoint.estimatedSpeed > maxSpeed {
+            maxSpeed = filteredPoint.estimatedSpeed
         }
 
-        processSegment(point, activity: currentActivity)
-        previousPoint = point
+        processSegment(filteredPoint: filteredPoint, rawPoint: rawPoint, activity: currentActivity)
+        previousFilteredPoint = filteredPoint
+        previousRawPoint = rawPoint
 
         return TrackingPointIngestResult(
             previousPoint: previousForHealthKit,
             distance: distance,
-            activity: currentActivity
+            activity: currentActivity,
+            scalar: scalarSnapshot()
         )
     }
 
@@ -214,11 +344,18 @@ private actor TrackingEngine {
     }
 
     func scalarSnapshot() -> ScalarSnapshot {
-        ScalarSnapshot(
+        let metrics = SessionSkiingMetrics(
+            totalDistance: totalDistance,
+            totalVertical: totalVertical,
+            maxSpeed: maxSpeed,
+            runCount: runCount
+        )
+        return ScalarSnapshot(
             currentSpeed: currentSpeed,
             maxSpeed: maxSpeed,
             totalDistance: totalDistance,
             totalVertical: totalVertical,
+            skiingMetrics: metrics,
             currentActivity: currentActivity,
             runCount: runCount,
             completedRunsVersion: completedRunsVersion,
@@ -235,11 +372,18 @@ private actor TrackingEngine {
     }
 
     func snapshot() -> TrackingEngineSnapshot {
-        TrackingEngineSnapshot(
+        let metrics = SessionSkiingMetrics(
+            totalDistance: totalDistance,
+            totalVertical: totalVertical,
+            maxSpeed: maxSpeed,
+            runCount: runCount
+        )
+        return TrackingEngineSnapshot(
             currentSpeed: currentSpeed,
             maxSpeed: maxSpeed,
             totalDistance: totalDistance,
             totalVertical: totalVertical,
+            skiingMetrics: metrics,
             currentActivity: currentActivity,
             runCount: runCount,
             completedRuns: completedRuns,
@@ -249,7 +393,13 @@ private actor TrackingEngine {
 
     func recordSpeedSample() {
         let now = Date.now
-        speedSamples.append(SpeedSample(time: now, speed: max(currentSpeed, 0)))
+        speedSamples.append(
+            SpeedSample(
+                time: now,
+                speed: max(currentSpeed, 0),
+                state: currentActivity.speedCurveState
+            )
+        )
         let cutoff = now.addingTimeInterval(-Self.speedSampleWindow)
         if let firstValid = speedSamples.firstIndex(where: { $0.time >= cutoff }),
            firstValid > 0 {
@@ -276,7 +426,8 @@ private actor TrackingEngine {
         currentActivity = .idle
 
         recentPoints = []
-        previousPoint = nil
+        previousFilteredPoint = nil
+        previousRawPoint = nil
         candidateActivity = nil
         candidateStartTime = nil
 
@@ -299,7 +450,7 @@ private actor TrackingEngine {
 
     // MARK: - Segment processing
 
-    private func processSegment(_ point: TrackPoint, activity: DetectedActivity) {
+    private func processSegment(filteredPoint: FilteredTrackPoint, rawPoint: TrackPoint, activity: DetectedActivity) {
         let targetType: RunActivityType?
         switch activity {
         case .skiing: targetType = .skiing
@@ -313,14 +464,14 @@ private actor TrackingEngine {
                 finalizeCurrentSegment()
                 startSegment(type: targetType)
             }
-            appendPointToCurrentSegment(point)
-            lastActiveTime = point.timestamp
+            appendPointToCurrentSegment(filteredPoint: filteredPoint, rawPoint: rawPoint)
+            lastActiveTime = filteredPoint.timestamp
             return
         }
 
         if currentSegmentType != nil,
            let lastActive = lastActiveTime,
-           RunDetectionService.shouldEndRun(lastActivityTime: lastActive, now: point.timestamp) {
+           RunDetectionService.shouldEndRun(lastActivityTime: lastActive, now: filteredPoint.timestamp) {
             finalizeCurrentSegment()
         }
     }
@@ -341,25 +492,25 @@ private actor TrackingEngine {
         }
     }
 
-    private func appendPointToCurrentSegment(_ point: TrackPoint) {
+    private func appendPointToCurrentSegment(filteredPoint: FilteredTrackPoint, rawPoint: TrackPoint) {
         guard currentSegmentType != nil else { return }
 
         if segmentStartPoint == nil {
-            segmentStartPoint = point
-            segmentLastPoint = point
-            segmentMaxSpeed = point.speed
+            segmentStartPoint = filteredPoint
+            segmentLastPoint = filteredPoint
+            segmentMaxSpeed = filteredPoint.estimatedSpeed
             segmentPointCount = 1
-            appendPointToSegmentFile(point)
+            appendPointToSegmentFile(rawPoint)
             return
         }
 
         if let last = segmentLastPoint {
-            segmentDistance += last.distance(to: point)
+            segmentDistance += last.distance(to: filteredPoint)
         }
-        segmentLastPoint = point
-        segmentMaxSpeed = max(segmentMaxSpeed, point.speed)
+        segmentLastPoint = filteredPoint
+        segmentMaxSpeed = max(segmentMaxSpeed, filteredPoint.estimatedSpeed)
         segmentPointCount += 1
-        appendPointToSegmentFile(point)
+        appendPointToSegmentFile(rawPoint)
     }
 
     private func finalizeCurrentSegment() {
@@ -417,7 +568,8 @@ private actor TrackingEngine {
 
     private func clearRealtimeState() {
         gpsFilter.reset()
-        previousPoint = nil
+        previousFilteredPoint = nil
+        previousRawPoint = nil
         recentPoints = []
         candidateActivity = nil
         candidateStartTime = nil
@@ -446,6 +598,11 @@ private actor TrackingEngine {
         closeSegmentHandle()
         if deleteFile {
             deleteSegmentFileIfPresent()
+        } else {
+            // The file URL has already been moved to `completedRunFiles`.
+            // Clearing it here prevents later no-op finalization from deleting
+            // a completed segment's persisted track file.
+            segmentTrackFileURL = nil
         }
         currentSegmentType = nil
         segmentStartPoint = nil
@@ -504,13 +661,19 @@ final class SessionTrackingService {
 
     /// Set to true by deep links / quick actions. HomeView observes and starts tracking.
     var quickStartPending = false
+    private(set) var didRecoverSession = false
 
     private(set) var runCount: Int = 0
     private(set) var completedRuns: [CompletedRunData] = []
+    private(set) var skiingMetrics: SessionSkiingMetrics = .zero
     var pendingHealthKitWorkoutId: UUID? { healthKitCoordinator.pendingWorkoutId }
 
     /// Rolling 10-minute window of time-stamped speed samples for the live curve.
+    /// Each sample carries a coarse activity state for curve coloring.
     private(set) var speedSamples: [SpeedSample] = []
+
+    /// Rolling 1-hour window of time-stamped altitude samples for the altitude curve widget.
+    private(set) var altitudeSamples: [AltitudeSample] = []
 
     // MARK: - Internal state
     private var trackingTask: Task<Void, Never>?
@@ -561,6 +724,10 @@ final class SessionTrackingService {
 
     // MARK: - Public API
 
+    func dismissRecoveryNotification() {
+        didRecoverSession = false
+    }
+
     func startTracking(healthKitEnabled: Bool = false, unitSystem: UnitSystem = .metric) {
         guard state == .idle else { return }
 
@@ -587,7 +754,7 @@ final class SessionTrackingService {
 
         ensureLiveActivityStarted(unitSystem: unitSystem)
 
-        startLiveTrackingPipeline()
+        startLiveTrackingPipeline(seedHistory: locationService.recentTrackPointsSnapshot())
         startTimer()
         startPeriodicPersistence()
     }
@@ -610,7 +777,7 @@ final class SessionTrackingService {
         if trackingTask == nil {
             motionService.startMonitoring()
             batteryService.startMonitoring()
-            startLiveTrackingPipeline()
+            startLiveTrackingPipeline(seedHistory: locationService.recentTrackPointsSnapshot())
             if timerTask == nil {
                 startTimer()
             }
@@ -618,6 +785,8 @@ final class SessionTrackingService {
                 startPeriodicPersistence()
             }
         }
+
+        await trackingEngine.primeRecentWindow(with: locationService.recentTrackPointsSnapshot())
 
         if let pauseStart = pauseStartTime {
             totalPausedTime += Date().timeIntervalSince(pauseStart)
@@ -683,10 +852,10 @@ final class SessionTrackingService {
             id: sessionId,
             startDate: start,
             endDate: Date(),
-            totalDistance: totalDistance,
-            totalVertical: totalVertical,
-            maxSpeed: maxSpeed,
-            runCount: runCount
+            totalDistance: skiingMetrics.totalDistance,
+            totalVertical: skiingMetrics.totalVertical,
+            maxSpeed: skiingMetrics.maxSpeed,
+            runCount: skiingMetrics.runCount
         )
 
         if let workoutId = pendingHealthKitWorkoutId {
@@ -751,12 +920,16 @@ final class SessionTrackingService {
 
     // MARK: - Private
 
-    private func startLiveTrackingPipeline() {
+    private func startLiveTrackingPipeline(seedHistory: [TrackPoint] = []) {
         trackingTask?.cancel()
         let stream = locationService.startTracking()
         trackingTask = Task { [weak self] in
+            guard let self else { return }
+            if !seedHistory.isEmpty {
+                await self.trackingEngine.primeRecentWindow(with: seedHistory)
+            }
             for await point in stream {
-                guard let self, !Task.isCancelled else { break }
+                guard !Task.isCancelled else { break }
                 await self.processTrackPoint(point)
             }
         }
@@ -789,24 +962,24 @@ final class SessionTrackingService {
             )
         }
 
-        await pushLiveActivityUpdateFromEngine()
+        // Use the scalar returned by ingest() — no second actor hop into TrackingEngine.
+        pushLiveActivityUpdate(scalar: ingestResult.scalar)
     }
 
-    /// Pushes Live Activity updates directly from engine state so background
-    /// updates are not blocked by UI refresh cadence.
-    private func pushLiveActivityUpdateFromEngine() async {
-        guard liveActivityService != nil else { return }
-        let scalar = await trackingEngine.scalarSnapshot()
+    /// Pushes a Live Activity update using a scalar snapshot already in hand.
+    /// Synchronous — no actor access needed.
+    private func pushLiveActivityUpdate(scalar: ScalarSnapshot) {
+        guard let liveActivityService else { return }
         let state = SnowlyActivityAttributes.ContentState(
             currentSpeed: scalar.currentSpeed,
-            totalVertical: scalar.totalVertical,
-            runCount: scalar.runCount,
+            totalVertical: scalar.skiingMetrics.totalVertical,
+            runCount: scalar.skiingMetrics.runCount,
             elapsedSeconds: Int(computeElapsedTime()),
             currentActivity: scalar.currentActivity.activityName,
             isPaused: self.state == .paused,
-            maxSpeed: scalar.maxSpeed
+            maxSpeed: scalar.skiingMetrics.maxSpeed
         )
-        liveActivityService?.update(state: state)
+        liveActivityService.update(state: state)
     }
 
     private func startTimer() {
@@ -871,9 +1044,28 @@ final class SessionTrackingService {
         }
     }
 
+    private func recordAltitudeSample() {
+        guard state == .tracking else { return }
+        let raw = locationService.currentAltitude
+        let display = liveActivityUnitSystem == .imperial ? UnitConversion.metersToFeet(raw) : raw
+        let sample = AltitudeSample(
+            time: .now,
+            altitude: display,
+            state: speedSamples.last?.state ?? .others
+        )
+        var updated = altitudeSamples
+        updated.append(sample)
+        let cutoff = Date.now.addingTimeInterval(-SharedConstants.altitudeSampleWindowSeconds)
+        if let firstValid = updated.firstIndex(where: { $0.time >= cutoff }), firstValid > 0 {
+            updated.removeSubrange(0..<firstValid)
+        }
+        altitudeSamples = updated
+    }
+
     private func syncPublishedSnapshot(recordSpeedSample: Bool) async {
         if recordSpeedSample {
             await trackingEngine.recordSpeedSample()
+            recordAltitudeSample()
         }
 
         let scalar = await trackingEngine.scalarSnapshot()
@@ -898,6 +1090,9 @@ final class SessionTrackingService {
         // Batch all MainActor mutations in one synchronous block
         if currentSpeed != scalar.currentSpeed {
             currentSpeed = scalar.currentSpeed
+        }
+        if skiingMetrics != scalar.skiingMetrics {
+            skiingMetrics = scalar.skiingMetrics
         }
         if maxSpeed != scalar.maxSpeed {
             maxSpeed = scalar.maxSpeed
@@ -927,12 +1122,12 @@ final class SessionTrackingService {
     private func buildLiveActivityState() -> SnowlyActivityAttributes.ContentState {
         SnowlyActivityAttributes.ContentState(
             currentSpeed: currentSpeed,
-            totalVertical: totalVertical,
-            runCount: runCount,
+            totalVertical: skiingMetrics.totalVertical,
+            runCount: skiingMetrics.runCount,
             elapsedSeconds: Int(computeElapsedTime()),
             currentActivity: currentActivity.activityName,
             isPaused: state == .paused,
-            maxSpeed: maxSpeed
+            maxSpeed: skiingMetrics.maxSpeed
         )
     }
 
@@ -950,10 +1145,10 @@ final class SessionTrackingService {
             sessionId: sessionId,
             startDate: start,
             lastUpdateDate: lastUpdateDate,
-            totalDistance: snapshot.totalDistance,
-            totalVertical: snapshot.totalVertical,
-            maxSpeed: snapshot.maxSpeed,
-            runCount: snapshot.runCount,
+            totalDistance: snapshot.skiingMetrics.totalDistance,
+            totalVertical: snapshot.skiingMetrics.totalVertical,
+            maxSpeed: snapshot.skiingMetrics.maxSpeed,
+            runCount: snapshot.skiingMetrics.runCount,
             isActive: true,
             elapsedTime: computeElapsedTime(),
             completedRuns: snapshot.completedRuns.map {
@@ -1039,6 +1234,7 @@ final class SessionTrackingService {
     }
 
     private func restoreState(from persisted: PersistedTrackingState) {
+        didRecoverSession = true
         activeSessionId = persisted.sessionId
         startDate = persisted.startDate
         totalDistance = persisted.totalDistance
@@ -1062,6 +1258,12 @@ final class SessionTrackingService {
         }
         completedRuns = restoredRuns
         runCount = max(persisted.runCount, restoredRuns.filter { $0.activityType == .skiing }.count)
+        skiingMetrics = SessionSkiingMetrics(
+            totalDistance: totalDistance,
+            totalVertical: totalVertical,
+            maxSpeed: maxSpeed,
+            runCount: runCount
+        )
 
         let seed = TrackingEngine.Seed(
             totalDistance: totalDistance,
@@ -1075,49 +1277,74 @@ final class SessionTrackingService {
         currentSpeed = 0
         currentActivity = .idle
         speedSamples = []
+        altitudeSamples = []
         state = .paused
     }
 
     /// Returns the required dwell time for a state transition.
-    static func dwellTimeForTransition(
+    /// `nonisolated` so TrackingEngine can call it without a MainActor hop.
+    nonisolated static func dwellTimeForTransition(
         from current: DetectedActivity,
-        to target: DetectedActivity
+        to target: DetectedActivity,
+        accelerated: Bool = false
     ) -> TimeInterval {
+        let base: TimeInterval
         switch (current, target) {
         case (.skiing, .lift):
-            return SharedConstants.dwellTimeSkiingToLift
+            base = SharedConstants.dwellTimeSkiingToLift
         case (.lift, .skiing):
-            return SharedConstants.dwellTimeLiftToSkiing
+            base = SharedConstants.dwellTimeLiftToSkiing
         case (.idle, .skiing):
-            return SharedConstants.dwellTimeIdleToSkiing
+            base = SharedConstants.dwellTimeIdleToSkiing
         case (.idle, .lift):
-            return SharedConstants.dwellTimeIdleToLift
+            base = SharedConstants.dwellTimeIdleToLift
         case (_, .walk):
-            return SharedConstants.dwellTimeAnyToWalk
+            base = SharedConstants.dwellTimeAnyToWalk
         case (.walk, .skiing):
-            return SharedConstants.dwellTimeWalkToSkiing
+            base = SharedConstants.dwellTimeWalkToSkiing
         case (.walk, .lift):
-            return SharedConstants.dwellTimeWalkToLift
+            base = SharedConstants.dwellTimeWalkToLift
         default:
-            return 0
+            base = 0
+        }
+
+        guard accelerated else { return base }
+
+        switch (current, target) {
+        case (.skiing, .lift):
+            return min(base, 8)   // high-confidence lift entry: 8s floor (down from 12s)
+        case (.lift, .skiing):
+            return min(base, 4)
+        case (.idle, .skiing):
+            return min(base, 2)
+        case (.idle, .lift):
+            return min(base, 6)
+        default:
+            return base
         }
     }
 
     /// Pure function: applies dwell time hysteresis to raw activity detection.
     /// State only switches after the candidate activity persists for the required dwell time.
-    static func applyDwellTime(
+    /// `nonisolated` so TrackingEngine can call it without a MainActor hop.
+    nonisolated static func applyDwellTime(
         rawActivity: DetectedActivity,
         currentActivity: DetectedActivity,
         candidateActivity: DetectedActivity?,
         candidateStartTime: Date?,
-        timestamp: Date
+        timestamp: Date,
+        accelerated: Bool = false
     ) -> (activity: DetectedActivity, candidate: DetectedActivity?, candidateStart: Date?) {
         if rawActivity == currentActivity {
             return (currentActivity, nil, nil)
         }
 
         if rawActivity == candidateActivity, let candidateStart = candidateStartTime {
-            let required = dwellTimeForTransition(from: currentActivity, to: rawActivity)
+            let required = dwellTimeForTransition(
+                from: currentActivity,
+                to: rawActivity,
+                accelerated: accelerated
+            )
             if timestamp.timeIntervalSince(candidateStart) >= required {
                 return (rawActivity, nil, nil)
             }
@@ -1135,7 +1362,9 @@ final class SessionTrackingService {
         currentActivity = .idle
         runCount = 0
         completedRuns = []
+        skiingMetrics = .zero
         speedSamples = []
+        altitudeSamples = []
 
         totalPausedTime = 0
         pauseStartTime = nil

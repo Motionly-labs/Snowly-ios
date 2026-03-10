@@ -16,11 +16,10 @@ final class UserProfile {
     var displayName: String = ""
     var preferredUnits: UnitSystem
 
-    // Season best records
+    // All-time personal bests (single session records)
     var seasonBestMaxSpeed: Double = 0      // m/s
-    var seasonBestVertical: Double = 0      // meters (single session)
-    var seasonBestDistance: Double = 0      // meters (single session)
-    var seasonBestRunCount: Int = 0         // single session
+    var seasonBestVertical: Double = 0      // meters
+    var seasonBestDistance: Double = 0      // meters
 
     /// Daily activity goal in minutes (default: 4 hours).
     var dailyGoalMinutes: Double = 240
@@ -37,7 +36,6 @@ final class UserProfile {
         seasonBestMaxSpeed: Double = 0,
         seasonBestVertical: Double = 0,
         seasonBestDistance: Double = 0,
-        seasonBestRunCount: Int = 0,
         dailyGoalMinutes: Double = 240,
         avatarData: Data? = nil,
         createdAt: Date = Date()
@@ -48,7 +46,6 @@ final class UserProfile {
         self.seasonBestMaxSpeed = seasonBestMaxSpeed
         self.seasonBestVertical = seasonBestVertical
         self.seasonBestDistance = seasonBestDistance
-        self.seasonBestRunCount = seasonBestRunCount
         self.dailyGoalMinutes = dailyGoalMinutes
         self.avatarData = avatarData
         self.createdAt = createdAt

@@ -20,11 +20,30 @@ struct RunBarsView: View {
                 let rawHeight = CGFloat(value / maxValue) * 48
                 let animatedHeight = max(2, rawHeight * progress)
                 let isMax = index == maxIndex && value > 0
+                let runGradient = RunColorPalette.chartGradientColors(
+                    forRunIndex: index,
+                    totalRuns: max(values.count, 1)
+                )
 
                 VStack {
                     Spacer(minLength: 0)
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(isMax ? Color.accentColor : Color.secondary.opacity(Opacity.moderate))
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    runGradient.top.opacity(isMax ? 0.95 : 0.68),
+                                    runGradient.bottom.opacity(isMax ? 0.92 : 0.55),
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .overlay {
+                            if isMax {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .stroke(Color.white.opacity(0.45), lineWidth: 0.9)
+                            }
+                        }
                         .frame(maxWidth: 32)
                         .frame(height: animatedHeight)
                 }

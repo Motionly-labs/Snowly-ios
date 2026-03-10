@@ -40,6 +40,10 @@ struct SessionSummaryView: View {
 
     private var profile: UserProfile? { profiles.first }
 
+    private var hasAnyTrackDecodeError: Bool {
+        displayedSession?.runs.contains(where: { $0.hasTrackDecodeError }) ?? false
+    }
+
     private var unitSystem: UnitSystem {
         profile?.preferredUnits ?? .metric
     }
@@ -242,6 +246,12 @@ struct SessionSummaryView: View {
                 statsGridSection(session: session)
                     .padding(.horizontal)
 
+                // Track decode error notice
+                if hasAnyTrackDecodeError {
+                    trackDecodeErrorNotice
+                        .padding(.horizontal)
+                }
+
                 // Personal best
                 if !personalBestRecords.isEmpty {
                     personalBestsBanner(personalBestRecords)
@@ -276,6 +286,10 @@ struct SessionSummaryView: View {
                     userInfoSection(session: session)
                     heroDurationSection(session: session)
                     statsGridSection(session: session)
+
+                    if hasAnyTrackDecodeError {
+                        trackDecodeErrorNotice
+                    }
 
                     if !personalBestRecords.isEmpty {
                         personalBestsBanner(personalBestRecords)
@@ -586,6 +600,22 @@ struct SessionSummaryView: View {
         }
     }
 
+    /// Exports canonical session route points as JSON.
+    ///
+    /// Data-shape flow for export:
+    /// ```mermaid
+    /// graph LR
+    /// P[Raw TrackPoint] --> Q[Kalman Filtered TrackPoint]
+    /// Q --> R[Detection/State/Metrics]
+    /// P --> S[NDJSON Segment File]
+    /// S --> T[Materialized JSON]
+    /// T --> U[SkiRun.trackData]
+    /// U --> V[Exported GPS]
+    /// ```
+    ///
+    /// Notes:
+    /// - Detection/statistics consume filtered points.
+    /// - Persisted and exported route data consume raw GPS points.
     @MainActor
     private func exportSessionData(_ session: SkiSession) async {
         guard !isExportingData else { return }
@@ -627,6 +657,19 @@ struct SessionSummaryView: View {
         } else {
             exportErrorMessage = String(localized: "settings_alert_export_unknown_error")
         }
+    }
+
+    private var trackDecodeErrorNotice: some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle")
+                .foregroundStyle(ColorTokens.warning)
+            Text(String(localized: "session.track_decode_error_notice"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(Spacing.md)
+        .background(ColorTokens.warning.opacity(Opacity.subtle), in: RoundedRectangle(cornerRadius: CornerRadius.medium))
     }
 
     private func sanitizedFilenameComponent(_ value: String) -> String {

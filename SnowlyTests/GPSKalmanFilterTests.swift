@@ -173,7 +173,7 @@ struct GPSKalmanFilterTests {
             0.00003, -0.00001, 0.00002, -0.00003, 0.00001,
             -0.00002, 0.00004, -0.00001, 0.00003, -0.00002
         ]
-        var lastResult: TrackPoint?
+        var lastResult: FilteredTrackPoint?
         for i in 1...20 {
             let point = makePoint(
                 lat: baseLat + offsets[i - 1],
@@ -206,7 +206,7 @@ struct GPSKalmanFilterTests {
         ))
 
         // Feed 30 points moving north at 10 m/s
-        var lastResult: TrackPoint?
+        var lastResult: FilteredTrackPoint?
         for i in 1...30 {
             let t = Double(i)
             let lat = startLat + (speedMps * t) / metersPerDegreeLat
@@ -256,7 +256,7 @@ struct GPSKalmanFilterTests {
         _ = filter.update(point: makePoint(altitude: 2500, timestamp: now))
 
         // Descend 5 m/s for 20 seconds
-        var lastResult: TrackPoint?
+        var lastResult: FilteredTrackPoint?
         for i in 1...20 {
             let alt = 2500 - 5.0 * Double(i)
             lastResult = filter.update(point: makePoint(
@@ -320,7 +320,7 @@ struct GPSKalmanFilterTests {
         ))
 
         // Feed 5 more normal points — filter should recover toward 5 m/s
-        var lastResult: TrackPoint?
+        var lastResult: FilteredTrackPoint?
         for i in 12...16 {
             lastResult = filter.update(point: makePoint(
                 lat: 46.0 + 0.000045 * Double(i),

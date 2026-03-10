@@ -40,6 +40,9 @@
         }
       }
     },
+    "%lld bpm" : {
+
+    },
     "%lld%%" : {
 
     },
@@ -327,6 +330,22 @@
         }
       }
     },
+    "alert.crew_join_failed_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to Join Crew"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法加入队伍"
+          }
+        }
+      }
+    },
     "battery_time_remaining_format" : {
       "localizations" : {
         "en" : {
@@ -348,6 +367,9 @@
           }
         }
       }
+    },
+    "bpm" : {
+
     },
     "cache_action_download" : {
       "localizations" : {
@@ -1139,6 +1161,28 @@
         }
       }
     },
+    "common_reset" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Återställ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置"
+          }
+        }
+      }
+    },
     "common_resort" : {
       "localizations" : {
         "en" : {
@@ -1294,13 +1338,52 @@
       }
     },
     "control_widget_description" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Track your ski runs from Control Center"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在控制中心快速开始滑雪追踪"
+          }
+        }
+      }
     },
     "control_widget_display_name" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly"
+          }
+        }
+      }
     },
     "control_widget_start" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start Tracking"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始追踪"
+          }
+        }
+      }
     },
     "crew_create" : {
       "localizations" : {
@@ -1479,7 +1562,20 @@
       }
     },
     "crew_error_decoding_format %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to decode response: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解析响应失败：%@"
+          }
+        }
+      }
     },
     "crew_error_forbidden" : {
       "localizations" : {
@@ -1507,8 +1603,14 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "crew_error_http_format %1$lld %2$@"
+            "state" : "translated",
+            "value" : "Server error %lld: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器错误 %lld：%@"
           }
         }
       }
@@ -3631,6 +3733,246 @@
         }
       }
     },
+    "gear.default_item.backpack" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backpack"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "背包"
+          }
+        }
+      }
+    },
+    "gear.default_item.base_layer_bottom" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Base Layer Bottom"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排汗内衣（下）"
+          }
+        }
+      }
+    },
+    "gear.default_item.base_layer_top" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Base Layer Top"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排汗内衣（上）"
+          }
+        }
+      }
+    },
+    "gear.default_item.gloves" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gloves"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手套"
+          }
+        }
+      }
+    },
+    "gear.default_item.goggles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goggles"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "护目镜"
+          }
+        }
+      }
+    },
+    "gear.default_item.helmet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Helmet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "头盔"
+          }
+        }
+      }
+    },
+    "gear.default_item.lift_pass" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lift Pass"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缆车票"
+          }
+        }
+      }
+    },
+    "gear.default_item.phone_charger" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phone Charger"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手机充电器"
+          }
+        }
+      }
+    },
+    "gear.default_item.poles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poles"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雪杖"
+          }
+        }
+      }
+    },
+    "gear.default_item.ski_boots" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ski Boots"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪靴"
+          }
+        }
+      }
+    },
+    "gear.default_item.ski_jacket" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ski Jacket"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪夹克"
+          }
+        }
+      }
+    },
+    "gear.default_item.ski_pants" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ski Pants"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪裤"
+          }
+        }
+      }
+    },
+    "gear.default_item.ski_socks" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ski Socks"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "滑雪袜"
+          }
+        }
+      }
+    },
+    "gear.default_item.skis" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skis"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "雪板"
+          }
+        }
+      }
+    },
+    "gear.default_item.sunscreen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunscreen"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "防晒霜"
+          }
+        }
+      }
+    },
     "home_gps_status_denied" : {
       "localizations" : {
         "en" : {
@@ -4700,6 +5042,22 @@
         }
       }
     },
+    "onboarding.icloud_sync_note" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable iCloud before first launch to sync sessions across your devices."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在首次启动前启用 iCloud，以在设备间同步数据。"
+          }
+        }
+      }
+    },
     "privacy_last_updated" : {
       "localizations" : {
         "en" : {
@@ -5030,28 +5388,6 @@
         }
       }
     },
-    "profile_best_most_runs" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Most Runs"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Flest åk"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "最多趟数"
-          }
-        }
-      }
-    },
     "profile_best_most_vertical" : {
       "localizations" : {
         "en" : {
@@ -5206,24 +5542,90 @@
         }
       }
     },
-    "profile_section_season_bests" : {
+    "profile_reset_personal_bests" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Season Bests"
+            "value" : "Reset Personal Bests"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Säsongens bästa"
+            "value" : "Återställ personliga rekord"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "赛季最佳"
+            "value" : "重置历史最佳"
+          }
+        }
+      }
+    },
+    "profile_reset_personal_bests_confirm_message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will clear your top speed, vertical, and distance records. This cannot be undone."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detta rensar dina rekord för topphastighet, höjdmeter och distans. Det går inte att ångra."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将清除峰值速度、最大落差和最远距离记录，此操作不可撤销。"
+          }
+        }
+      }
+    },
+    "profile_reset_personal_bests_confirm_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Personal Bests?"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Återställa personliga rekord?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置历史最佳？"
+          }
+        }
+      }
+    },
+    "profile_section_personal_bests" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Bests"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personliga rekord"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "历史最佳"
           }
         }
       }
@@ -5246,6 +5648,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "版本"
+          }
+        }
+      }
+    },
+    "record.session_recovered_banner" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous session recovered."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已恢复上次滑雪会话。"
           }
         }
       }
@@ -6134,6 +6552,32 @@
         }
       }
     },
+    "session.track_decode_error_notice" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS track data unavailable for this run."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此次滑行的 GPS 轨迹数据不可用。"
+          }
+        }
+      }
+    },
+    "Set Tracking" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置追踪"
+          }
+        }
+      }
+    },
     "settings_about_app_version" : {
       "localizations" : {
         "en" : {
@@ -6662,6 +7106,22 @@
         }
       }
     },
+    "settings_section_healthkit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HealthKit"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "健康"
+          }
+        }
+      }
+    },
     "settings_section_profile" : {
       "localizations" : {
         "en" : {
@@ -7146,6 +7606,22 @@
         }
       }
     },
+    "settings.healthkit_unauthorized_notice" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HealthKit access unavailable. Enable in iOS Settings."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HealthKit 访问不可用。请在 iOS 设置中启用。"
+          }
+        }
+      }
+    },
     "share_card_logged_with" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7232,10 +7708,46 @@
       }
     },
     "Start Ski Tracking" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始滑雪追踪"
+          }
+        }
+      }
     },
     "Start Skiing" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始滑雪"
+          }
+        }
+      }
+    },
+    "stat_altitude_curve" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altitude"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Höjdprofil"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高度曲线"
+          }
+        }
+      }
     },
     "stat_avg_speed" : {
       "localizations" : {
@@ -7259,6 +7771,29 @@
         }
       }
     },
+    "stat_current_altitude" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altitude"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Höjd"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前海拔"
+          }
+        }
+      }
+    },
     "stat_current_speed" : {
       "localizations" : {
         "en" : {
@@ -7277,6 +7812,73 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "当前速度"
+          }
+        }
+      }
+    },
+    "stat_heart_rate" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heart Rate"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hjärtfrekvens"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "心率"
+          }
+        }
+      }
+    },
+    "stat_heart_rate_curve" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heart Rate"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pulskurva"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "心率曲线"
+          }
+        }
+      }
+    },
+    "stat_lift_count" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lifts"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liftar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缆车次数"
           }
         }
       }
@@ -7326,6 +7928,7 @@
       }
     },
     "stat_run_count" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7343,6 +7946,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "趟数"
+          }
+        }
+      }
+    },
+    "stat_speed_curve" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speed Curve"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hastighetskurva"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "速度曲线"
           }
         }
       }
@@ -7589,8 +8214,35 @@
         }
       }
     },
+    "Toggle Pause" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换暂停"
+          }
+        }
+      }
+    },
     "Tracking" : {
-
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追踪"
+          }
+        }
+      }
+    },
+    "Tracking Enabled" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "启用追踪"
+          }
+        }
+      }
     },
     "tracking_activity_idle" : {
       "localizations" : {
@@ -7740,6 +8392,404 @@
         }
       }
     },
+    "tracking_edit_add_stats" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Stats"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till statistik"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加数据项"
+          }
+        }
+      }
+    },
+    "tracking_edit_mode_label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editing"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redigerar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在编辑"
+          }
+        }
+      }
+    },
+    "tracking_hero_card_altitude_curve_description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows a live altitude curve with current vertical drop."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visar en livekurva för höjd med aktuell fallhöjd."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示实时高度曲线及当前落差。"
+          }
+        }
+      }
+    },
+    "tracking_hero_card_average_description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keeps the session average speed in view."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visar sessionsmedelhastigheten."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "持续显示本次平均速度。"
+          }
+        }
+      }
+    },
+    "tracking_hero_card_heart_rate_curve_description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live heart rate curve from Apple Watch."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Livekurva för puls från Apple Watch."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "来自 Apple Watch 的实时心率曲线。"
+          }
+        }
+      }
+    },
+    "tracking_hero_card_heart_rate_description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows live heart rate when data is available."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visar livepuls när data finns."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有数据时显示实时心率。"
+          }
+        }
+      }
+    },
+    "tracking_hero_card_peak_description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Highlights your fastest run or session peak."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lyfter fram ditt snabbaste åk eller sessionsrekord."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "突出显示最快一趟或本次峰值。"
+          }
+        }
+      }
+    },
+    "tracking_hero_card_profile_description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An overview of metrics you choose to display."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En översikt av de mätvärden du väljer."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自定义展示你想看的数据。"
+          }
+        }
+      }
+    },
+    "tracking_hero_card_speed_curve_description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows a live speed curve with current activity status."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visar en livekurva för hastighet med aktuell aktivitetsstatus."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示实时速度曲线及当前运动状态。"
+          }
+        }
+      }
+    },
+    "tracking_hero_card_speed_description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows live speed first."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visar aktuell hastighet först."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认显示实时速度。"
+          }
+        }
+      }
+    },
+    "tracking_hero_card_vertical_description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tracks accumulated vertical drop."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Följer ackumulerad fallhöjd."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "追踪累计落差。"
+          }
+        }
+      }
+    },
+    "tracking_hero_cards_subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to preview, set a default, or add alternatives."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck för att förhandsvisa, välja standard eller lägga till alternativ."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点按可预览、设为默认，或添加备选卡片。"
+          }
+        }
+      }
+    },
+    "tracking_hero_cards_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hero Cards"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toppkort"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顶部卡片"
+          }
+        }
+      }
+    },
+    "tracking_hero_default_badge" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认"
+          }
+        }
+      }
+    },
+    "tracking_hero_heart_rate_subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live when available"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live när tillgänglig"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "有数据时实时显示"
+          }
+        }
+      }
+    },
+    "tracking_hero_make_default" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make Default"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gör till standard"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设为默认"
+          }
+        }
+      }
+    },
+    "tracking_hero_profile_subtitle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altitude and speed update together"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hojd och fart uppdateras tillsammans"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高度和速度同步更新"
+          }
+        }
+      }
+    },
+    "tracking_hero_profile_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overview"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Översikt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "概览"
+          }
+        }
+      }
+    },
     "tracking_metric_peak" : {
       "localizations" : {
         "en" : {
@@ -7758,6 +8808,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "峰值"
+          }
+        }
+      }
+    },
+    "tracking_overview_stats_label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Displayed Stats"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visad statistik"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示数据"
           }
         }
       }
@@ -8027,7 +9099,20 @@
       }
     },
     "weather_updated_minutes_ago_format %lld" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated %lld min ago"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 分钟前更新"
+          }
+        }
+      }
     },
     "weather_uv_index_format" : {
       "localizations" : {

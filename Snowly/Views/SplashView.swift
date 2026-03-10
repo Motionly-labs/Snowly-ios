@@ -20,10 +20,12 @@ struct SplashView: View {
         VStack(spacing: Spacing.xxxl) {
             Spacer()
 
-            // App icon / snowflake
-            Image(systemName: "snowflake")
-                .font(Typography.splashIcon)
-                .foregroundStyle(Color.accentColor)
+            // Brand logo
+            Image("SnowlyLogo")
+                .resizable()
+                .renderingMode(.original)
+                .scaledToFit()
+                .frame(height: 112)
 
             // App name
             Text("SNOWLY")

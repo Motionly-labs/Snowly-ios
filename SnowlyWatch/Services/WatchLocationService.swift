@@ -62,7 +62,6 @@ final class WatchLocationService: NSObject {
             latitude: location.coordinate.latitude,
             longitude: location.coordinate.longitude,
             altitude: location.altitude,
-            speed: max(0, location.speed),
             accuracy: location.horizontalAccuracy,
             course: location.course
         )

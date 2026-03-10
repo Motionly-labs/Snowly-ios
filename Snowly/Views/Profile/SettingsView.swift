@@ -15,6 +15,7 @@ struct SettingsView: View {
     @Environment(SyncMonitorService.self) private var syncMonitorService
     @Environment(SkiMapCacheService.self) private var skiMapService
     @Environment(SessionTrackingService.self) private var trackingService
+    @Environment(HealthKitService.self) private var healthKitService
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
     @Query(sort: \DeviceSettings.createdAt) private var deviceSettings: [DeviceSettings]
 
@@ -38,6 +39,9 @@ struct SettingsView: View {
             profileSection
             unitsSection
             syncSection
+            if (deviceSettings.first?.healthKitEnabled ?? false) && !healthKitService.isAuthorized {
+                healthKitUnauthorizedSection
+            }
             liveActivitySection
             autoPauseSection
             serverSection
@@ -235,7 +239,7 @@ struct SettingsView: View {
             if let syncError = syncMonitorService.syncError, !syncError.isEmpty {
                 VStack(alignment: .leading, spacing: Spacing.gap) {
                     Text(String(localized: "settings_sync_error_title"))
-                        .font(.subheadline.weight(.semibold))
+                        .font(Typography.subheadlineSemibold)
                         .foregroundStyle(ColorTokens.error)
                     Text(syncError)
                         .font(.caption)
@@ -261,6 +265,26 @@ struct SettingsView: View {
             Label(String(localized: "settings_section_server"), systemImage: "network")
         } footer: {
             Text(String(localized: "settings_server_footer"))
+        }
+    }
+
+    private var healthKitUnauthorizedSection: some View {
+        Section {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "heart.slash")
+                    .foregroundStyle(.red)
+                Text(String(localized: "settings.healthkit_unauthorized_notice"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Button {
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                UIApplication.shared.open(url)
+            } label: {
+                Label(String(localized: "common_open_settings"), systemImage: "gear")
+            }
+        } header: {
+            Label(String(localized: "settings_section_healthkit"), systemImage: "heart.fill")
         }
     }
 
@@ -530,7 +554,6 @@ private struct ProfileSnapshot: Codable {
     let seasonBestMaxSpeed: Double
     let seasonBestVertical: Double
     let seasonBestDistance: Double
-    let seasonBestRunCount: Int
     let dailyGoalMinutes: Double
     let createdAt: Date
 
@@ -541,7 +564,6 @@ private struct ProfileSnapshot: Codable {
         seasonBestMaxSpeed = profile.seasonBestMaxSpeed
         seasonBestVertical = profile.seasonBestVertical
         seasonBestDistance = profile.seasonBestDistance
-        seasonBestRunCount = profile.seasonBestRunCount
         dailyGoalMinutes = profile.dailyGoalMinutes
         createdAt = profile.createdAt
     }

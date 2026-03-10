@@ -1,0 +1,30 @@
+{
+  "fixtures": [
+    {
+      "id": "zermatt_loop",
+      "display_name": "Zermatt Loop",
+      "trackpoints_resource": "ZermattLoop.trackpoints",
+      "session_id": "F2E2F990-9A1F-4693-AE91-A7362B950001",
+      "resort": {
+        "id": "F1AE37A3-22AC-4B70-8C69-A4CF0D3566F7",
+        "name": "Zermatt",
+        "latitude": 46.0207,
+        "longitude": 7.7491,
+        "country": "CH"
+      }
+    },
+    {
+      "id": "zermatt_ski_day",
+      "display_name": "Zermatt Ski Day",
+      "trackpoints_resource": "ZermattSkiDay.trackpoints",
+      "session_id": "6E99CF0E-4E4A-4C06-8F15-8E0F9FF1DF00",
+      "resort": {
+        "id": "F1AE37A3-22AC-4B70-8C69-A4CF0D3566F7",
+        "name": "Zermatt",
+        "latitude": 46.0207,
+        "longitude": 7.7491,
+        "country": "CH"
+      }
+    }
+  ]
+}

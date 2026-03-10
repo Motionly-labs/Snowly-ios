@@ -30,7 +30,6 @@ struct FixtureTrackPoint: Codable {
     let latitude: Double
     let longitude: Double
     let altitude: Double
-    let speed: Double
     let accuracy: Double
     let course: Double
 }
@@ -110,7 +109,9 @@ private let elevationEndpoints = [
 private let zermattAnchor = Coordinate(latitude: 46.0217, longitude: 7.7823)
 private let fetchRadiusMeters: Double = 8500
 private let loopCount = 4
-private let sampleInterval: TimeInterval = 2.0
+// Keep fixture sampling near real GPS cadence (~1 Hz), so production
+// motion estimation gets enough in-window points for altitude trend detection.
+private let sampleInterval: TimeInterval = 1.0
 private let defaultLoopOutputPath = "Snowly/Debug/Fixtures/ZermattLoop.trackpoints.json"
 private let defaultLoopGPXPath = "Snowly/Debug/Locations/ZermattLoop.gpx"
 private let defaultSummaryOutputPath = "Snowly/Debug/Fixtures/ZermattSkiDay.trackpoints.json"
@@ -619,6 +620,117 @@ private func interpolate(_ a: Waypoint, _ b: Waypoint, t: Double) -> Waypoint {
     )
 }
 
+private struct PathNoiseProfile {
+    let lateralFreq1: Double
+    let lateralFreq2: Double
+    let lateralPhase1: Double
+    let lateralPhase2: Double
+    let microPhase: Double
+    let speedFreq1: Double
+    let speedFreq2: Double
+    let speedPhase1: Double
+    let speedPhase2: Double
+
+    static let neutral = PathNoiseProfile(
+        lateralFreq1: 0.010,
+        lateralFreq2: 0.006,
+        lateralPhase1: 0,
+        lateralPhase2: 0,
+        microPhase: 0,
+        speedFreq1: 0.012,
+        speedFreq2: 0.007,
+        speedPhase1: 0,
+        speedPhase2: 0
+    )
+}
+
+private func hash64(_ value: UInt64) -> UInt64 {
+    var x = value &+ 0x9E3779B97F4A7C15
+    x = (x ^ (x >> 30)) &* 0xBF58476D1CE4E5B9
+    x = (x ^ (x >> 27)) &* 0x94D049BB133111EB
+    return x ^ (x >> 31)
+}
+
+private func stableUnitRandom(seed: Int, salt: UInt64) -> Double {
+    let input = UInt64(bitPattern: Int64(seed)) &+ salt
+    let hashed = hash64(input)
+    // 53-bit mantissa range -> [0, 1)
+    let maxValue = Double(0x0020_0000_0000_0000 as UInt64)
+    return Double(hashed & 0x001F_FFFF_FFFF_FFFF) / maxValue
+}
+
+private func makePathNoiseProfile(seed: Int) -> PathNoiseProfile {
+    let phaseScale = 2.0 * Double.pi
+    return PathNoiseProfile(
+        lateralFreq1: 0.006 + stableUnitRandom(seed: seed, salt: 0x11) * 0.010,
+        lateralFreq2: 0.003 + stableUnitRandom(seed: seed, salt: 0x12) * 0.006,
+        lateralPhase1: stableUnitRandom(seed: seed, salt: 0x13) * phaseScale,
+        lateralPhase2: stableUnitRandom(seed: seed, salt: 0x14) * phaseScale,
+        microPhase: stableUnitRandom(seed: seed, salt: 0x15) * phaseScale,
+        speedFreq1: 0.010 + stableUnitRandom(seed: seed, salt: 0x16) * 0.010,
+        speedFreq2: 0.004 + stableUnitRandom(seed: seed, salt: 0x17) * 0.006,
+        speedPhase1: stableUnitRandom(seed: seed, salt: 0x18) * phaseScale,
+        speedPhase2: stableUnitRandom(seed: seed, salt: 0x19) * phaseScale
+    )
+}
+
+private func meanDownhillSpeed(for trailID: Int64) -> Double {
+    let seed = Int(truncatingIfNeeded: trailID)
+    // Keep each trail's mean speed stable across repeated passes.
+    return 14.6 + stableUnitRandom(seed: seed, salt: 0x201) * 1.8
+}
+
+private func meanLiftSpeed(for liftID: Int64) -> Double {
+    let seed = Int(truncatingIfNeeded: liftID)
+    return 3.1 + stableUnitRandom(seed: seed, salt: 0x202) * 0.55
+}
+
+private func applyLowFrequencySpeedNoise(
+    to output: inout [FixtureTrackPoint],
+    range: Range<Int>,
+    baseSpeed: Double,
+    speedJitter: Double,
+    profile: PathNoiseProfile
+) {
+    guard !range.isEmpty else { return }
+
+    let count = range.count
+    var modulation = Array(repeating: 0.0, count: count)
+    for offset in 0..<count {
+        let phase = Double(offset)
+        let slow = sin(phase * profile.speedFreq1 + profile.speedPhase1)
+        let slower = 0.65 * cos(phase * profile.speedFreq2 + profile.speedPhase2)
+        modulation[offset] = slow + slower
+    }
+
+    let meanModulation = modulation.reduce(0.0, +) / Double(count)
+    var candidateSpeeds = modulation.map { baseSpeed + ($0 - meanModulation) * speedJitter }
+
+    // First-order correction to keep per-path mean speed equal to baseSpeed.
+    let currentMean = candidateSpeeds.reduce(0.0, +) / Double(count)
+    let correction = baseSpeed - currentMean
+    candidateSpeeds = candidateSpeeds.map { max(0.35, $0 + correction) }
+
+    // Small residual can appear after clamping.
+    let correctedMean = candidateSpeeds.reduce(0.0, +) / Double(count)
+    let residual = baseSpeed - correctedMean
+    if abs(residual) > 1e-4 {
+        candidateSpeeds = candidateSpeeds.map { max(0.35, $0 + residual) }
+    }
+
+    for pointIndex in range {
+        let original = output[pointIndex]
+        output[pointIndex] = FixtureTrackPoint(
+            timestamp: original.timestamp,
+            latitude: original.latitude,
+            longitude: original.longitude,
+            altitude: original.altitude,
+            accuracy: original.accuracy,
+            course: original.course
+        )
+    }
+}
+
 private func appendSegment(
     from start: Waypoint,
     to end: Waypoint,
@@ -630,7 +742,8 @@ private func appendSegment(
     sampleInterval: TimeInterval,
     currentTime: inout TimeInterval,
     output: inout [FixtureTrackPoint],
-    includeStartPoint: Bool
+    includeStartPoint: Bool,
+    noiseProfile: PathNoiseProfile = .neutral
 ) {
     let startCoord = Coordinate(latitude: start.latitude, longitude: start.longitude)
     let endCoord = Coordinate(latitude: end.latitude, longitude: end.longitude)
@@ -645,15 +758,18 @@ private func appendSegment(
         let p = interpolate(start, end, t: progress)
 
         let phase = Double(output.count + i)
-        let noiseX = lateralNoiseMeters * sin(phase * 0.23)
-        let noiseY = lateralNoiseMeters * cos(phase * 0.17)
-        let driftSpike = output.count % 121 == 0 ? lateralNoiseMeters * 1.3 : 0
-        let lat = p.latitude + metersToLatitudeDelta(noiseY + driftSpike * sin(phase * 0.41))
-        let lon = p.longitude + metersToLongitudeDelta(noiseX + driftSpike * cos(phase * 0.39), atLatitude: p.latitude)
+        // Low-frequency line-choice variation (rider picks slightly different lines each pass).
+        let lowFreqX = lateralNoiseMeters * sin(phase * noiseProfile.lateralFreq1 + noiseProfile.lateralPhase1)
+        let lowFreqY = lateralNoiseMeters * 0.78 * cos(phase * noiseProfile.lateralFreq2 + noiseProfile.lateralPhase2)
+        // Keep a small high-frequency jitter so GPS still looks sensor-like.
+        let microAmplitude = max(0.25, lateralNoiseMeters * 0.14)
+        let microX = microAmplitude * sin(phase * 0.31 + noiseProfile.microPhase)
+        let microY = microAmplitude * cos(phase * 0.27 + noiseProfile.microPhase * 0.71)
+        let lat = p.latitude + metersToLatitudeDelta(lowFreqY + microY)
+        let lon = p.longitude + metersToLongitudeDelta(lowFreqX + microX, atLatitude: p.latitude)
 
-        let wobble = sin(phase * 0.31)
-        let speed = max(0.35, baseSpeed + wobble * speedJitter)
-        let accuracy = max(3, baseAccuracy + abs(wobble) * accuracyJitter + (driftSpike > 0 ? 4 : 0))
+        let wobble = sin(phase * 0.19 + noiseProfile.microPhase * 0.58)
+        let accuracy = max(3, baseAccuracy + abs(wobble) * accuracyJitter + microAmplitude * 0.55)
 
         output.append(
             FixtureTrackPoint(
@@ -661,7 +777,6 @@ private func appendSegment(
                 latitude: lat,
                 longitude: lon,
                 altitude: p.altitude,
-                speed: speed,
                 accuracy: accuracy,
                 course: baseCourse
             )
@@ -680,9 +795,12 @@ private func appendPath(
     sampleInterval: TimeInterval,
     currentTime: inout TimeInterval,
     output: inout [FixtureTrackPoint],
-    includeFirstPoint: Bool
+    includeFirstPoint: Bool,
+    noiseSeed: Int = 0
 ) {
     guard path.count > 1 else { return }
+    let profile = makePathNoiseProfile(seed: noiseSeed)
+    let startIndex = output.count
     for i in 0..<(path.count - 1) {
         appendSegment(
             from: path[i],
@@ -695,9 +813,18 @@ private func appendPath(
             sampleInterval: sampleInterval,
             currentTime: &currentTime,
             output: &output,
-            includeStartPoint: includeFirstPoint && i == 0
+            includeStartPoint: includeFirstPoint && i == 0,
+            noiseProfile: profile
         )
     }
+    let endIndex = output.count
+    applyLowFrequencySpeedNoise(
+        to: &output,
+        range: startIndex..<endIndex,
+        baseSpeed: baseSpeed,
+        speedJitter: speedJitter,
+        profile: profile
+    )
 }
 
 private func appendPause(
@@ -723,7 +850,6 @@ private func appendPause(
         previous = coord
 
         let wobble = abs(sin(phase * 0.22))
-        let speed = max(0.35, 0.25 + wobble * 1.0)
         let accuracy = baseAccuracy + wobble * max(2.0, driftMeters * 0.4)
 
         output.append(
@@ -732,7 +858,6 @@ private func appendPause(
                 latitude: lat,
                 longitude: lon,
                 altitude: anchor.altitude + sin(phase * 0.12) * 0.8,
-                speed: speed,
                 accuracy: accuracy,
                 course: course
             )

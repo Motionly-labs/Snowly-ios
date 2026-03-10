@@ -12,6 +12,8 @@ struct AnimatedNumberText: View {
     var decimals: Int = 0
     var suffix: String = ""
     var delay: Double = 0
+    var usesNumericTransition: Bool = true
+    var animation: Animation? = .easeOut(duration: AnimationTokens.moderate)
 
     @State private var display: Double = 0
     @State private var hasAppeared = false
@@ -20,11 +22,19 @@ struct AnimatedNumberText: View {
         String(format: "%.\(decimals)f", display)
     }
 
+    @ViewBuilder
+    private var valueText: some View {
+        let text = Text(formattedValue).monospacedDigit()
+        if usesNumericTransition {
+            text.contentTransition(.numericText())
+        } else {
+            text
+        }
+    }
+
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Spacing.xxs) {
-            Text(formattedValue)
-                .contentTransition(.numericText())
-                .monospacedDigit()
+            valueText
 
             if !suffix.isEmpty {
                 Text(suffix)
@@ -33,7 +43,7 @@ struct AnimatedNumberText: View {
                     .baselineOffset(1)
             }
         }
-        .animation(.easeOut(duration: AnimationTokens.moderate), value: display)
+        .animation(animation, value: display)
         .onAppear {
             if delay > 0 && !hasAppeared {
                 hasAppeared = true

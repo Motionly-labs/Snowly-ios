@@ -12,7 +12,7 @@ enum Formatters {
     // MARK: - Speed
 
     /// Formats speed from m/s to display string.
-    static func speed(_ metersPerSecond: Double, unit: UnitSystem) -> String {
+    nonisolated static func speed(_ metersPerSecond: Double, unit: UnitSystem) -> String {
         switch unit {
         case .metric:
             return String(format: "%.0f km/h", UnitConversion.metersPerSecondToKmh(metersPerSecond))
@@ -22,7 +22,7 @@ enum Formatters {
     }
 
     /// Formats speed value only (no unit suffix).
-    static func speedValue(_ metersPerSecond: Double, unit: UnitSystem) -> String {
+    nonisolated static func speedValue(_ metersPerSecond: Double, unit: UnitSystem) -> String {
         switch unit {
         case .metric:
             return String(format: "%.0f", UnitConversion.metersPerSecondToKmh(metersPerSecond))
@@ -31,7 +31,7 @@ enum Formatters {
         }
     }
 
-    static func speedUnit(_ unit: UnitSystem) -> String {
+    nonisolated static func speedUnit(_ unit: UnitSystem) -> String {
         switch unit {
         case .metric: return "km/h"
         case .imperial: return "mph"
@@ -41,7 +41,7 @@ enum Formatters {
     // MARK: - Distance
 
     /// Formats distance from meters to display string.
-    static func distance(_ meters: Double, unit: UnitSystem) -> String {
+    nonisolated static func distance(_ meters: Double, unit: UnitSystem) -> String {
         switch unit {
         case .metric:
             if meters >= 1000 {
@@ -57,10 +57,14 @@ enum Formatters {
         }
     }
 
+    nonisolated static func distanceUnit(_ unit: UnitSystem) -> String {
+        unit == .imperial ? "mi" : "km"
+    }
+
     // MARK: - Altitude / Vertical
 
     /// Formats altitude/vertical from meters.
-    static func vertical(_ meters: Double, unit: UnitSystem) -> String {
+    nonisolated static func vertical(_ meters: Double, unit: UnitSystem) -> String {
         switch unit {
         case .metric:
             return String(format: "%.0f m", meters)
@@ -69,7 +73,7 @@ enum Formatters {
         }
     }
 
-    static func verticalUnit(_ unit: UnitSystem) -> String {
+    nonisolated static func verticalUnit(_ unit: UnitSystem) -> String {
         switch unit {
         case .metric: return "m"
         case .imperial: return "ft"
@@ -79,7 +83,7 @@ enum Formatters {
     // MARK: - Duration
 
     /// Formats TimeInterval to "Xh Xm" or "Xm Xs".
-    static func duration(_ interval: TimeInterval) -> String {
+    nonisolated static func duration(_ interval: TimeInterval) -> String {
         let hours = Int(interval) / 3600
         let minutes = (Int(interval) % 3600) / 60
         let seconds = Int(interval) % 60
@@ -94,7 +98,7 @@ enum Formatters {
     }
 
     /// Formats TimeInterval to "HH:MM:SS" timer style.
-    static func timer(_ interval: TimeInterval) -> String {
+    nonisolated static func timer(_ interval: TimeInterval) -> String {
         let hours = Int(interval) / 3600
         let minutes = (Int(interval) % 3600) / 60
         let seconds = Int(interval) % 60
@@ -107,7 +111,7 @@ enum Formatters {
 
     // MARK: - Temperature
 
-    static func temperature(_ celsius: Double, unit: UnitSystem) -> String {
+    nonisolated static func temperature(_ celsius: Double, unit: UnitSystem) -> String {
         switch unit {
         case .metric:
             return String(format: "%.0f°C", celsius)

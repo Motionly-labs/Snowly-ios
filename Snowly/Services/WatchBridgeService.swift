@@ -32,6 +32,9 @@ final class WatchBridgeService {
     /// Cleared once merged into a saved session.
     private(set) var pendingWatchTrackPoints: [TrackPoint] = []
     private(set) var completedIndependentWorkout: ImportedWatchWorkout?
+    private(set) var currentHeartRate: Double = 0
+    private(set) var averageHeartRate: Double = 0
+    private(set) var heartRateSamples: [HeartRateSample] = []
 
     // MARK: - Private
 
@@ -135,6 +138,17 @@ final class WatchBridgeService {
             Self.logger.debug("Received \(points.count) track points from Watch (total: \(self.pendingWatchTrackPoints.count))")
             completePendingIndependentWorkoutIfPossible()
 
+        case .liveVitals(let vitals):
+            currentHeartRate = vitals.currentHeartRate
+            averageHeartRate = vitals.averageHeartRate
+            if vitals.currentHeartRate > 0 {
+                let sample = HeartRateSample(time: .now, bpm: vitals.currentHeartRate)
+                let updated = heartRateSamples + [sample]
+                heartRateSamples = updated.count > SharedConstants.heartRateCurveMaxPoints
+                    ? Array(updated.suffix(SharedConstants.heartRateCurveMaxPoints))
+                    : updated
+            }
+
         default:
             Self.logger.warning("Unexpected Watch→Phone message: \(String(describing: message))")
         }
@@ -197,6 +211,11 @@ final class WatchBridgeService {
         case .paused, .idle:
             stopLiveUpdates()
             connectivityService.updateApplicationContext(state: state, liveData: nil)
+            if state == .idle {
+                currentHeartRate = 0
+                averageHeartRate = 0
+                heartRateSamples = []
+            }
         }
     }
 

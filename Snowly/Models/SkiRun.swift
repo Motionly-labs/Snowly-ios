@@ -37,6 +37,13 @@ final class SkiRun {
 
     private nonisolated static let logger = Logger(subsystem: "com.Snowly", category: "SkiRun")
 
+    /// Returns `true` when `trackData` exists but cannot be decoded by any supported format.
+    /// Surfaces corrupted or schema-incompatible track data so the UI can show a notice.
+    var hasTrackDecodeError: Bool {
+        guard let data = trackData else { return false }
+        return decodeTrackPoints(from: data) == nil
+    }
+
     /// Decode track points from binary storage.
     var trackPoints: [TrackPoint] {
         guard let data = trackData else { return [] }
@@ -49,6 +56,13 @@ final class SkiRun {
             Self.logger.error("Failed to decode track points: \(error.localizedDescription, privacy: .public)")
             return []
         }
+    }
+
+    /// Try all supported decode formats; returns decoded points or nil on failure.
+    /// Shared by `hasTrackDecodeError` and future callers to avoid duplicate decode attempts.
+    private func decodeTrackPoints(from data: Data) -> [TrackPoint]? {
+        if let points = try? JSONDecoder().decode([TrackPoint].self, from: data) { return points }
+        return decodeNDJSONTrackPoints(from: data)
     }
 
     private func decodeNDJSONTrackPoints(from data: Data) -> [TrackPoint]? {
@@ -66,7 +80,6 @@ final class SkiRun {
                 let latitude = dict["latitude"] as? Double,
                 let longitude = dict["longitude"] as? Double,
                 let altitude = dict["altitude"] as? Double,
-                let speed = dict["speed"] as? Double,
                 let accuracy = dict["accuracy"] as? Double,
                 let course = dict["course"] as? Double
             else {
@@ -77,7 +90,6 @@ final class SkiRun {
                 latitude: latitude,
                 longitude: longitude,
                 altitude: altitude,
-                speed: speed,
                 accuracy: accuracy,
                 course: course
             ))

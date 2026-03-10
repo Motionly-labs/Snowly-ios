@@ -18,7 +18,7 @@ extension TrackPoint {
             horizontalAccuracy: accuracy,
             verticalAccuracy: 10.0,
             course: course >= 0 ? course : -1,
-            speed: max(0, speed),
+            speed: max(speed, 0),
             timestamp: timestamp
         )
     }

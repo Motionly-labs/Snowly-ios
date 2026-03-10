@@ -150,8 +150,9 @@ final class HealthKitCoordinator {
         }
     }
 
-    /// Cancel any in-progress HealthKit task.
+    /// Cancel any in-progress HealthKit task and discard the workout builder.
     func cancel() {
+        let shouldDiscard = workoutRequested
         workoutRequested = false
         workoutStartToken = UUID()
         healthKitTask?.cancel()
@@ -160,6 +161,10 @@ final class HealthKitCoordinator {
         activeFlushTask = nil
         flushTask?.cancel()
         flushTask = nil
+
+        if shouldDiscard, let hk = healthKitService {
+            Task { await hk.cancelWorkout() }
+        }
     }
 
     /// Reset state for a new session.

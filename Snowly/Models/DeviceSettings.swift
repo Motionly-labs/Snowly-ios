@@ -82,6 +82,7 @@ final class DeviceSettings {
     var liveActivityRefreshInactiveSeconds: Int = LiveActivityRefreshIntervalOption.sec3.rawValue
     var liveActivityRefreshBackgroundSeconds: Int = LiveActivityRefreshIntervalOption.sec10.rawValue
     var autoPauseIdleSeconds: Int = AutoPauseOption.never.rawValue
+    var trackingDashboardLayoutJSON: String = TrackingDashboardLayout.default.encoded()
     var createdAt: Date = Date()
 
     var resolvedAutoPause: AutoPauseOption {
@@ -112,6 +113,10 @@ final class DeviceSettings {
         LiveActivityRefreshIntervalOption(rawValue: liveActivityRefreshBackgroundSeconds) ?? .sec10
     }
 
+    var resolvedDashboardLayout: TrackingDashboardLayout {
+        TrackingDashboardLayout.decode(from: trackingDashboardLayoutJSON)
+    }
+
     init(
         id: UUID = UUID(),
         healthKitEnabled: Bool = false,
@@ -122,6 +127,7 @@ final class DeviceSettings {
         liveActivityRefreshInactiveSeconds: Int = LiveActivityRefreshIntervalOption.sec3.rawValue,
         liveActivityRefreshBackgroundSeconds: Int = LiveActivityRefreshIntervalOption.sec10.rawValue,
         autoPauseIdleSeconds: Int = AutoPauseOption.never.rawValue,
+        trackingDashboardLayoutJSON: String = TrackingDashboardLayout.default.encoded(),
         createdAt: Date = Date()
     ) {
         self.id = id
@@ -133,6 +139,7 @@ final class DeviceSettings {
         self.liveActivityRefreshInactiveSeconds = liveActivityRefreshInactiveSeconds
         self.liveActivityRefreshBackgroundSeconds = liveActivityRefreshBackgroundSeconds
         self.autoPauseIdleSeconds = autoPauseIdleSeconds
+        self.trackingDashboardLayoutJSON = trackingDashboardLayoutJSON
         self.createdAt = createdAt
     }
 }

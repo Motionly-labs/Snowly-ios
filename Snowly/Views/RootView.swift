@@ -70,7 +70,6 @@ struct RootView: View {
             primary.seasonBestMaxSpeed = max(primary.seasonBestMaxSpeed, duplicate.seasonBestMaxSpeed)
             primary.seasonBestVertical = max(primary.seasonBestVertical, duplicate.seasonBestVertical)
             primary.seasonBestDistance = max(primary.seasonBestDistance, duplicate.seasonBestDistance)
-            primary.seasonBestRunCount = max(primary.seasonBestRunCount, duplicate.seasonBestRunCount)
             modelContext.delete(duplicate)
         }
     }

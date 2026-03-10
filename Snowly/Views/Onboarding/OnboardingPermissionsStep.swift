@@ -84,6 +84,18 @@ struct OnboardingPermissionsStep: View {
             }
             .padding(.horizontal, Spacing.xxl)
 
+            // iCloud sync note (Option C: document the limitation)
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "icloud")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(String(localized: "onboarding.icloud_sync_note"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+            }
+            .padding(.horizontal, Spacing.xxl)
+
             Spacer()
 
             Button(action: onNext) {

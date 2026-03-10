@@ -31,6 +31,7 @@ enum WatchMessage: Codable, Sendable {
     case watchWorkoutSummary(IndependentWorkoutSummary)
     case watchWorkoutEnded
     case watchTrackPoints([TrackPoint])
+    case liveVitals(LiveVitalsData)
 
     // MARK: - Shared payload
     struct LiveTrackingData: Codable, Sendable, Equatable {
@@ -60,5 +61,10 @@ enum WatchMessage: Codable, Sendable {
         let runCount: Int
         let elapsedTime: TimeInterval
         let trackPointCount: Int
+    }
+
+    struct LiveVitalsData: Codable, Sendable, Equatable {
+        let currentHeartRate: Double
+        let averageHeartRate: Double
     }
 }
