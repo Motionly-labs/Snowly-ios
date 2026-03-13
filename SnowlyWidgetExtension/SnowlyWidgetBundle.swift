@@ -12,8 +12,6 @@ import WidgetKit
 struct SnowlyWidgetBundle: WidgetBundle {
     var body: some Widget {
         SnowlyLiveActivityWidget()
-        if #available(iOS 18.0, *) {
-            SnowlyControlWidget()
-        }
+        SnowlyControlWidget()
     }
 }

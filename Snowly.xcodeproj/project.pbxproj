@@ -7,10 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		33C6BFA52F5C530E00DF2C52 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 33C6BF622F5C52B600DF2C52 /* WidgetKit.framework */; };
-		33C6BFA62F5C530E00DF2C52 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 33C6BF642F5C52B700DF2C52 /* SwiftUI.framework */; };
-		33C6BFB52F5C530F00DF2C52 /* SnowlyWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 33C6BFA42F5C530E00DF2C52 /* SnowlyWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AA0000012F5500000000000E /* Snowly Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = AA0000012F5500000000000001 /* Snowly Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		33A104642F558EAA0066DAF5 /* SnowlyWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 33A104732F558EAA0066DAF5 /* SnowlyWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		33A104652F558EAA0066DAF5 /* SnowlyControlWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33A104742F558EAA0066DAF5 /* SnowlyControlWidget.swift */; };
+		33A104662F558EAA0066DAF5 /* SnowlyLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33A104752F558EAA0066DAF5 /* SnowlyLiveActivityWidget.swift */; };
+		33A104672F558EAA0066DAF5 /* SnowlyWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33A104762F558EAA0066DAF5 /* SnowlyWidgetBundle.swift */; };
+		33A104682F558EAA0066DAF5 /* Snowly/Shared/SetTrackingIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33A104792F558EAA0066DAF5 /* Snowly/Shared/SetTrackingIntent.swift */; };
+		33A104692F558EAA0066DAF5 /* Snowly/Shared/TogglePauseIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33A1047A2F558EAA0066DAF5 /* Snowly/Shared/TogglePauseIntent.swift */; };
+		33A1046A2F558EAA0066DAF5 /* Snowly/Shared/TogglePauseState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33A1047B2F558EAA0066DAF5 /* Snowly/Shared/TogglePauseState.swift */; };
+		33A1046B2F558EAA0066DAF5 /* Snowly/Shared/SnowlyActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33A1047C2F558EAA0066DAF5 /* Snowly/Shared/SnowlyActivityAttributes.swift */; };
+		33A1046C2F558EAA0066DAF5 /* Snowly/Shared/UnitSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33A1047D2F558EAA0066DAF5 /* Snowly/Shared/UnitSystem.swift */; };
+		33A1046D2F558EAA0066DAF5 /* Snowly/Utilities/Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33A1047E2F558EAA0066DAF5 /* Snowly/Utilities/Formatters.swift */; };
+		33A1046E2F558EAA0066DAF5 /* Snowly/Utilities/UnitConversion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33A1047F2F558EAA0066DAF5 /* Snowly/Utilities/UnitConversion.swift */; };
+		33A1046F2F558EAA0066DAF5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 33A104782F558EAA0066DAF5 /* Assets.xcassets */; };
+		33A104702F558EAA0066DAF5 /* Snowly/Resources/Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 33A104802F558EAA0066DAF5 /* Snowly/Resources/Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -28,43 +37,25 @@
 			remoteGlobalIDString = 33A104372F558EA80066DAF5;
 			remoteInfo = Snowly;
 		};
-		33C6BFB32F5C530F00DF2C52 /* PBXContainerItemProxy */ = {
+		33A104712F558EAA0066DAF5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 33A104302F558EA80066DAF5 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 33C6BFA32F5C530E00DF2C52;
+			remoteGlobalIDString = 33A104842F558EAA0066DAF5;
 			remoteInfo = SnowlyWidgetExtension;
-		};
-		AA0000012F550000000000A /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 33A104302F558EA80066DAF5 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = AA0000012F5500000000000006;
-			remoteInfo = "Snowly Watch App";
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		33C6BF772F5C52B700DF2C52 /* Embed Foundation Extensions */ = {
+		33A104722F558EAA0066DAF5 /* Embed App Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				33C6BFB52F5C530F00DF2C52 /* SnowlyWidgetExtension.appex in Embed Foundation Extensions */,
+				33A104642F558EAA0066DAF5 /* SnowlyWidgetExtension.appex in Embed App Extensions */,
 			);
-			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AA0000012F550000000000C /* Embed Watch Content */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
-			dstSubfolderSpec = 16;
-			files = (
-				AA0000012F5500000000000E /* Snowly Watch App.app in Embed Watch Content */,
-			);
-			name = "Embed Watch Content";
+			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -73,63 +64,25 @@
 		33A104382F558EA80066DAF5 /* Snowly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Snowly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		33A104472F558EA90066DAF5 /* SnowlyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SnowlyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		33A104512F558EA90066DAF5 /* SnowlyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SnowlyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		33C6BF622F5C52B600DF2C52 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
-		33C6BF642F5C52B700DF2C52 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		33C6BFA42F5C530E00DF2C52 /* SnowlyWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SnowlyWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA0000012F5500000000000001 /* Snowly Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Snowly Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		33A104732F558EAA0066DAF5 /* SnowlyWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SnowlyWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		33A104742F558EAA0066DAF5 /* SnowlyControlWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnowlyControlWidget.swift; sourceTree = "<group>"; };
+		33A104752F558EAA0066DAF5 /* SnowlyLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnowlyLiveActivityWidget.swift; sourceTree = "<group>"; };
+		33A104762F558EAA0066DAF5 /* SnowlyWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnowlyWidgetBundle.swift; sourceTree = "<group>"; };
+		33A104772F558EAA0066DAF5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		33A104782F558EAA0066DAF5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		33A104792F558EAA0066DAF5 /* Snowly/Shared/SetTrackingIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snowly/Shared/SetTrackingIntent.swift; sourceTree = SOURCE_ROOT; };
+		33A1047A2F558EAA0066DAF5 /* Snowly/Shared/TogglePauseIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snowly/Shared/TogglePauseIntent.swift; sourceTree = SOURCE_ROOT; };
+		33A1047B2F558EAA0066DAF5 /* Snowly/Shared/TogglePauseState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snowly/Shared/TogglePauseState.swift; sourceTree = SOURCE_ROOT; };
+		33A1047C2F558EAA0066DAF5 /* Snowly/Shared/SnowlyActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snowly/Shared/SnowlyActivityAttributes.swift; sourceTree = SOURCE_ROOT; };
+		33A1047D2F558EAA0066DAF5 /* Snowly/Shared/UnitSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snowly/Shared/UnitSystem.swift; sourceTree = SOURCE_ROOT; };
+		33A1047E2F558EAA0066DAF5 /* Snowly/Utilities/Formatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snowly/Utilities/Formatters.swift; sourceTree = SOURCE_ROOT; };
+		33A1047F2F558EAA0066DAF5 /* Snowly/Utilities/UnitConversion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snowly/Utilities/UnitConversion.swift; sourceTree = SOURCE_ROOT; };
+		33A104802F558EAA0066DAF5 /* Snowly/Resources/Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Snowly/Resources/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		33C6BFB62F5C530F00DF2C52 /* Exceptions for "SnowlyWidgetExtension" folder in "SnowlyWidgetExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 33C6BFA32F5C530E00DF2C52 /* SnowlyWidgetExtension */;
-		};
-		33C6BFBA2F5C540000DF2C52 /* Exceptions for "Snowly" folder in "SnowlyWidgetExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Resources/Localizable.xcstrings,
-				Shared/QuickActionState.swift,
-				Shared/SetTrackingIntent.swift,
-				Shared/SnowlyActivityAttributes.swift,
-				Shared/TogglePauseIntent.swift,
-				Shared/TogglePauseState.swift,
-				Shared/UnitSystem.swift,
-				Utilities/Formatters.swift,
-				Utilities/UnitConversion.swift,
-			);
-			target = 33C6BFA32F5C530E00DF2C52 /* SnowlyWidgetExtension */;
-		};
-		AA0000012F550000000000D /* Exceptions for "Snowly" folder in "Snowly Watch App" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"Extensions/Color+Extensions.swift",
-				"Extensions/TrackPoint+CoreLocation.swift",
-				Services/MotionEstimate.swift,
-				Services/MotionEstimator.swift,
-				Services/Protocols/MotionDetecting.swift,
-				Services/RunDetectionService.swift,
-				Shared/RunActivityType.swift,
-				Shared/SharedConstants.swift,
-				Shared/TrackPoint.swift,
-				Shared/UnitSystem.swift,
-				Shared/WatchMessage.swift,
-				Utilities/Formatters.swift,
-				Utilities/UnitConversion.swift,
-			);
-			target = AA0000012F5500000000000006 /* Snowly Watch App */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		33A1043A2F558EA80066DAF5 /* Snowly */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				AA0000012F550000000000D /* Exceptions for "Snowly" folder in "Snowly Watch App" target */,
-				33C6BFBA2F5C540000DF2C52 /* Exceptions for "Snowly" folder in "SnowlyWidgetExtension" target */,
-			);
 			path = Snowly;
 			sourceTree = "<group>";
 		};
@@ -141,19 +94,6 @@
 		33A104542F558EA90066DAF5 /* SnowlyUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = SnowlyUITests;
-			sourceTree = "<group>";
-		};
-		33C6BFA72F5C530E00DF2C52 /* SnowlyWidgetExtension */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				33C6BFB62F5C530F00DF2C52 /* Exceptions for "SnowlyWidgetExtension" folder in "SnowlyWidgetExtension" target */,
-			);
-			path = SnowlyWidgetExtension;
-			sourceTree = "<group>";
-		};
-		AA0000012F5500000000000002 /* SnowlyWatch */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SnowlyWatch;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -180,16 +120,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		33C6BFA12F5C530E00DF2C52 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				33C6BFA62F5C530E00DF2C52 /* SwiftUI.framework in Frameworks */,
-				33C6BFA52F5C530E00DF2C52 /* WidgetKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AA0000012F5500000000000004 /* Frameworks */ = {
+		33A104812F558EAA0066DAF5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -203,11 +134,9 @@
 			isa = PBXGroup;
 			children = (
 				33A1043A2F558EA80066DAF5 /* Snowly */,
-				AA0000012F5500000000000002 /* SnowlyWatch */,
+				33A104822F558EAA0066DAF5 /* SnowlyWidgetExtension */,
 				33A1044A2F558EA90066DAF5 /* SnowlyTests */,
 				33A104542F558EA90066DAF5 /* SnowlyUITests */,
-				33C6BFA72F5C530E00DF2C52 /* SnowlyWidgetExtension */,
-				33C6BF612F5C52B600DF2C52 /* Frameworks */,
 				33A104392F558EA80066DAF5 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -216,21 +145,39 @@
 			isa = PBXGroup;
 			children = (
 				33A104382F558EA80066DAF5 /* Snowly.app */,
-				AA0000012F5500000000000001 /* Snowly Watch App.app */,
+				33A104732F558EAA0066DAF5 /* SnowlyWidgetExtension.appex */,
 				33A104472F558EA90066DAF5 /* SnowlyTests.xctest */,
 				33A104512F558EA90066DAF5 /* SnowlyUITests.xctest */,
-				33C6BFA42F5C530E00DF2C52 /* SnowlyWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		33C6BF612F5C52B600DF2C52 /* Frameworks */ = {
+		33A104822F558EAA0066DAF5 /* SnowlyWidgetExtension */ = {
 			isa = PBXGroup;
 			children = (
-				33C6BF622F5C52B600DF2C52 /* WidgetKit.framework */,
-				33C6BF642F5C52B700DF2C52 /* SwiftUI.framework */,
+				33A104742F558EAA0066DAF5 /* SnowlyControlWidget.swift */,
+				33A104752F558EAA0066DAF5 /* SnowlyLiveActivityWidget.swift */,
+				33A104762F558EAA0066DAF5 /* SnowlyWidgetBundle.swift */,
+				33A104772F558EAA0066DAF5 /* Info.plist */,
+				33A104782F558EAA0066DAF5 /* Assets.xcassets */,
+				33A104832F558EAA0066DAF5 /* Widget Shared */,
 			);
-			name = Frameworks;
+			path = SnowlyWidgetExtension;
+			sourceTree = "<group>";
+		};
+		33A104832F558EAA0066DAF5 /* Widget Shared */ = {
+			isa = PBXGroup;
+			children = (
+				33A104792F558EAA0066DAF5 /* Snowly/Shared/SetTrackingIntent.swift */,
+				33A1047A2F558EAA0066DAF5 /* Snowly/Shared/TogglePauseIntent.swift */,
+				33A1047B2F558EAA0066DAF5 /* Snowly/Shared/TogglePauseState.swift */,
+				33A1047C2F558EAA0066DAF5 /* Snowly/Shared/SnowlyActivityAttributes.swift */,
+				33A1047D2F558EAA0066DAF5 /* Snowly/Shared/UnitSystem.swift */,
+				33A1047E2F558EAA0066DAF5 /* Snowly/Utilities/Formatters.swift */,
+				33A1047F2F558EAA0066DAF5 /* Snowly/Utilities/UnitConversion.swift */,
+				33A104802F558EAA0066DAF5 /* Snowly/Resources/Localizable.xcstrings */,
+			);
+			name = "Widget Shared";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -243,14 +190,12 @@
 				33A104342F558EA80066DAF5 /* Sources */,
 				33A104352F558EA80066DAF5 /* Frameworks */,
 				33A104362F558EA80066DAF5 /* Resources */,
-				AA0000012F550000000000C /* Embed Watch Content */,
-				33C6BF772F5C52B700DF2C52 /* Embed Foundation Extensions */,
+				33A104722F558EAA0066DAF5 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				AA0000012F550000000000B /* PBXTargetDependency */,
-				33C6BFB42F5C530F00DF2C52 /* PBXTargetDependency */,
+				33A104872F558EAA0066DAF5 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				33A1043A2F558EA80066DAF5 /* Snowly */,
@@ -308,49 +253,24 @@
 			productReference = 33A104512F558EA90066DAF5 /* SnowlyUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		33C6BFA32F5C530E00DF2C52 /* SnowlyWidgetExtension */ = {
+		33A104842F558EAA0066DAF5 /* SnowlyWidgetExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 33C6BFB72F5C530F00DF2C52 /* Build configuration list for PBXNativeTarget "SnowlyWidgetExtension" */;
+			buildConfigurationList = 33A1048A2F558EAA0066DAF5 /* Build configuration list for PBXNativeTarget "SnowlyWidgetExtension" */;
 			buildPhases = (
-				33C6BFA02F5C530E00DF2C52 /* Sources */,
-				33C6BFA12F5C530E00DF2C52 /* Frameworks */,
-				33C6BFA22F5C530E00DF2C52 /* Resources */,
+				33A104862F558EAA0066DAF5 /* Sources */,
+				33A104812F558EAA0066DAF5 /* Frameworks */,
+				33A104852F558EAA0066DAF5 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				33C6BFA72F5C530E00DF2C52 /* SnowlyWidgetExtension */,
 			);
 			name = SnowlyWidgetExtension;
 			packageProductDependencies = (
 			);
 			productName = SnowlyWidgetExtension;
-			productReference = 33C6BFA42F5C530E00DF2C52 /* SnowlyWidgetExtension.appex */;
+			productReference = 33A104732F558EAA0066DAF5 /* SnowlyWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
-		};
-		AA0000012F5500000000000006 /* Snowly Watch App */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = AA0000012F5500000000000009 /* Build configuration list for PBXNativeTarget "Snowly Watch App" */;
-			buildPhases = (
-				AA0000012F5500000000000003 /* Sources */,
-				AA0000012F5500000000000004 /* Frameworks */,
-				AA0000012F5500000000000005 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				AA0000012F5500000000000002 /* SnowlyWatch */,
-			);
-			name = "Snowly Watch App";
-			packageProductDependencies = (
-			);
-			productName = "Snowly Watch App";
-			productReference = AA0000012F5500000000000001 /* Snowly Watch App.app */;
-			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
@@ -373,10 +293,7 @@
 						CreatedOnToolsVersion = 26.3;
 						TestTargetID = 33A104372F558EA80066DAF5;
 					};
-					33C6BFA32F5C530E00DF2C52 = {
-						CreatedOnToolsVersion = 26.3;
-					};
-					AA0000012F5500000000000006 = {
+					33A104842F558EAA0066DAF5 = {
 						CreatedOnToolsVersion = 26.3;
 					};
 				};
@@ -387,8 +304,6 @@
 			knownRegions = (
 				en,
 				Base,
-				"zh-Hans",
-				sv,
 			);
 			mainGroup = 33A1042F2F558EA80066DAF5;
 			minimizedProjectReferenceProxies = 1;
@@ -398,10 +313,9 @@
 			projectRoot = "";
 			targets = (
 				33A104372F558EA80066DAF5 /* Snowly */,
-				AA0000012F5500000000000006 /* Snowly Watch App */,
+				33A104842F558EAA0066DAF5 /* SnowlyWidgetExtension */,
 				33A104462F558EA90066DAF5 /* SnowlyTests */,
 				33A104502F558EA90066DAF5 /* SnowlyUITests */,
-				33C6BFA32F5C530E00DF2C52 /* SnowlyWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -428,17 +342,12 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		33C6BFA22F5C530E00DF2C52 /* Resources */ = {
+		33A104852F558EAA0066DAF5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AA0000012F5500000000000005 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
+				33A1046F2F558EAA0066DAF5 /* Assets.xcassets in Resources */,
+				33A104702F558EAA0066DAF5 /* Snowly/Resources/Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -466,17 +375,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		33C6BFA02F5C530E00DF2C52 /* Sources */ = {
+		33A104862F558EAA0066DAF5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AA0000012F5500000000000003 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
+				33A104652F558EAA0066DAF5 /* SnowlyControlWidget.swift in Sources */,
+				33A104662F558EAA0066DAF5 /* SnowlyLiveActivityWidget.swift in Sources */,
+				33A104672F558EAA0066DAF5 /* SnowlyWidgetBundle.swift in Sources */,
+				33A104682F558EAA0066DAF5 /* Snowly/Shared/SetTrackingIntent.swift in Sources */,
+				33A104692F558EAA0066DAF5 /* Snowly/Shared/TogglePauseIntent.swift in Sources */,
+				33A1046A2F558EAA0066DAF5 /* Snowly/Shared/TogglePauseState.swift in Sources */,
+				33A1046B2F558EAA0066DAF5 /* Snowly/Shared/SnowlyActivityAttributes.swift in Sources */,
+				33A1046C2F558EAA0066DAF5 /* Snowly/Shared/UnitSystem.swift in Sources */,
+				33A1046D2F558EAA0066DAF5 /* Snowly/Utilities/Formatters.swift in Sources */,
+				33A1046E2F558EAA0066DAF5 /* Snowly/Utilities/UnitConversion.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -493,15 +405,10 @@
 			target = 33A104372F558EA80066DAF5 /* Snowly */;
 			targetProxy = 33A104522F558EA90066DAF5 /* PBXContainerItemProxy */;
 		};
-		33C6BFB42F5C530F00DF2C52 /* PBXTargetDependency */ = {
+		33A104872F558EAA0066DAF5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 33C6BFA32F5C530E00DF2C52 /* SnowlyWidgetExtension */;
-			targetProxy = 33C6BFB32F5C530F00DF2C52 /* PBXContainerItemProxy */;
-		};
-		AA0000012F550000000000B /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = AA0000012F5500000000000006 /* Snowly Watch App */;
-			targetProxy = AA0000012F550000000000A /* PBXContainerItemProxy */;
+			target = 33A104842F558EAA0066DAF5 /* SnowlyWidgetExtension */;
+			targetProxy = 33A104712F558EAA0066DAF5 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -631,16 +538,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Snowly/Snowly.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Snowly;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Snowly can open Apple Music now playing when you tap the music button.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Snowly reads your heart rate and workout data to enrich your ski session stats.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Snowly saves your ski sessions as workouts in Health so you can track your fitness progress.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Your phone is in your pocket while you ski — this keeps tracking active when the screen locks.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Snowly tracks your position to record runs and measure speed. One more prompt will follow for background access.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Snowly uses motion sensors to automatically detect when you're skiing or riding a chairlift.";
@@ -648,29 +554,24 @@
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UIBackgroundModes = "location remote-notification";
-				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Roy-Kid.Snowly";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -680,16 +581,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Snowly/Snowly.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Snowly;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSAppleMusicUsageDescription = "Snowly can open Apple Music now playing when you tap the music button.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Snowly reads your heart rate and workout data to enrich your ski session stats.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Snowly saves your ski sessions as workouts in Health so you can track your fitness progress.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Your phone is in your pocket while you ski — this keeps tracking active when the screen locks.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Snowly tracks your position to record runs and measure speed. One more prompt will follow for background access.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Snowly uses motion sensors to automatically detect when you're skiing or riding a chairlift.";
@@ -697,29 +597,24 @@
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UIBackgroundModes = "location remote-notification";
-				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Roy-Kid.Snowly";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -729,22 +624,17 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 0.0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Roy-Kid.SnowlyTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Snowly.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Snowly";
 			};
 			name = Debug;
@@ -755,22 +645,17 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
-				MARKETING_VERSION = 0.0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Roy-Kid.SnowlyTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Snowly.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Snowly";
 			};
 			name = Release;
@@ -780,21 +665,16 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 0.0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Roy-Kid.SnowlyUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Snowly;
 			};
 			name = Debug;
@@ -804,47 +684,41 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 0.0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Roy-Kid.SnowlyUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Snowly;
 			};
 			name = Release;
 		};
-		33C6BFB82F5C530F00DF2C52 /* Debug */ = {
+		33A104882F558EAA0066DAF5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
-				GENERATE_INFOPLIST_FILE = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SnowlyWidgetExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = SnowlyWidgetExtension;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Roy-Kid.Snowly.SnowlyWidgetExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
@@ -853,107 +727,32 @@
 			};
 			name = Debug;
 		};
-		33C6BFB92F5C530F00DF2C52 /* Release */ = {
+		33A104892F558EAA0066DAF5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
-				GENERATE_INFOPLIST_FILE = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SnowlyWidgetExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = SnowlyWidgetExtension;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.0.1;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "Roy-Kid.Snowly.SnowlyWidgetExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		AA0000012F5500000000000007 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = SnowlyWatch/SnowlyWatch.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Snowly;
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Snowly needs your location to track ski runs on Apple Watch.";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "Roy-Kid.Snowly";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 0.0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = "Roy-Kid.Snowly.watchkitapp";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = watchos;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "watchos watchsimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.2;
-			};
-			name = Debug;
-		};
-		AA0000012F5500000000000008 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = SnowlyWatch/SnowlyWatch.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Snowly;
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Snowly needs your location to track ski runs on Apple Watch.";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "Roy-Kid.Snowly";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 0.0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = "Roy-Kid.Snowly.watchkitapp";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = watchos;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "watchos watchsimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Release;
 		};
@@ -996,20 +795,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		33C6BFB72F5C530F00DF2C52 /* Build configuration list for PBXNativeTarget "SnowlyWidgetExtension" */ = {
+		33A1048A2F558EAA0066DAF5 /* Build configuration list for PBXNativeTarget "SnowlyWidgetExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				33C6BFB82F5C530F00DF2C52 /* Debug */,
-				33C6BFB92F5C530F00DF2C52 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		AA0000012F5500000000000009 /* Build configuration list for PBXNativeTarget "Snowly Watch App" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				AA0000012F5500000000000007 /* Debug */,
-				AA0000012F5500000000000008 /* Release */,
+				33A104882F558EAA0066DAF5 /* Debug */,
+				33A104892F558EAA0066DAF5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

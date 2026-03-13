@@ -52,7 +52,7 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
     override init() {
         super.init()
         locationManager.delegate = self
-        authorizationStatus = locationManager.authorizationStatus
+        refreshAuthorizationStatus()
 #if DEBUG
         let args = ProcessInfo.processInfo.arguments
         if let idx = args.firstIndex(of: "-replay_gpx"), idx + 1 < args.count {
@@ -76,6 +76,10 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
         default:
             break
         }
+    }
+
+    func refreshAuthorizationStatus() {
+        authorizationStatus = locationManager.authorizationStatus
     }
 
     func recentTrackPointsSnapshot() -> [TrackPoint] {
@@ -198,9 +202,6 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
             case .authorizedWhenInUse, .authorizedAlways:
                 self.startPassiveCollectionIfAuthorized()
                 manager.requestLocation()
-                if status == .authorizedWhenInUse {
-                    manager.requestAlwaysAuthorization()
-                }
             case .denied, .restricted:
                 self.stopAllLocationUpdates()
                 self.recentTrackPoints.removeAll(keepingCapacity: false)

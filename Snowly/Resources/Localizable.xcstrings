@@ -1276,6 +1276,28 @@
         }
       }
     },
+    "common_unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unavailable"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otillgänglig"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不可用"
+          }
+        }
+      }
+    },
     "common_remove" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6653,19 +6675,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "GPS for speed, distance & altitude"
+            "value" : "Tracks runs, speed & altitude, including when your phone is locked"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Spåra rutt, hastighet och höjd"
+            "value" : "Spårar åk, fart och höjd även när telefonen är låst"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "记录路线、速度和海拔"
+            "value" : "在手机锁屏时也能持续记录路线、速度和海拔"
           }
         }
       }
@@ -6747,13 +6769,13 @@
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Visa aktuellt bergsväder"
+            "value" : "Aktuellt bergsväder via din plats"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "显示实时山区天气"
+            "value" : "基于定位显示实时山区天气"
           }
         }
       }

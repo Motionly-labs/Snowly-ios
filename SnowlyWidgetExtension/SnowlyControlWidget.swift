@@ -10,7 +10,6 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-@available(iOS 18.0, *)
 struct SnowlyControlWidget: ControlWidget {
     private static let kind = "com.snowly.start-tracking-control"
 
@@ -29,7 +28,6 @@ struct SnowlyControlWidget: ControlWidget {
     }
 }
 
-@available(iOS 18.0, *)
 private struct TrackingStatusProvider: ControlValueProvider {
     let previewValue = false
 

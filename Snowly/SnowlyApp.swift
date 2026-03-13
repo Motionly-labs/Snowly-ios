@@ -95,6 +95,7 @@ struct SnowlyApp: App {
     @State private var services = AppServices()
     @State private var deepLinkJoinError: String?
     @Environment(\.scenePhase) private var scenePhase
+    private static let storeCompatibilityStampKey = "snowly_store_compatibility_stamp"
     private static var cloudContainerIdentifier: String {
         if let bundleIdentifier = Bundle.main.bundleIdentifier, !bundleIdentifier.isEmpty {
             return "iCloud.\(bundleIdentifier)"
@@ -109,7 +110,15 @@ struct SnowlyApp: App {
         let isTesting = isUITesting
             || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 
-        let shouldUseCloudKit = !isTesting && SnowlyApp.canUseCloudKitAtLaunch
+        // Pre-flight: reset incompatible store files before SwiftData can abort.
+        // If stores were reset, disable CloudKit for this launch to avoid
+        // the mirroring delegate aborting on incompatible remote records.
+        var shouldSkipCloudKitForLaunch = false
+        if !isTesting {
+            shouldSkipCloudKitForLaunch = SnowlyApp.preparePersistentStoresForLaunch()
+        }
+
+        let shouldUseCloudKit = !isTesting && !shouldSkipCloudKitForLaunch && SnowlyApp.canUseCloudKitAtLaunch
 
         do {
             let container: ModelContainer
@@ -332,12 +341,15 @@ struct SnowlyApp: App {
         isTesting: Bool,
         launchArguments: [String]
     ) -> ModelContainer? {
-#if targetEnvironment(simulator)
         guard !isTesting else { return nil }
+        guard !hasMigrationStages else {
+            print("Persistent store load failed with migration stages present. Skipping destructive store reset: \(error)")
+            return nil
+        }
         let launchArgumentSet = Set(launchArguments)
 
         do {
-            print("Simulator persistent store load failed. Attempting store reset recovery: \(error)")
+            print("Persistent store load failed. Attempting store reset recovery: \(error)")
             try resetPersistentStoreFiles()
             let recoveredContainer = try makeModelContainer(
                 isStoredInMemoryOnly: false,
@@ -351,15 +363,94 @@ struct SnowlyApp: App {
                 in: recoveredContainer,
                 launchArguments: launchArguments
             )
-            print("Recovered persistent store by resetting incompatible simulator files.")
+            print("Recovered persistent store by resetting incompatible store files.")
             return recoveredContainer
         } catch {
             print("Persistent store recovery failed: \(error)")
             return nil
         }
-#else
+    }
+
+    /// Pre-flight store handling before SwiftData opens SQLite files.
+    ///
+    /// If migration stages exist, preserve the stores and let SwiftData migrate.
+    /// If no migration stages exist, treat an app-bundle change as incompatible
+    /// and reset the existing stores once before opening them.
+    /// Returns `true` when CloudKit should be skipped for this launch.
+    private static func preparePersistentStoresForLaunch() -> Bool {
+        let currentStamp = currentStoreCompatibilityStamp
+        let storedStamp = UserDefaults.standard.string(forKey: storeCompatibilityStampKey)
+        let decision = PersistentStoreCompatibilityPolicy.evaluate(
+            storedStamp: storedStamp,
+            currentStamp: currentStamp,
+            storeFilesExist: storeFilesExist(),
+            hasMigrationStages: hasMigrationStages
+        )
+
+        if decision.shouldResetStores {
+            print("Persistent store compatibility changed without migration stages. Resetting existing stores before launch.")
+            try? resetPersistentStoreFiles()
+        } else if storedStamp != nil, storedStamp != currentStamp {
+            print("Persistent store compatibility stamp updated (\(storedStamp ?? "") -> \(currentStamp)). SwiftData migration will handle the upgrade.")
+        }
+
+        UserDefaults.standard.set(currentStamp, forKey: storeCompatibilityStampKey)
+        return decision.shouldSkipCloudKit
+    }
+
+    private static var hasMigrationStages: Bool {
+        !SnowlyMigrationPlan.stages.isEmpty
+    }
+
+    private static var currentStoreCompatibilityStamp: String {
+        if hasMigrationStages {
+            return "migration:\(currentMigrationSchemaStamp)"
+        }
+        return "reset-on-bundle-change:\(currentBundleFingerprint)"
+    }
+
+    private static var currentMigrationSchemaStamp: String {
+        SnowlyMigrationPlan.schemas
+            .map { $0.versionIdentifier }
+            .map { version in
+                [version.major, version.minor, version.patch]
+                    .map(String.init)
+                    .joined(separator: ".")
+            }
+            .joined(separator: "->")
+    }
+
+    private static var currentBundleFingerprint: String {
+        let marketingVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+        let buildVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0"
+        let modificationDate = bundleContentModificationDate?.timeIntervalSince1970 ?? 0
+        return "\(marketingVersion)-\(buildVersion)-\(Int(modificationDate))"
+    }
+
+    private static var bundleContentModificationDate: Date? {
+        let keys: Set<URLResourceKey> = [.contentModificationDateKey]
+
+        if let date = try? Bundle.main.bundleURL.resourceValues(forKeys: keys).contentModificationDate {
+            return date
+        }
+
+        if let executableURL = Bundle.main.executableURL,
+           let date = try? executableURL.resourceValues(forKeys: keys).contentModificationDate {
+            return date
+        }
+
         return nil
-#endif
+    }
+
+    private static func storeFilesExist() -> Bool {
+        guard let appSupportURL = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask
+        ).first else { return false }
+
+        let storeNames = ["Synced.store", "Local.store"]
+        return storeNames.contains { name in
+            FileManager.default.fileExists(atPath: appSupportURL.appendingPathComponent(name).path)
+        }
     }
 
     private static func resetPersistentStoreFiles() throws {
