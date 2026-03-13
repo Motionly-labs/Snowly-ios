@@ -1,0 +1,57 @@
+name: Feature Request
+description: Suggest something new for Snowly
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Got an idea? We're building this for skiers and snowboarders — your input shapes the app.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation or pain point. What are you trying to do that the app doesn't support today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like this to work? Rough ideas are welcome — no need for a full spec.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature_area
+    attributes:
+      label: Feature Area
+      options:
+        - GPS Tracking / Run Detection
+        - Crew / Location Sharing
+        - Apple Watch
+        - Gear Checklist
+        - Session History
+        - Maps / Resort Detection
+        - Share Cards
+        - Privacy / Data
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any other approaches you've thought about or workarounds you currently use?
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and this hasn't been requested yet
+          required: true
+        - label: This fits Snowly's privacy-first, offline-capable design principles
+          required: false

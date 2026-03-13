@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+	<!-- MARK: - HealthKit -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>Snowly reads your heart rate and workout data to enrich your ski session stats.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Snowly saves your ski sessions as workouts in Health so you can track your fitness progress.</string>
+
+	<!-- MARK: - Deep Link -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>snowly</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- MARK: - Launch Screen -->
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+
+</dict>
+</plist>

@@ -1,0 +1,64 @@
+# Xcode
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcshareddata/xcschemes/xcschememanagement.plist
+xcuserdata/
+
+# Build artifacts
+build/
+DerivedData/
+.derivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Module cache
+.swift-module-cache/
+ModuleCache.noindex/
+
+# CocoaPods (not used, but just in case)
+Pods/
+
+# OS files
+.DS_Store
+*.swp
+*~
+
+# IDE
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+*.moved-aside
+
+# Provisioning profiles
+*.mobileprovision
+*.provisionprofile
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# AI agent config
+.claude/
+CLAUDE.md
+.cursor/
+.aider*
+.copilot/
+
+# Secrets
+*.env
+*.env.*
+
+# Debug fixtures and GPX (regenerated locally)
+Snowly/Debug/

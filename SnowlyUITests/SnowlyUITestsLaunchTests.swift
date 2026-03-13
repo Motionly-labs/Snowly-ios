@@ -2,8 +2,6 @@
 //  SnowlyUITestsLaunchTests.swift
 //  SnowlyUITests
 //
-//  Created by Roy Kid on 2026-03-02.
-//
 
 import XCTest
 
@@ -20,13 +18,23 @@ final class SnowlyUITestsLaunchTests: XCTestCase {
     @MainActor
     func testLaunch() throws {
         let app = XCUIApplication()
+        app.launchArguments = ["-ui_testing", "-ui_testing_skip_onboarding"]
         app.launch()
-
-        // Insert steps here to perform after app launch but before taking a screenshot,
-        // such as logging into a test account or navigating somewhere in the app
 
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Launch Screen"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    @MainActor
+    func testLaunch_freshInstall() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui_testing"]
+        app.launch()
+
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "Fresh Install Launch"
         attachment.lifetime = .keepAlways
         add(attachment)
     }
