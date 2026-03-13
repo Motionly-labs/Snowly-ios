@@ -51,6 +51,12 @@
             "value" : "%lld gear items"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld utrustningsartiklar"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -170,6 +176,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Share day summary"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dela dagens sammanfattning"
           }
         },
         "zh-Hans" : {
@@ -362,6 +374,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unable to Join Crew"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det gick inte att gå med i gruppen"
           }
         },
         "zh-Hans" : {
@@ -823,6 +841,12 @@
             "value" : "%lld pts"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld pts"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -834,6 +858,12 @@
     "chart_stat_max" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Max"
+          }
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Max"
@@ -855,6 +885,12 @@
             "value" : "Mean"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medel"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -866,6 +902,12 @@
     "chart_stat_min" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Min"
+          }
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Min"
@@ -909,6 +951,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till"
           }
         },
         "zh-Hans" : {
@@ -1170,6 +1218,12 @@
             "value" : "None"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1229,6 +1283,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta bort"
           }
         },
         "zh-Hans" : {
@@ -1424,6 +1484,12 @@
             "value" : "Track your ski runs from Control Center"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spåra dina skidåkningar från Kontrollcenter"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1435,6 +1501,12 @@
     "control_widget_display_name" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowly"
+          }
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Snowly"
@@ -1454,6 +1526,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Start Tracking"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starta spårning"
           }
         },
         "zh-Hans" : {
@@ -1648,6 +1726,12 @@
             "value" : "Failed to decode response: %@"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det gick inte att avkoda svar: %@"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1684,6 +1768,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Server error %lld: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serverfel %lld: %@"
           }
         },
         "zh-Hans" : {
@@ -2924,6 +3014,12 @@
             "value" : "Gear"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utrustning"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2938,6 +3034,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "In Checklists"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I checklistor"
           }
         },
         "zh-Hans" : {
@@ -2956,6 +3058,12 @@
             "value" : "No local reminders configured for this gear."
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inga lokala påminnelser konfigurerade för denna utrustning."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2970,6 +3078,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This gear is in your locker but not assigned to any checklist yet."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denna utrustning finns i ditt förråd men är inte tilldelad någon checklista ännu."
           }
         },
         "zh-Hans" : {
@@ -2988,6 +3102,12 @@
             "value" : "Notes"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anteckningar"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3004,6 +3124,12 @@
             "value" : "Recent Sessions"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senaste sessioner"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3018,6 +3144,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reminder Schedule"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schema för påminnelser"
           }
         },
         "zh-Hans" : {
@@ -3128,6 +3260,12 @@
             "value" : "Packed"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Packad"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3142,6 +3280,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose gear from locker"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Välj utrustning från förrådet"
           }
         },
         "zh-Hans" : {
@@ -3206,6 +3350,12 @@
             "value" : "Active checklist"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktiv checklista"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3220,6 +3370,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till"
           }
         },
         "zh-Hans" : {
@@ -3238,6 +3394,12 @@
             "value" : "Everything in your locker is already part of this checklist."
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allt i ditt förråd är redan en del av denna checklista."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3252,6 +3414,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Locker Gear You Can Add"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Förrådutrustning du kan lägga till"
           }
         },
         "zh-Hans" : {
@@ -3270,6 +3438,12 @@
             "value" : "Gear In This Checklist"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utrustning i denna checklista"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3284,6 +3458,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No gear selected yet."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen utrustning vald ännu."
           }
         },
         "zh-Hans" : {
@@ -3302,6 +3482,12 @@
             "value" : "Recent Sessions"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senaste sessioner"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3318,6 +3504,12 @@
             "value" : "Remove"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta bort"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3332,6 +3524,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Use as active checklist"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Använd som aktiv checklista"
           }
         },
         "zh-Hans" : {
@@ -3373,6 +3571,12 @@
             "value" : "Active checklists attach automatically to new sessions. You can still correct the attached checklist later from session summary."
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktiva checklistor kopplas automatiskt till nya sessioner. Du kan fortfarande korrigera den bifogade checklistan senare från sessionssammanfattningen."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3387,6 +3591,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Use as active checklist"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Använd som aktiv checklista"
           }
         },
         "zh-Hans" : {
@@ -3405,6 +3615,12 @@
             "value" : "Checklist name"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checklistans namn"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3421,6 +3637,12 @@
             "value" : "Checklist"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checklista"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3435,6 +3657,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit Checklist"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redigera checklista"
           }
         },
         "zh-Hans" : {
@@ -3568,6 +3796,12 @@
             "value" : "New Checklist"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny checklista"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3582,6 +3816,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notes"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anteckningar"
           }
         },
         "zh-Hans" : {
@@ -3623,6 +3863,12 @@
             "value" : "Acquired"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inköpt"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3637,6 +3883,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Archived"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arkiverad"
           }
         },
         "zh-Hans" : {
@@ -3655,6 +3907,12 @@
             "value" : "Brand"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Märke"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3669,6 +3927,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enable local reminders"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktivera lokala påminnelser"
           }
         },
         "zh-Hans" : {
@@ -3687,6 +3951,12 @@
             "value" : "Every"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Var"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3698,6 +3968,12 @@
     "gear_editor_extra_section" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extra"
+          }
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Extra"
@@ -3719,6 +3995,12 @@
             "value" : "From"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Från"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3733,6 +4015,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Gear name"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utrustningsnamn"
           }
         },
         "zh-Hans" : {
@@ -3751,6 +4039,12 @@
             "value" : "Gear"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utrustning"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3765,6 +4059,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Model"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modell"
           }
         },
         "zh-Hans" : {
@@ -3783,6 +4083,12 @@
             "value" : "No checklists yet. Create one first if you want sessions and the visual checklist to inherit this gear."
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inga checklistor ännu. Skapa en först om du vill att sessioner och den visuella checklistan ska ärva denna utrustning."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3797,6 +4103,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notes"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anteckningar"
           }
         },
         "zh-Hans" : {
@@ -3815,6 +4127,12 @@
             "value" : "Reminders stay on this device and schedule local notifications for this gear."
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Påminnelser stannar på den här enheten och schemalägger lokala aviseringar för denna utrustning."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3829,6 +4147,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reminder Schedule"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schema för påminnelser"
           }
         },
         "zh-Hans" : {
@@ -3847,6 +4171,12 @@
             "value" : "Time"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tid"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3861,6 +4191,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "To"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Till"
           }
         },
         "zh-Hans" : {
@@ -3879,6 +4215,12 @@
             "value" : "Track acquisition date"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spåra inköpsdatum"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3895,6 +4237,12 @@
             "value" : "Unit"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enhet"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3909,6 +4257,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Used In Checklists"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Används i checklistor"
           }
         },
         "zh-Hans" : {
@@ -3949,6 +4303,12 @@
             "value" : "Create a checklist, then pull locker gear into the visual packing view."
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa en checklista och dra sedan förrådutrustning in i den visuella packningsvyn."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3963,6 +4323,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create Checklist"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa checklista"
           }
         },
         "zh-Hans" : {
@@ -4002,6 +4368,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Checklists Yet"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inga checklistor ännu"
           }
         },
         "zh-Hans" : {
@@ -4158,6 +4530,12 @@
             "value" : "Checklist"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checklista"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4172,6 +4550,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All Gear"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All utrustning"
           }
         },
         "zh-Hans" : {
@@ -4190,6 +4574,12 @@
             "value" : "Checklist"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checklista"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4204,6 +4594,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create Gear"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skapa utrustning"
           }
         },
         "zh-Hans" : {
@@ -4222,6 +4618,12 @@
             "value" : "Locker gear is shared across all checklists. Create gear here first, then add it wherever you need it."
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Förrådutrustning delas över alla checklistor. Skapa utrustning här först och lägg sedan till den var du behöver den."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4236,6 +4638,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Gear Yet"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen utrustning ännu"
           }
         },
         "zh-Hans" : {
@@ -4254,6 +4662,12 @@
             "value" : "1 gear item"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 utrustningsartikel"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4268,6 +4682,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Locker"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Förråd"
           }
         },
         "zh-Hans" : {
@@ -4286,6 +4706,12 @@
             "value" : "Not in any checklist"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inte i någon checklista"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4300,6 +4726,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nästa %@"
           }
         },
         "zh-Hans" : {
@@ -4318,6 +4750,12 @@
             "value" : "Next reminder %@"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nästa påminnelse %@"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4332,6 +4770,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reminders"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Påminnelser"
           }
         },
         "zh-Hans" : {
@@ -4350,6 +4794,12 @@
             "value" : "No gear selected"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen utrustning vald"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4364,6 +4814,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No gear selected yet."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen utrustning vald ännu."
           }
         },
         "zh-Hans" : {
@@ -4450,6 +4906,12 @@
             "value" : "No checklist selected"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen checklista vald"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4464,6 +4926,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open Locker"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öppna förrådet"
           }
         },
         "zh-Hans" : {
@@ -4593,6 +5061,12 @@
             "value" : "Pull gear from your locker into this checklist."
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dra utrustning från ditt förråd till denna checklista."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4609,6 +5083,12 @@
             "value" : "Recent sessions using %@"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senaste sessioner med %@"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4623,6 +5103,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reminder for %@ from your locker."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Påminnelse för %@ från ditt förråd."
           }
         },
         "zh-Hans" : {
@@ -4754,6 +5240,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Visual checklist"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visuell checklista"
           }
         },
         "zh-Hans" : {
@@ -4933,6 +5425,12 @@
             "value" : "%1$lld of %2$lld packed"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld av %2$lld packade"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4948,6 +5446,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Backpack"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ryggsäck"
           }
         },
         "zh-Hans" : {
@@ -4967,6 +5471,12 @@
             "value" : "Base Layer Bottom"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Underställ underdel"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4982,6 +5492,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Base Layer Top"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Underställ överdel"
           }
         },
         "zh-Hans" : {
@@ -5001,6 +5517,12 @@
             "value" : "Gloves"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Handskar"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5016,6 +5538,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Goggles"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skidglasögon"
           }
         },
         "zh-Hans" : {
@@ -5035,6 +5563,12 @@
             "value" : "Helmet"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hjälm"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5050,6 +5584,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lift Pass"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liftkort"
           }
         },
         "zh-Hans" : {
@@ -5069,6 +5609,12 @@
             "value" : "Phone Charger"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telefonladdare"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5084,6 +5630,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Poles"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stavar"
           }
         },
         "zh-Hans" : {
@@ -5103,6 +5655,12 @@
             "value" : "Ski Boots"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skidpjäxor"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5118,6 +5676,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ski Jacket"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skidjacka"
           }
         },
         "zh-Hans" : {
@@ -5137,6 +5701,12 @@
             "value" : "Ski Pants"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skidbyxor"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5152,6 +5722,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ski Socks"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skidstrumpor"
           }
         },
         "zh-Hans" : {
@@ -5171,6 +5747,12 @@
             "value" : "Skis"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skidor"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5186,6 +5768,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sunscreen"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solskydd"
           }
         },
         "zh-Hans" : {
@@ -5204,6 +5792,12 @@
             "value" : "GPS signal not available. Move to an open area and try again."
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS-signal ej tillgänglig. Flytta till ett öppet område och försök igen."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5220,6 +5814,12 @@
             "value" : "Enable location access in Settings to track your run."
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktivera platsåtkomst i Inställningar för att spåra din åkning."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5234,6 +5834,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "GPS Not Available"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS ej tillgänglig"
           }
         },
         "zh-Hans" : {
@@ -5962,6 +6568,12 @@
             "value" : "Day Note"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dagsanteckning"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5976,6 +6588,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Title"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titel"
           }
         },
         "zh-Hans" : {
@@ -6322,6 +6940,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enable iCloud before first launch to sync sessions across your devices."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktivera iCloud innan första start för att synkronisera sessioner på dina enheter."
           }
         },
         "zh-Hans" : {
@@ -6949,12 +7573,17 @@
       }
     },
     "quick_action_start_tracking" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Start Skiing"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Börja åka"
           }
         },
         "zh-Hans" : {
@@ -6971,6 +7600,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Previous session recovered."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Föregående session återställd."
           }
         },
         "zh-Hans" : {
@@ -7674,6 +8309,12 @@
             "value" : "Change Checklist"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ändra checklista"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7778,6 +8419,12 @@
             "value" : "Walking"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promenad"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7816,6 +8463,12 @@
             "value" : "Export Track Data"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportera spårdata"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7830,6 +8483,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Exporting…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exporterar…"
           }
         },
         "zh-Hans" : {
@@ -7848,6 +8507,12 @@
             "value" : "Attach a checklist to connect this ski day to your locker history."
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bifoga en checklista för att koppla denna skiddag till din förrådshistorik."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7862,6 +8527,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This ski day is linked to your locker gear and checklist history."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denna skiddag är kopplad till din förrådutrustning och checklistehistorik."
           }
         },
         "zh-Hans" : {
@@ -7880,6 +8551,12 @@
             "value" : "Gear"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utrustning"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7896,6 +8573,12 @@
             "value" : "No checklist attached"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen checklista bifogad"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7910,6 +8593,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "None"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen"
           }
         },
         "zh-Hans" : {
@@ -8020,6 +8709,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "GPS track data unavailable for this run."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS-spårdata ej tillgänglig för denna åkning."
           }
         },
         "zh-Hans" : {
@@ -8576,6 +9271,12 @@
             "value" : "HealthKit"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HealthKit"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -9098,6 +9799,12 @@
             "value" : "HealthKit access unavailable. Enable in iOS Settings."
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HealthKit-åtkomst otillgänglig. Aktivera i iOS-inställningar."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -9160,6 +9867,12 @@
             "value" : "Copy Image"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopiera bild"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -9175,6 +9888,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "More Apps…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fler appar…"
           }
         },
         "zh-Hans" : {
@@ -9367,6 +10086,12 @@
     "stat_heart_rate_unit" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bpm"
+          }
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "bpm"
@@ -9836,6 +10561,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Walking"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promenad"
           }
         },
         "zh-Hans" : {
@@ -10626,6 +11357,12 @@
             "value" : "Updated %lld min ago"
           }
         },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uppdaterad %lld min sedan"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -10635,8 +11372,15 @@
       }
     },
     "weather_uv_index_format" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "UV %lld"
+          }
+        },
+        "sv" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "UV %lld"

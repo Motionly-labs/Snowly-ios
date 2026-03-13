@@ -213,33 +213,36 @@ private actor TrackingEngine {
 
         let sortedPoints = points.sorted { $0.timestamp < $1.timestamp }
         for point in sortedPoints {
-            let filteredPoint = gpsFilter.update(point: point)
-            recentPoints.append(filteredPoint)
+            recentPoints.append(point.filteredEstimatePoint)
             RecentTrackWindow.trimFilteredPoints(
                 &recentPoints,
-                relativeTo: filteredPoint.timestamp
+                relativeTo: point.timestamp
             )
         }
 
         // Record cutoff so ingest() skips any live-stream points that overlap with
-        // the seeded history, preventing double-processing through the Kalman filter.
+        // the seeded history. Seed history only warms detection windows; the Kalman
+        // filter itself stays cold so pre-start speed/course noise cannot leak into
+        // the first live tracking sample.
         primeEndTimestamp = sortedPoints.last?.timestamp
 
-        // Seed the current altitude from the last primed filtered point so the
+        // Seed the current altitude from the last primed point so the
         // altitude card has an immediate value before the first live GPS tick.
-        currentAltitude = recentPoints.last?.altitude ?? 0
+        currentAltitude = sortedPoints.last?.altitude ?? 0
 
         previousFilteredPoint = nil
         candidateActivity = nil
         candidateStartTime = nil
         currentActivity = .idle
         currentSpeed = 0
+        gpsFilter.reset()
     }
 
     func ingest(point: TrackPoint, motion: MotionHint) -> TrackingPointIngestResult {
-        // Skip points already fed through the Kalman filter during primeRecentWindow.
-        // Prevents double-processing at session start and after resume when the live
-        // stream overlaps with seeded history.
+        // Skip live-stream points that overlap with the seeded history window.
+        // The seed history only warms run detection; it does not initialize the
+        // Kalman filter. This cutoff prevents pre-start or pre-resume overlap from
+        // being processed twice once live GPS delivery begins.
         if let cutoff = primeEndTimestamp {
             if point.timestamp <= cutoff {
                 return TrackingPointIngestResult(

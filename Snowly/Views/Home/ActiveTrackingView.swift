@@ -163,12 +163,13 @@ private struct LiveSpeedCurveView: View {
             return
         }
 
-        let fresh: [SpeedSample]
+        let rawFresh: [SpeedSample]
         if let lastProcessedSampleTime {
-            fresh = samples.filter { $0.time > lastProcessedSampleTime }
+            rawFresh = samples.filter { $0.time > lastProcessedSampleTime }
         } else {
-            fresh = samples
+            rawFresh = samples.droppingLeadingZeroLikeSamples()
         }
+        let fresh = rawFresh
         guard !fresh.isEmpty else { return }
 
         var updatedPoints = frozenPoints
@@ -500,7 +501,9 @@ struct ActiveTrackingView: View {
     }
 
     private var profileAltitudeChangeValue: Double {
-        let window = trackingService.altitudeSamples.suffix(SyncedActivityProfileView.preferredWindowCount)
+        let window = trackingService.altitudeSamples
+            .droppingLeadingZeroLikeSamples()
+            .suffix(SyncedActivityProfileView.preferredWindowCount)
         guard let first = window.first?.altitude, let last = window.last?.altitude else { return 0 }
         return last - first
     }
@@ -983,7 +986,9 @@ struct ActiveTrackingView: View {
 
     private var altitudeHeroSamples: [AltitudeSample] {
         let cutoff = Date.now.addingTimeInterval(-SharedConstants.altitudeSampleWindowSeconds)
-        return trackingService.altitudeSamples.filter { $0.time >= cutoff }
+        return trackingService.altitudeSamples
+            .filter { $0.time >= cutoff }
+            .droppingLeadingZeroLikeSamples()
     }
 
     private var heroHeartRateCurvePage: some View {
@@ -1025,7 +1030,9 @@ struct ActiveTrackingView: View {
 
     private var heartRateHeroSamples: [HeartRateSample] {
         let cutoff = Date.now.addingTimeInterval(-SharedConstants.heartRateSampleWindowSeconds)
-        return watchBridgeService.heartRateSamples.filter { $0.time >= cutoff }
+        return watchBridgeService.heartRateSamples
+            .filter { $0.time >= cutoff }
+            .droppingLeadingZeroLikeSamples()
     }
 
     // MARK: - Landscape Dashboard
@@ -1726,11 +1733,15 @@ private struct HeartRateCurveView: View {
 
     @State private var selectedSampleTime: Date?
 
+    private var displaySamples: [HeartRateSample] {
+        samples.droppingLeadingZeroLikeSamples()
+    }
+
     var body: some View {
         GeometryReader { geo in
             let size = geo.size
 
-            if samples.count < 2 {
+            if displaySamples.count < 2 {
                 Path { path in
                     path.move(to: CGPoint(x: 0, y: size.height))
                     path.addLine(to: CGPoint(x: size.width, y: size.height))
@@ -1757,7 +1768,7 @@ private struct HeartRateCurveView: View {
                         CurveSelectionOverlay(
                             point: pts[selectionIndex],
                             baseline: size.height,
-                            label: selectionLabel(for: samples[selectionIndex]),
+                            label: selectionLabel(for: displaySamples[selectionIndex]),
                             tint: ColorTokens.brandRed,
                             chartSize: size
                         )
@@ -1771,7 +1782,7 @@ private struct HeartRateCurveView: View {
                 )
             }
         }
-        .onChange(of: samples.map(\.time)) { _, latestTimes in
+        .onChange(of: displaySamples.map(\.time)) { _, latestTimes in
             guard let selectedSampleTime else { return }
             if !latestTimes.contains(selectedSampleTime) {
                 self.selectedSampleTime = nil
@@ -1780,13 +1791,13 @@ private struct HeartRateCurveView: View {
     }
 
     private func computePoints(size: CGSize) -> [CGPoint] {
-        let values = samples.map(\.bpm)
+        let values = displaySamples.map(\.bpm)
         let minVal = values.min() ?? 0
         let maxVal = values.max() ?? 1
         let range = max(maxVal - minVal, 20)
 
-        return samples.enumerated().map { idx, sample in
-            let x = size.width * CGFloat(idx) / CGFloat(samples.count - 1)
+        return displaySamples.enumerated().map { idx, sample in
+            let x = size.width * CGFloat(idx) / CGFloat(displaySamples.count - 1)
             let normalised = (sample.bpm - minVal) / range
             let y = size.height * (1.0 - CGFloat(normalised)) * 0.85 + 4
             return CGPoint(x: x, y: y)
@@ -1795,7 +1806,7 @@ private struct HeartRateCurveView: View {
 
     private var selectedIndex: Int? {
         guard let selectedSampleTime else { return nil }
-        return samples.firstIndex(where: { $0.time == selectedSampleTime })
+        return displaySamples.firstIndex(where: { $0.time == selectedSampleTime })
     }
 
     private func drawCurve(into context: GraphicsContext, pts: [CGPoint]) {
@@ -1811,7 +1822,7 @@ private struct HeartRateCurveView: View {
 
     private func selectPoint(at x: CGFloat, points: [CGPoint]) {
         guard let index = CurveRendering.nearestPointIndex(to: x, in: points) else { return }
-        let tappedTime = samples[index].time
+        let tappedTime = displaySamples[index].time
         selectedSampleTime = selectedSampleTime == tappedTime ? nil : tappedTime
     }
 }

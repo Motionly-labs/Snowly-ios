@@ -694,4 +694,61 @@ struct SessionTrackingIntegrationTests {
         #expect(savedTimestamps.contains(livePoint2.timestamp))
         #expect(savedTimestamps.contains(livePoint3.timestamp))
     }
+
+    @Test func pretrackingBuffer_doesNotLeakSeedSpeedIntoFirstLiveSample() async {
+        let location = MockLocationService()
+        let motion = MockMotionService()
+        let battery = MockBatteryService()
+        let service = SessionTrackingService(
+            locationService: location,
+            motionService: motion,
+            batteryService: battery
+        )
+
+        let base = Date()
+        let bufferedPoint1 = makePoint(
+            timestamp: base.addingTimeInterval(-10),
+            latitude: 46.0,
+            longitude: 7.0,
+            altitude: 2220,
+            speed: 65.0,
+            horizontalAccuracy: 8,
+            verticalAccuracy: 12,
+            course: 180
+        )
+        let bufferedPoint2 = makePoint(
+            timestamp: base.addingTimeInterval(-5),
+            latitude: 46.0003,
+            longitude: 7.0003,
+            altitude: 2212,
+            speed: 62.0,
+            horizontalAccuracy: 8,
+            verticalAccuracy: 12,
+            course: 185
+        )
+        location.bufferedPoints = [bufferedPoint1, bufferedPoint2]
+
+        let firstLivePoint = makePoint(
+            timestamp: base,
+            latitude: 46.0006,
+            longitude: 7.0006,
+            altitude: 2204,
+            speed: 12.0,
+            horizontalAccuracy: 8,
+            verticalAccuracy: 12,
+            course: 188
+        )
+
+        service.startTracking()
+        try? await Task.sleep(for: .milliseconds(20))
+
+        location.emit(firstLivePoint)
+        await Task.yield()
+        try? await Task.sleep(for: .milliseconds(80))
+
+        #expect(abs(service.currentSpeed - firstLivePoint.speed) < 0.001)
+        #expect(service.currentSpeed < 20)
+
+        await service.stopTracking()
+    }
 }

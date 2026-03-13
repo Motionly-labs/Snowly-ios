@@ -39,8 +39,8 @@ enum ActiveTrackingCardSnapshotAssembler {
             return .series(seriesSnapshot(for: instance, context: context))
         case .profile:
             return .profile(ProfileCardSnapshot(
-                altitudeSamples: context.altitudeSamples,
-                speedSamples: context.speedSamples
+                altitudeSamples: context.altitudeSamples.droppingLeadingZeroLikeSamples(),
+                speedSamples: context.speedSamples.droppingLeadingZeroLikeSamples()
             ))
         case .text:
             return .text(textSnapshot(for: instance.kind, context: context))
@@ -109,7 +109,9 @@ enum ActiveTrackingCardSnapshotAssembler {
     ) -> SeriesCardSnapshot {
         let window = instance.config.windowSeconds ?? SharedConstants.altitudeSampleWindowSeconds
         let cutoff = Date.now.addingTimeInterval(-window)
-        let trimmed = context.altitudeSamples.filter { $0.time >= cutoff }
+        let trimmed = context.altitudeSamples
+            .filter { $0.time >= cutoff }
+            .droppingLeadingZeroLikeSamples()
         return SeriesCardSnapshot(kind: instance.kind, samples: trimmed)
     }
 
@@ -121,7 +123,9 @@ enum ActiveTrackingCardSnapshotAssembler {
     ) -> HeartRateSeriesCardSnapshot {
         let window = instance.config.windowSeconds ?? SharedConstants.heartRateSampleWindowSeconds
         let cutoff = Date.now.addingTimeInterval(-window)
-        let trimmed = context.heartRateSamples.filter { $0.time >= cutoff }
+        let trimmed = context.heartRateSamples
+            .filter { $0.time >= cutoff }
+            .droppingLeadingZeroLikeSamples()
         return HeartRateSeriesCardSnapshot(kind: instance.kind, samples: trimmed)
     }
 

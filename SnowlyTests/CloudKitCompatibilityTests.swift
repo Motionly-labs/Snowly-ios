@@ -111,9 +111,9 @@ struct CloudKitCompatibilityTests {
         #expect(fetchedSettings.first?.hasCompletedOnboarding == true)
     }
 
-    @Test("SchemaV5 includes device and gear models")
-    func schemaV5IncludesDeviceSettings() {
-        let modelTypes = SchemaV5.models
+    @Test("SchemaV1 includes device and gear models")
+    func schemaV1IncludesDeviceSettings() {
+        let modelTypes = SchemaV1.models
         let typeNames = modelTypes.map { String(describing: $0) }
 
         #expect(typeNames.contains("DeviceSettings"))

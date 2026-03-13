@@ -69,15 +69,31 @@ struct DashboardCardBackgroundModifier: ViewModifier {
         return shape
             .fill(Color(uiColor: .secondarySystemGroupedBackground))
             .overlay {
-                if !isDark {
-                    shape.fill(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.72), accent.opacity(0.06)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+                shape.fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(isDark ? 0.05 : 0.72),
+                            accent.opacity(isDark ? 0.14 : 0.08),
+                            accent.opacity(isDark ? 0.06 : 0.03),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
-                }
+                )
+            }
+            .overlay(alignment: .topTrailing) {
+                Circle()
+                    .fill(accent.opacity(isDark ? 0.16 : 0.12))
+                    .frame(width: 74, height: 74)
+                    .blur(radius: 16)
+                    .offset(x: 16, y: -20)
+            }
+            .overlay(alignment: .bottomLeading) {
+                Circle()
+                    .fill(Color.white.opacity(isDark ? 0.03 : 0.52))
+                    .frame(width: 52, height: 52)
+                    .blur(radius: 16)
+                    .offset(x: -10, y: 18)
             }
             .overlay {
                 shape.strokeBorder(Color.white.opacity(isDark ? 0.10 : 0.55), lineWidth: 1)

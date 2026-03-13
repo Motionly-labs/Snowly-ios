@@ -24,10 +24,7 @@ struct LongPressStartButton: View {
             .frame(width: buttonSize, height: buttonSize)
             .scaleEffect(isPressing ? 0.95 : 1.0)
             .animation(AnimationTokens.quickEaseInOut, value: isPressing)
-            .shadow(
-                color: ColorTokens.primaryAccent.opacity(isPressing ? Opacity.soft : Opacity.gentle),
-                radius: isPressing ? 16 : 20, x: 0, y: isPressing ? 6 : 8
-            )
+            .shadowStyle(isPressing ? ShadowTokens.Style.brandAmberGlowPressed : ShadowTokens.Style.brandAmberGlow)
             .shadowStyle(.glassBase)
             .animation(AnimationTokens.quickEaseInOut, value: isPressing)
             .contentShape(Circle())
@@ -52,7 +49,7 @@ struct LongPressStartButton: View {
 
     private var accentTintOverlay: some View {
         Circle()
-            .fill(ColorTokens.primaryAccent.opacity(isPressing ? Opacity.pressingAccent : Opacity.faint))
+            .fill(ColorTokens.brandWarmAmber.opacity(isPressing ? Opacity.pressingAccent : Opacity.gentle))
             .animation(AnimationTokens.quickEaseInOut, value: isPressing)
     }
 
@@ -60,7 +57,7 @@ struct LongPressStartButton: View {
         Circle()
             .trim(from: 0, to: progress)
             .stroke(
-                ColorTokens.primaryAccent,
+                ColorTokens.brandWarmAmber,
                 style: StrokeStyle(lineWidth: 3, lineCap: .round)
             )
             .rotationEffect(.degrees(-90))
@@ -70,7 +67,7 @@ struct LongPressStartButton: View {
     private var idleBorderOverlay: some View {
         Circle()
             .strokeBorder(
-                ColorTokens.primaryAccent.opacity(progress > 0 ? 0 : Opacity.mediumHigh),
+                ColorTokens.brandWarmAmber.opacity(progress > 0 ? 0 : Opacity.mediumHigh),
                 lineWidth: 1.5
             )
             .animation(AnimationTokens.quickEaseInOut, value: progress)

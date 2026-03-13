@@ -13,6 +13,10 @@ import SwiftData
 import MapKit
 
 struct HomeView: View {
+    /// Incremented by MainTabView each time the Ride tab is tapped.
+    /// Resets the internal page back to primary regardless of current sub-page.
+    var resetTrigger: Int = 0
+
     private enum HomePage: Hashable {
         case primary  // Ride page
         case map      // Unified map page (trails + crew)
@@ -196,6 +200,10 @@ struct HomeView: View {
             }
             .onChange(of: crewService.focusRequestedPin?.id) { _, _ in
                 focusOnRequestedPinIfNeeded()
+            }
+            .onChange(of: resetTrigger) { _, _ in
+                guard currentPage != .primary else { return }
+                withAnimation(.easeInOut(duration: 0.2)) { currentPage = .primary }
             }
             .task(id: locationCoordinateKey) {
                 guard let coord = locationService.currentLocation else { return }
@@ -408,6 +416,10 @@ struct HomeView: View {
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.primary)
                     }
+
+                    if shouldShowWeatherModule {
+                        temperatureDisplay
+                    }
                 }
 
                 Spacer()
@@ -420,14 +432,7 @@ struct HomeView: View {
             .padding(.top, Spacing.xl)
             .padding(.horizontal, Spacing.xl)
 
-            Spacer()
-
-            if shouldShowWeatherModule {
-                temperatureDisplay
-                    .allowsHitTesting(false)
-            }
-
-            Spacer()
+            Spacer(minLength: Spacing.xxl)
 
             primaryTrackingButton
 
@@ -771,37 +776,32 @@ struct HomeView: View {
     // MARK: - Weather Display
 
     private var temperatureDisplay: some View {
-        Group {
+        HStack(spacing: Spacing.sm) {
             if let weather = weatherService.currentWeather {
-                VStack(spacing: Spacing.md) {
-                    Text(temperatureString(weather.temperature))
-                        .font(Typography.temperatureHero)
-                        .monospacedDigit()
-                        .foregroundStyle(.primary)
+                Image(systemName: weather.symbolName)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
 
-                    Label(weather.condition, systemImage: weather.symbolName)
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                Text(temperatureString(weather.temperature))
+                    .font(.subheadline.weight(.semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(.primary)
 
-                    HStack(spacing: Spacing.content) {
-                        weatherMetricText(
-                            text: windSpeedShort(weather.windSpeed),
-                            systemImage: "wind"
-                        )
-                        weatherMetricText(
-                            text: String(format: String(localized: "weather_uv_index_format"), Int64(weather.uvIndex)),
-                            systemImage: "sun.max"
-                        )
-                    }
-                }
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, Spacing.content)
-                .padding(.vertical, Spacing.lg)
-                .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.xLarge, style: .continuous))
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(weatherAccessibilityLabel)
+                Text(weather.condition)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+
+                Text("·")
+                    .foregroundStyle(.tertiary)
+
+                Label(windSpeedShort(weather.windSpeed), systemImage: "wind")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(weatherAccessibilityLabel)
     }
 
     private var weatherAccessibilityLabel: String {

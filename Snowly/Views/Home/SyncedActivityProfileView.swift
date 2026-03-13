@@ -21,8 +21,16 @@ struct SyncedActivityProfileView: View {
     let unitSystem: UnitSystem
 
     private var displaySamples: [DisplaySample] {
-        let altitudeWindow = Array(altitudeSamples.suffix(Self.preferredWindowCount))
-        let speedWindow = Array(speedSamples.suffix(Self.preferredWindowCount))
+        let altitudeWindow = Array(
+            altitudeSamples
+                .droppingLeadingZeroLikeSamples()
+                .suffix(Self.preferredWindowCount)
+        )
+        let speedWindow = Array(
+            speedSamples
+                .droppingLeadingZeroLikeSamples()
+                .suffix(Self.preferredWindowCount)
+        )
         let count = min(altitudeWindow.count, speedWindow.count)
         guard count > 1 else { return [] }
 

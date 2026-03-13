@@ -97,7 +97,7 @@ For a `Double` with a default value, the migration is three lines:
 
 ```swift
 // In SnowlyMigrationPlan.stages:
-.lightweight(fromVersion: SchemaV4.self, toVersion: SchemaV5.self)
+.lightweight(fromVersion: SchemaV1.self, toVersion: SchemaV2.self)
 ```
 
 ---

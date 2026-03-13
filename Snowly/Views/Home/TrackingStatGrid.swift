@@ -12,11 +12,6 @@ import SwiftUI
 
 struct TrackingStatGrid: View {
 
-    private struct WiggleAnimationState: Equatable {
-        let isActive: Bool
-        let isEvenIndex: Bool
-    }
-
     // MARK: Inputs
 
     let instances: [ActiveTrackingCardInstance]
@@ -32,6 +27,8 @@ struct TrackingStatGrid: View {
     @State private var displayInstances: [ActiveTrackingCardInstance]
     @State private var dragSession: TrackingGridDragSession?
     @State private var gridWidth: CGFloat = 300
+    @State private var wiggleBeat = false
+    @State private var wiggleLoopTask: Task<Void, Never>?
 
     private static let cardHeight: CGFloat = 88
     private static let gridColumns = [GridItem(.flexible()), GridItem(.flexible())]
@@ -102,13 +99,25 @@ struct TrackingStatGrid: View {
             displayInstances = latest
         }
         .onChange(of: isEditing) { _, editing in
-            guard !editing else { return }
-            if dragSession != nil {
-                commitDisplayOrderIfNeeded()
+            if editing {
+                startWiggleLoop()
+            } else {
+                stopWiggleLoop()
+                if dragSession != nil {
+                    commitDisplayOrderIfNeeded()
+                }
+                withAnimation(AnimationTokens.gentleSpring) {
+                    dragSession = nil
+                }
             }
-            withAnimation(AnimationTokens.gentleSpring) {
-                dragSession = nil
+        }
+        .onAppear {
+            if isEditing {
+                startWiggleLoop()
             }
+        }
+        .onDisappear {
+            stopWiggleLoop()
         }
     }
 
@@ -135,18 +144,10 @@ struct TrackingStatGrid: View {
     @ViewBuilder
     private func widgetCell(instance: ActiveTrackingCardInstance, displayIndex: Int) -> some View {
         let isDragging = dragSession?.draggingId == instance.instanceId
-        let wiggleState = WiggleAnimationState(
-            isActive: isEditing && !isDragging,
-            isEvenIndex: displayIndex.isMultiple(of: 2)
-        )
 
         statCardBody(instance: instance)
             .opacity(isDragging ? 0 : 1)
-            .rotationEffect(
-                wiggleState.isActive
-                    ? .degrees(wiggleState.isEvenIndex ? 1.5 : -1.5)
-                    : .zero
-            )
+            .rotationEffect(wiggleAngle(for: displayIndex, isDragging: isDragging))
             .overlay(alignment: .topLeading) {
                 if isEditing && !isDragging {
                     deleteButton(for: instance)
@@ -154,14 +155,6 @@ struct TrackingStatGrid: View {
                         .transition(.scale(scale: 0.1, anchor: .topLeading).combined(with: .opacity))
                 }
             }
-            .animation(
-                wiggleState.isActive
-                    ? Animation.easeInOut(duration: 0.13)
-                        .repeatForever(autoreverses: true)
-                        .delay(wiggleState.isEvenIndex ? 0.0 : 0.07)
-                    : AnimationTokens.quickEaseOut,
-                value: wiggleState
-            )
             .gesture(
                 isEditing
                     ? DragGesture(minimumDistance: 4)
@@ -226,18 +219,65 @@ struct TrackingStatGrid: View {
         onReorder(displayInstances)
     }
 
+    private func wiggleAngle(for displayIndex: Int, isDragging: Bool) -> Angle {
+        guard isEditing && !isDragging else { return .zero }
+
+        let slotDirection = displayIndex.isMultiple(of: 2) ? 1.0 : -1.0
+        let beatDirection = wiggleBeat ? 1.0 : -1.0
+        return .degrees(slotDirection * beatDirection * 1.4)
+    }
+
+    @MainActor
+    private func startWiggleLoop() {
+        guard wiggleLoopTask == nil else { return }
+
+        wiggleLoopTask = Task { @MainActor in
+            var nextBeat = true
+
+            while !Task.isCancelled {
+                withAnimation(.easeInOut(duration: 0.13)) {
+                    wiggleBeat = nextBeat
+                }
+                nextBeat.toggle()
+                try? await Task.sleep(for: .milliseconds(130))
+            }
+        }
+    }
+
+    @MainActor
+    private func stopWiggleLoop() {
+        wiggleLoopTask?.cancel()
+        wiggleLoopTask = nil
+
+        withAnimation(AnimationTokens.quickEaseOut) {
+            wiggleBeat = false
+        }
+    }
+
     // MARK: - Stat Card
 
     @ViewBuilder
     private func cardHeader(for kind: ActiveTrackingCardKind) -> some View {
         let def = ActiveTrackingCardRegistry.definition(for: kind)
-        HStack(spacing: Spacing.xs) {
+        let accent = cardAccent(for: kind)
+
+        HStack(spacing: Spacing.sm) {
             Image(systemName: def.icon)
-                .font(Typography.caption2Semibold)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(accent)
+                .frame(width: 22, height: 22)
+                .background(
+                    Circle()
+                        .fill(accent.opacity(0.14))
+                )
+                .overlay {
+                    Circle()
+                        .strokeBorder(accent.opacity(0.18), lineWidth: 1)
+                }
             Text(String(localized: String.LocalizationValue(def.titleKey)))
-                .font(.caption2)
+                .font(Typography.caption2Semibold)
+                .foregroundStyle(.secondary)
         }
-        .foregroundStyle(.tertiary)
     }
 
     @ViewBuilder
@@ -253,24 +293,22 @@ struct TrackingStatGrid: View {
     }
 
     private func numberStatCard(snapshot: ScalarCardSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.gutter) {
-            cardHeader(for: snapshot.kind)
+        gridCardShell(accent: cardAccent(for: snapshot.kind)) {
+            VStack(alignment: .leading, spacing: Spacing.gutter) {
+                cardHeader(for: snapshot.kind)
 
-            AnimatedNumberText(
-                value: snapshot.value,
-                decimals: snapshot.decimals,
-                suffix: snapshot.unit,
-                delay: snapshot.animationDelay
-            )
-            .font(.title2.bold())
-            .foregroundStyle(.primary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.78)
+                AnimatedNumberText(
+                    value: snapshot.value,
+                    decimals: snapshot.decimals,
+                    suffix: snapshot.unit,
+                    delay: snapshot.animationDelay
+                )
+                .font(.title2.bold())
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, Spacing.card)
-        .padding(.vertical, Spacing.lg)
-        .dashboardGridCardBackground()
         .opacity(cardsAppeared ? 1 : 0)
         .scaleEffect(cardsAppeared ? 1 : 0.92)
         .animation(
@@ -280,16 +318,14 @@ struct TrackingStatGrid: View {
     }
 
     private func seriesCard(snapshot: SeriesCardSnapshot, instance: ActiveTrackingCardInstance) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            cardHeader(for: snapshot.kind)
+        gridCardShell(accent: cardAccent(for: snapshot.kind)) {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                cardHeader(for: snapshot.kind)
 
-            AltitudeSparkline(samples: snapshot.samples)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                AltitudeSparkline(samples: snapshot.samples)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, Spacing.card)
-        .padding(.vertical, Spacing.lg)
-        .dashboardGridCardBackground()
         .opacity(cardsAppeared ? 1 : 0)
         .scaleEffect(cardsAppeared ? 1 : 0.92)
         .animation(AnimationTokens.smoothEntranceFast, value: cardsAppeared)
@@ -339,26 +375,61 @@ struct TrackingStatGrid: View {
                 onAdd(kind)
             }
         } label: {
-            VStack(alignment: .leading, spacing: Spacing.gutter) {
-                cardHeader(for: kind)
+            gridCardShell(accent: cardAccent(for: kind)) {
+                VStack(alignment: .leading, spacing: Spacing.gutter) {
+                    cardHeader(for: kind)
 
-                Image(systemName: "plus.circle.fill")
-                    .font(.title3)
-                    .foregroundStyle(ColorTokens.secondaryAccent)
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(cardAccent(for: kind))
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, Spacing.card)
-            .padding(.vertical, Spacing.lg)
-            .dashboardGridCardBackground(accent: ColorTokens.secondaryAccent)
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous)
                     .strokeBorder(
-                        ColorTokens.secondaryAccent.opacity(Opacity.moderate),
+                        cardAccent(for: kind).opacity(Opacity.moderate),
                         lineWidth: 1.5
                     )
             )
         }
         .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func gridCardShell<Content: View>(
+        accent: Color,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        content()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, Spacing.card)
+            .padding(.vertical, Spacing.lg)
+            .dashboardGridCardBackground(accent: accent)
+            .overlay {
+                if isEditing {
+                    RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous)
+                        .strokeBorder(accent.opacity(0.22), lineWidth: 1.1)
+                }
+            }
+    }
+
+    private func cardAccent(for kind: ActiveTrackingCardKind) -> Color {
+        switch kind {
+        case .currentSpeed, .speedCurve, .skiTime:
+            return ColorTokens.sportAccent
+        case .peakSpeed, .liftCount:
+            return ColorTokens.secondaryAccent
+        case .avgSpeed, .distance:
+            return ColorTokens.info
+        case .vertical:
+            return ColorTokens.success
+        case .runCount:
+            return ColorTokens.brandGold
+        case .currentAltitude, .altitudeCurve, .profile:
+            return ColorTokens.trailBlack
+        case .heartRate, .heartRateCurve:
+            return ColorTokens.brandRed
+        }
     }
 
 }
@@ -377,6 +448,10 @@ struct AltitudeSparkline: View {
         self.unitLabel = unitLabel
     }
 
+    private var displaySamples: [AltitudeSample] {
+        samples.droppingLeadingZeroLikeSamples()
+    }
+
     private func color(for state: SpeedCurveState) -> Color {
         switch state {
         case .skiing: return ColorTokens.skiingAccent
@@ -389,7 +464,7 @@ struct AltitudeSparkline: View {
         GeometryReader { geo in
             let size = geo.size
 
-            if samples.count < 2 {
+            if displaySamples.count < 2 {
                 Path { path in
                     path.move(to: CGPoint(x: 0, y: size.height))
                     path.addLine(to: CGPoint(x: size.width, y: size.height))
@@ -417,8 +492,8 @@ struct AltitudeSparkline: View {
                         CurveSelectionOverlay(
                             point: pts[selectionIndex],
                             baseline: size.height,
-                            label: selectionLabel(for: samples[selectionIndex]),
-                            tint: color(for: samples[selectionIndex].state),
+                            label: selectionLabel(for: displaySamples[selectionIndex]),
+                            tint: color(for: displaySamples[selectionIndex].state),
                             chartSize: size
                         )
                     }
@@ -431,7 +506,7 @@ struct AltitudeSparkline: View {
                 )
             }
         }
-        .onChange(of: samples.map(\.time)) { _, latestTimes in
+        .onChange(of: displaySamples.map(\.time)) { _, latestTimes in
             guard let selectedSampleTime else { return }
             if !latestTimes.contains(selectedSampleTime) {
                 self.selectedSampleTime = nil
@@ -440,13 +515,13 @@ struct AltitudeSparkline: View {
     }
 
     private func computePoints(size: CGSize) -> [CGPoint] {
-        let altitudes = samples.map(\.altitude)
+        let altitudes = displaySamples.map(\.altitude)
         let minAlt = altitudes.min() ?? 0
         let maxAlt = altitudes.max() ?? 1
         let range = max(maxAlt - minAlt, 20)
 
-        return samples.enumerated().map { idx, sample in
-            let x = size.width * CGFloat(idx) / CGFloat(samples.count - 1)
+        return displaySamples.enumerated().map { idx, sample in
+            let x = size.width * CGFloat(idx) / CGFloat(displaySamples.count - 1)
             let normalised = (sample.altitude - minAlt) / range
             let y = size.height * (1.0 - CGFloat(normalised)) * 0.85 + 4
             return CGPoint(x: x, y: y)
@@ -455,7 +530,7 @@ struct AltitudeSparkline: View {
 
     private var selectedIndex: Int? {
         guard let selectedSampleTime else { return nil }
-        return samples.firstIndex(where: { $0.time == selectedSampleTime })
+        return displaySamples.firstIndex(where: { $0.time == selectedSampleTime })
     }
 
     private func drawSegments(into context: GraphicsContext, pts: [CGPoint]) {
@@ -465,9 +540,9 @@ struct AltitudeSparkline: View {
 
         var segStart = 1
         while segStart < pts.count {
-            let segState = samples[segStart].state
+            let segState = displaySamples[segStart].state
             var j = segStart
-            while j < pts.count && samples[j].state == segState {
+            while j < pts.count && displaySamples[j].state == segState {
                 j += 1
             }
             let segPath = CurveRendering.smoothPath(points: Array(pts[(segStart - 1)..<j]))
@@ -483,7 +558,7 @@ struct AltitudeSparkline: View {
 
     private func selectPoint(at x: CGFloat, points: [CGPoint]) {
         guard let index = CurveRendering.nearestPointIndex(to: x, in: points) else { return }
-        let tappedTime = samples[index].time
+        let tappedTime = displaySamples[index].time
         selectedSampleTime = selectedSampleTime == tappedTime ? nil : tappedTime
     }
 }

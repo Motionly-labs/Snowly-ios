@@ -35,11 +35,11 @@ If you add a non-optional field without a default value, the CloudKit sync will 
 
 ### Step 1 — Copy the current schema into a new version
 
-In `SchemaVersions.swift`, add the next version by copying the current schema enum. For example, if the live app is on `SchemaV4`, create `SchemaV5`:
+In `SchemaVersions.swift`, add the next version by copying the current schema enum. For example, if the live app is on `SchemaV1`, create `SchemaV2`:
 
 ```swift
-enum SchemaV5: VersionedSchema {
-    static var versionIdentifier = Schema.Version(5, 0, 0)
+enum SchemaV2: VersionedSchema {
+    static var versionIdentifier = Schema.Version(2, 0, 0)
 
     static var models: [any PersistentModel.Type] {
         [
@@ -65,19 +65,19 @@ Edit the actual `@Model` class (e.g., `SkiRun.swift`) to add the new property wi
 var avgTurnRate: Double = 0  // degrees/second
 ```
 
-Do **not** modify `SchemaV4`. The schema enum is a snapshot — it references the model type, not a copy. `SchemaV5` is just a new version identifier pointing at the same updated models.
+Do **not** modify `SchemaV1`. The schema enum is a snapshot — it references the model type, not a copy. `SchemaV2` is just a new version identifier pointing at the same updated models.
 
 ### Step 3 — Add the new schema to the migration plan
 
 ```swift
 enum SnowlyMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV4.self, SchemaV5.self]
+        [SchemaV1.self, SchemaV2.self]
     }
 
     static var stages: [MigrationStage] {
         [
-            .lightweight(fromVersion: SchemaV4.self, toVersion: SchemaV5.self)
+            .lightweight(fromVersion: SchemaV1.self, toVersion: SchemaV2.self)
         ]
     }
 }

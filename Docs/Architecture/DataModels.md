@@ -111,11 +111,11 @@ These are populated once in `SessionTrackingService.saveSession()` at session en
 
 Schema versions and migration stages are defined in `Snowly/Models/SchemaVersions.swift`.
 
-The current state is `SchemaV4` only, with an empty `stages` array:
+The current state is `SchemaV1` only, with an empty `stages` array:
 
 ```swift
 enum SnowlyMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] { [SchemaV4.self] }
+    static var schemas: [any VersionedSchema.Type] { [SchemaV1.self] }
     static var stages: [MigrationStage] { [] }
 }
 ```

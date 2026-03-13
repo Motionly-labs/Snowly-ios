@@ -10,6 +10,7 @@ import SwiftUI
 
 struct MainTabView: View {
     @State private var selectedTab: TabID = .ride
+    @State private var homeResetTrigger = 0
 
     enum TabID: Hashable {
         case gear
@@ -17,14 +18,24 @@ struct MainTabView: View {
         case tracks
     }
 
+    private var tabSelection: Binding<TabID> {
+        Binding(
+            get: { selectedTab },
+            set: { newTab in
+                if newTab == .ride { homeResetTrigger += 1 }
+                selectedTab = newTab
+            }
+        )
+    }
+
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: tabSelection) {
             Tab(String(localized: "tab_gear"), systemImage: "gearshape.fill", value: TabID.gear) {
                 GearWorkspaceView()
             }
 
             Tab(String(localized: "tab_ride"), systemImage: "play.fill", value: TabID.ride) {
-                HomeView()
+                HomeView(resetTrigger: homeResetTrigger)
             }
 
             Tab(String(localized: "tab_tracks"), systemImage: "person.fill", value: TabID.tracks) {

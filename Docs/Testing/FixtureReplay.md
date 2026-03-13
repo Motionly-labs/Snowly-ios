@@ -104,10 +104,10 @@ This function does not apply dwell time or segmentation — it takes a pre-class
 
 ## Generator Script
 
-`Scripts/Generators/generate-zermatt-fixtures.swift` fetches real Zermatt lift/trail geometry plus DEM elevation data, then emits fixture JSON in the production `TrackPoint` shape. Run it when refreshing a fixture:
+`Scripts/generate-zermatt-fixtures.swift` fetches real Zermatt lift/trail geometry plus DEM elevation data, then emits fixture JSON in the production `TrackPoint` shape. Run it when refreshing a fixture:
 
 ```bash
-swift Scripts/Generators/generate-zermatt-fixtures.swift --mode loop
+swift Scripts/generate-zermatt-fixtures.swift --mode loop
 ```
 
 After generating the file:

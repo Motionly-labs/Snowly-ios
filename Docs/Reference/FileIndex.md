@@ -1,27 +1,34 @@
 # File Index
 
-Flat index of every significant source file in the Snowly codebase.
+Flat index of the most significant source files in the Snowly codebase.
 
 ---
 
-## Entry Point
+## App Entry And Targets
 
 | Path | Role |
 |---|---|
-| `Snowly/SnowlyApp.swift` | App entry point; creates `AppServices`, sets up dual-store `ModelContainer`, injects services |
+| `Snowly/SnowlyApp.swift` | Main app entry point; creates `AppServices`, configures persistence, injects services |
+| `Snowly/QuickActionDelegate.swift` | Home Screen quick-action registration and dispatch |
+| `Snowly/Views/AppLaunchView.swift` | Thin launch wrapper that hands off immediately to `RootView` |
+| `SnowlyWidgetExtension/SnowlyWidgetBundle.swift` | Widget extension entry point for Live Activity and Control widget |
+| `SnowlyWatch/SnowlyWatchApp.swift` | watchOS app entry point and watch-side service wiring |
 
 ---
 
-## Shared (iOS + watchOS)
+## Shared (iOS + watchOS + widgets)
 
 | Path | Role |
 |---|---|
-| `Snowly/Shared/TrackPoint.swift` | `TrackPoint` struct, `FilteredTrackPoint`, `RecentTrackWindow` window utilities, haversine function |
-| `Snowly/Shared/SharedConstants.swift` | All algorithm constants (thresholds, dwell times, battery levels) |
-| `Snowly/Shared/WatchMessage.swift` | `WatchMessage` enum — full phone/watch IPC protocol |
-| `Snowly/Shared/UnitSystem.swift` | `UnitSystem` enum (`.metric` / `.imperial`) |
-| `Snowly/Shared/RunActivityType.swift` | `RunActivityType` enum (`.skiing`, `.lift`, `.walk`, `.idle`) |
-| `Snowly/Shared/StartTrackingIntent.swift` | Siri / Shortcuts intent for starting a tracking session |
+| `Snowly/Shared/TrackPoint.swift` | `TrackPoint`, `FilteredTrackPoint`, rolling-window helpers, haversine distance |
+| `Snowly/Shared/SharedConstants.swift` | Tracking, detection, dwell-time, battery, and WatchConnectivity constants |
+| `Snowly/Shared/WatchMessage.swift` | Full phone/watch IPC payload model |
+| `Snowly/Shared/UnitSystem.swift` | Metric vs imperial setting |
+| `Snowly/Shared/RunActivityType.swift` | Stable activity taxonomy: skiing, lift, walk, idle |
+| `Snowly/Shared/StartTrackingIntent.swift` | App Intents shortcut for starting tracking |
+| `Snowly/Shared/TogglePauseIntent.swift` | App Intents shortcut for pausing and resuming tracking |
+| `Snowly/Shared/QuickActionState.swift` | Shared quick-action handoff state |
+| `Snowly/Shared/SnowlyActivityAttributes.swift` | ActivityKit attributes shared with the widget extension |
 
 ---
 
@@ -29,16 +36,17 @@ Flat index of every significant source file in the Snowly codebase.
 
 | Path | Role |
 |---|---|
-| `Snowly/Models/SkiSession.swift` | `@Model` — one day of skiing; denormalized aggregates |
-| `Snowly/Models/SkiRun.swift` | `@Model` — individual run/lift segment; `trackData: Data?` binary blob |
-| `Snowly/Models/Resort.swift` | `@Model` — resort metadata (name, location) |
-| `Snowly/Models/GearSetup.swift` | `@Model` — internal checklist model backing the product-facing checklist concept |
-| `Snowly/Models/GearAsset.swift` | `@Model` — internal locker gear model backing the product-facing gear concept |
-| `Snowly/Models/GearMaintenanceEvent.swift` | `@Model` — compatibility-only legacy service-event model kept in the synced schema |
-| `Snowly/Models/UserProfile.swift` | `@Model` — user display name, units, personal bests |
-| `Snowly/Models/DeviceSettings.swift` | `@Model` — local-only device preferences, onboarding state, dashboard layout |
-| `Snowly/Models/SchemaVersions.swift` | `SchemaV4` definition and `SnowlyMigrationPlan` |
-| `Snowly/Models/TrackingDashboardLayout.swift` | `TrackingDashboardLayout` / `TrackingStatWidget` — widget configuration model |
+| `Snowly/Models/SkiSession.swift` | `@Model` for a ski day with denormalized totals |
+| `Snowly/Models/SkiRun.swift` | `@Model` for a run or transport segment, including serialized track data |
+| `Snowly/Models/Resort.swift` | Cached resort metadata and identity |
+| `Snowly/Models/UserProfile.swift` | Display name, units, avatar, and personal bests |
+| `Snowly/Models/DeviceSettings.swift` | Local-only device preferences, onboarding state, dashboard layout |
+| `Snowly/Models/ServerProfile.swift` | Local-only backend server profiles for Crew and upload flows |
+| `Snowly/Models/GearAsset.swift` | Locker gear items |
+| `Snowly/Models/GearSetup.swift` | Saved checklist definitions assembled from locker gear |
+| `Snowly/Models/GearMaintenanceEvent.swift` | Legacy synced maintenance event model kept for schema compatibility |
+| `Snowly/Models/TrackingDashboardLayout.swift` | Persisted configuration for the tracking stat grid |
+| `Snowly/Models/SchemaVersions.swift` | `SchemaV1` definition and `SnowlyMigrationPlan` |
 
 ---
 
@@ -46,33 +54,39 @@ Flat index of every significant source file in the Snowly codebase.
 
 | Path | Role |
 |---|---|
-| `Snowly/Services/SessionTrackingService.swift` | Orchestrator; owns tracking state machine, dwell-time filter, live metrics |
-| `Snowly/Services/LocationTrackingService.swift` | GPS via `CLLocationManagerDelegate` callbacks |
-| `Snowly/Services/MotionDetectionService.swift` | CoreMotion accelerometer/gyroscope; emits `MotionHint` |
-| `Snowly/Services/BatteryMonitorService.swift` | Device battery level monitoring |
-| `Snowly/Services/HealthKitService.swift` | HealthKit workout session (write) |
-| `Snowly/Services/HealthKitCoordinator.swift` | Coordinates HealthKit authorization and workout finalization |
-| `Snowly/Services/GPSKalmanFilter.swift` | Three-axis constant-velocity Kalman filter for GPS smoothing |
-| `Snowly/Services/GearChecklistStore.swift` | Local persistence for visual checklist checkmarks |
-| `Snowly/Services/GearLockerService.swift` | Pure helpers for locker gear and checklist composition |
-| `Snowly/Services/GearReminderService.swift` | Local reminder schedules, persistence, and notification syncing |
-| `Snowly/Services/MotionEstimator.swift` | Pure functions: computes `MotionEstimate` over a rolling window |
-| `Snowly/Services/MotionEstimate.swift` | `MotionEstimate` and `MotionEstimateWindow` types |
-| `Snowly/Services/RunDetectionService.swift` | Pure functions: classifies activity from `MotionEstimate` |
-| `Snowly/Services/SegmentFinalizationService.swift` | Segment state machine; produces `CompletedRunData` |
-| `Snowly/Services/SegmentValidator.swift` | Pure functions: validates and potentially demotes completed segments |
-| `Snowly/Services/StatsService.swift` | Pure functions: session and season aggregate statistics |
-| `Snowly/Services/WeatherService.swift` | WeatherKit current conditions |
-| `Snowly/Services/SkiMapCacheService.swift` | Ski area map data (OpenStreetMap Overpass API) |
-| `Snowly/Services/OverpassService.swift` | Low-level Overpass API client |
-| `Snowly/Services/MusicPlayerService.swift` | `MPMusicPlayerController` wrapper |
-| `Snowly/Services/PhoneConnectivityService.swift` | `WCSession` delegate; sends live updates to watch |
-| `Snowly/Services/WatchBridgeService.swift` | Receives watch track points and imports them through the production pipeline |
-| `Snowly/Services/SyncMonitorService.swift` | CloudKit sync status observation |
-| `Snowly/Services/ShareCardRenderer.swift` | Renders 1080×1920 share card image |
-| `Snowly/Services/MapSnapshotRenderer.swift` | `MKMapSnapshotter` wrapper for track map tiles |
-| `Snowly/Services/FixtureReplayService.swift` | DEBUG-only: replays fixture track points through the production pipeline |
-| `Snowly/Services/LiveActivityService.swift` | Live Activity / Dynamic Island updates |
+| `Snowly/Services/SessionTrackingService.swift` | Main tracking orchestrator and dwell-time owner |
+| `Snowly/Services/LocationTrackingService.swift` | `CLLocationManager` wrapper with passive and active GPS collection |
+| `Snowly/Services/MotionDetectionService.swift` | Core Motion integration and motion hints |
+| `Snowly/Services/BatteryMonitorService.swift` | Battery level monitoring and low-battery state |
+| `Snowly/Services/HealthKitService.swift` | HealthKit authorization and workout write path |
+| `Snowly/Services/HealthKitCoordinator.swift` | Batches route and distance writes during active tracking |
+| `Snowly/Services/GPSKalmanFilter.swift` | Three-axis Kalman filter for GPS smoothing |
+| `Snowly/Services/MotionEstimator.swift` | Pure rolling-window feature extraction |
+| `Snowly/Services/MotionEstimate.swift` | Motion estimate data structures shared by the detector |
+| `Snowly/Services/RunDetectionService.swift` | Pure activity classification logic |
+| `Snowly/Services/SegmentFinalizationService.swift` | Segment state machine and run completion pipeline |
+| `Snowly/Services/SegmentValidator.swift` | Validation and demotion rules for completed segments |
+| `Snowly/Services/StatsService.swift` | Aggregate stats and personal-best updates |
+| `Snowly/Services/SkiMapCacheService.swift` | Resort map cache and lookup orchestration |
+| `Snowly/Services/OverpassService.swift` | Low-level Overpass API client for ski geometry |
+| `Snowly/Services/WeatherService.swift` | WeatherKit access with cached fallback |
+| `Snowly/Services/MusicPlayerService.swift` | Apple Music authorization, queue, and playback control |
+| `Snowly/Services/SyncMonitorService.swift` | CloudKit sync event monitoring |
+| `Snowly/Services/PhoneConnectivityService.swift` | iPhone-side `WCSession` coordination |
+| `Snowly/Services/WatchBridgeService.swift` | Imports watch workouts into the iPhone production pipeline |
+| `Snowly/Services/CrewAPIClient.swift` | Network client for Crew endpoints |
+| `Snowly/Services/CrewService.swift` | Crew lifecycle, sync loops, pins, and membership state |
+| `Snowly/Services/CrewPinNotificationService.swift` | Local notifications for crew pins and membership events |
+| `Snowly/Services/SkiDataAPIClient.swift` | Network client for Snowly ski-day upload APIs |
+| `Snowly/Services/SkiDataUploadService.swift` | Registration, token refresh, and session upload orchestration |
+| `Snowly/Services/ServerHealthCheck.swift` | Stateless `/api/v1/health` connectivity check |
+| `Snowly/Services/GearLockerService.swift` | Locker/checklist composition helpers |
+| `Snowly/Services/GearChecklistStore.swift` | Persistence for visual checklist state |
+| `Snowly/Services/GearReminderService.swift` | Reminder permission and notification scheduling |
+| `Snowly/Services/ShareCardRenderer.swift` | Renders the 1920x1080 landscape share card |
+| `Snowly/Services/MapSnapshotRenderer.swift` | `MKMapSnapshotter` wrapper for route imagery |
+| `Snowly/Services/FixtureReplayService.swift` | DEBUG-only fixture replay into the production pipeline |
+| `Snowly/Services/LiveActivityService.swift` | ActivityKit lifecycle management |
 
 ---
 
@@ -80,8 +94,12 @@ Flat index of every significant source file in the Snowly codebase.
 
 | Path | Role |
 |---|---|
-| `Snowly/Services/Protocols/LocationProviding.swift` | Protocol for `LocationTrackingService` (enables mock injection) |
-| `Snowly/Services/Protocols/HealthKitProviding.swift` | Protocol for `HealthKitService` |
+| `Snowly/Services/Protocols/LocationProviding.swift` | Protocol abstraction for location services |
+| `Snowly/Services/Protocols/HealthKitProviding.swift` | Protocol abstraction for HealthKit workout services |
+| `Snowly/Services/Protocols/CrewAPIProviding.swift` | Protocol abstraction for the Crew API client |
+| `Snowly/Services/Protocols/SkiDataAPIProviding.swift` | Protocol abstraction for ski-day upload APIs |
+| `Snowly/Services/Protocols/BatteryMonitoring.swift` | Protocol for battery state dependencies |
+| `Snowly/Services/Protocols/MotionDetecting.swift` | Protocol for motion detection dependencies |
 
 ---
 
@@ -89,15 +107,16 @@ Flat index of every significant source file in the Snowly codebase.
 
 | Path | Role |
 |---|---|
-| `Snowly/DesignSystem/ColorTokens.swift` | Brand, semantic, and trail-difficulty color constants |
-| `Snowly/DesignSystem/Typography.swift` | Font styles organized by category |
-| `Snowly/DesignSystem/Spacing.swift` | 4-point spacing grid constants |
-| `Snowly/DesignSystem/CornerRadius.swift` | Standard corner radius values |
-| `Snowly/DesignSystem/AnimationTokens.swift` | Duration constants and preset `Animation` values |
-| `Snowly/DesignSystem/ShadowTokens.swift` | Card and surface shadow presets |
+| `Snowly/DesignSystem/ColorTokens.swift` | Brand, semantic, and trail-difficulty colors |
+| `Snowly/DesignSystem/Typography.swift` | Named font styles |
+| `Snowly/DesignSystem/Spacing.swift` | 4-point spacing grid |
+| `Snowly/DesignSystem/CornerRadius.swift` | Standard corner radii |
+| `Snowly/DesignSystem/AnimationTokens.swift` | Timing and animation presets |
+| `Snowly/DesignSystem/ShadowTokens.swift` | Surface and card shadows |
 | `Snowly/DesignSystem/Opacity.swift` | Named opacity levels |
-| `Snowly/DesignSystem/ChartTokens.swift` | Chart-specific color and style constants |
-| `Snowly/DesignSystem/RunColorPalette.swift` | Sequential warm-to-cool ramp for run indexing on maps and charts |
+| `Snowly/DesignSystem/ChartTokens.swift` | Chart-specific styling constants |
+| `Snowly/DesignSystem/RunColorPalette.swift` | Sequential run coloring for charts and maps |
+| `Snowly/DesignSystem/DashboardCardBackground.swift` | Shared material background for dashboard cards |
 
 ---
 
@@ -105,19 +124,23 @@ Flat index of every significant source file in the Snowly codebase.
 
 | Path | Role |
 |---|---|
-| `Snowly/Views/Home/HomeView.swift` | Home tab root — idle / active tracking routing |
-| `Snowly/Views/Home/ActiveTrackingView.swift` | Live tracking screen with speed curve |
-| `Snowly/Views/Home/TrackingStatGrid.swift` | Draggable widget grid for live stats |
-| `Snowly/Views/Home/SessionSummaryView.swift` | Post-session summary card |
-| `Snowly/Views/Home/SpeedCurveView.swift` | Live speed curve chart |
-| `Snowly/Views/Home/HalfViolinRunSpeedChart.swift` | Session speed distribution chart |
-| `Snowly/Views/Home/RunBarsView.swift` | Horizontal bar chart of run durations |
-| `Snowly/Views/Home/LongPressStartButton.swift` | 2 s long-press start button |
-| `Snowly/Views/Home/ResumeTrackingButton.swift` | Resume-tracking slide button |
-| `Snowly/Views/Profile/ProfileView.swift` | User profile and personal bests |
-| `Snowly/Views/Profile/SettingsView.swift` | App settings |
-| `Snowly/Views/Onboarding/OnboardingPermissionsStep.swift` | Permission request onboarding step |
-| `Snowly/Views/SplashView.swift` | Launch splash screen |
+| `Snowly/Views/RootView.swift` | Top-level routing between onboarding and the main app |
+| `Snowly/Views/MainTabView.swift` | Main tab scaffold |
+| `Snowly/Views/Home/HomeView.swift` | Home-tab root for idle vs active tracking |
+| `Snowly/Views/Home/ActiveTrackingView.swift` | Active session screen with live stats and controls |
+| `Snowly/Views/Home/TrackingStatGrid.swift` | Reorderable live-stat widget grid |
+| `Snowly/Views/Home/RouteMapView.swift` | Session map and route rendering |
+| `Snowly/Views/Home/SessionSummaryView.swift` | Post-session recap and share flow |
+| `Snowly/Views/Home/ShareCardView.swift` | Share card composition view used by the renderer |
+| `Snowly/Views/Activity/ActivityHistoryView.swift` | Session history list |
+| `Snowly/Views/Activity/SessionDetailView.swift` | Full session detail screen |
+| `Snowly/Views/Gear/GearLockerView.swift` | Locker inventory surface |
+| `Snowly/Views/Gear/GearWorkspaceView.swift` | Checklist editing and body-zone workspace |
+| `Snowly/Views/Profile/ProfileView.swift` | User profile and personal stats |
+| `Snowly/Views/Profile/SettingsView.swift` | Settings, export, cache, and about screens |
+| `Snowly/Views/Profile/ServerManagementView.swift` | Manage production and self-hosted API endpoints |
+| `Snowly/Views/Profile/PrivacyView.swift` | In-app privacy policy presentation |
+| `Snowly/Views/Onboarding/OnboardingFlow.swift` | First-launch onboarding flow |
 
 ---
 
@@ -125,11 +148,12 @@ Flat index of every significant source file in the Snowly codebase.
 
 | Path | Role |
 |---|---|
-| `SnowlyTests/GPSKalmanFilterTests.swift` | Unit tests for `GPSKalmanFilter` |
-| `SnowlyTests/MotionEstimatorTests.swift` | Unit tests for `MotionEstimator` |
-| `SnowlyTests/HealthKitServiceTests.swift` | Unit tests for `HealthKitService` using mocks |
-| `SnowlyTests/SessionTrackingIntegrationTests.swift` | Integration tests for the full tracking pipeline |
-| `SnowlyTests/CloudKitCompatibilityTests.swift` | CloudKit schema compatibility tests |
+| `SnowlyTests/SessionTrackingIntegrationTests.swift` | End-to-end pipeline integration coverage |
+| `SnowlyTests/RunDetectionTests.swift` | Activity classification tests |
+| `SnowlyTests/GPSKalmanFilterTests.swift` | Filter predict/update tests |
+| `SnowlyTests/SegmentFinalizationServiceTests.swift` | Segment state machine coverage |
+| `SnowlyTests/CloudKitCompatibilityTests.swift` | Schema compatibility tests for CloudKit-safe models |
+| `SnowlyUITests/SnowlyUITests.swift` | Basic UI smoke tests |
 
 ---
 
@@ -137,23 +161,23 @@ Flat index of every significant source file in the Snowly codebase.
 
 | Path | Role |
 |---|---|
-| `SnowlyWatch/Services/WatchConnectivityService.swift` | Receives `WatchMessage` commands from phone |
-| `SnowlyWatch/Services/WatchLocationService.swift` | Watch GPS tracking for independent mode |
-| `SnowlyWatch/Services/WatchWorkoutManager.swift` | HealthKit workout session on watch |
+| `SnowlyWatch/Services/WatchConnectivityService.swift` | Watch-side connectivity to the phone |
+| `SnowlyWatch/Services/WatchLocationService.swift` | Watch GPS management |
+| `SnowlyWatch/Services/WatchWorkoutManager.swift` | Independent workout lifecycle and import payload creation |
+| `SnowlyWatch/Views/WatchRootView.swift` | Watch root routing |
+| `SnowlyWatch/Views/WorkoutActiveView.swift` | Active workout screen |
+| `SnowlyWatch/Views/WorkoutSummaryView.swift` | Watch summary screen |
+| `SnowlyWatch/Complications/ActiveSessionWidget.swift` | Watch complication for active sessions |
 
 ---
 
-## Generator Scripts
+## Scripts And Resources
 
 | Path | Role |
 |---|---|
-| `Scripts/Generators/generate-zermatt-fixtures.swift` | Generates Zermatt fixture JSON from a recorded track file |
-
----
-
-## Resources
-
-| Path | Role |
-|---|---|
-| `Snowly/Resources/ReplayFixtures.manifest.json` | Fixture registry: IDs, display names, track file references |
-| `Snowly/Resources/Localizable.xcstrings` | All user-facing strings (Swift 5.9 `.xcstrings` format) |
+| `Scripts/generate-zermatt-fixtures.swift` | Generates or refreshes Zermatt replay fixtures |
+| `Scripts/generate-zone-assets.swift` | Generates gear-zone mask assets |
+| `Scripts/generate_share_card.swift` | Generates share-card output for local iteration |
+| `Snowly/Resources/ReplayFixtures.manifest.json` | Fixture registry for `-replay_recap` |
+| `Snowly/Resources/Localizable.xcstrings` | App localization catalog |
+| `Snowly/PrivacyInfo.xcprivacy` | Apple privacy manifest for collected/accessed data declarations |

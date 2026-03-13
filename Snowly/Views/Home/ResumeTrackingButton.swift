@@ -10,17 +10,25 @@ import SwiftUI
 struct ResumeTrackingButton: View {
     let onTap: () -> Void
 
+    @State private var pulseScale: CGFloat = 1.0
+
     private let buttonSize = Spacing.heroButton
 
     var body: some View {
         Button(action: onTap) {
             ZStack {
-                // Subtle accent tint — signals active session without heavy gradients
+                // Warm amber tint — signals active session
                 Circle()
-                    .fill(ColorTokens.primaryAccent.opacity(Opacity.faint))
-                // Thin accent ring: shows "live session" state clearly but quietly
+                    .fill(ColorTokens.brandWarmAmber.opacity(Opacity.gentle))
+                // Live-pulse ring: subtle breathing animation indicates recording is running
                 Circle()
-                    .strokeBorder(ColorTokens.primaryAccent.opacity(Opacity.ring), lineWidth: 1.5)
+                    .strokeBorder(ColorTokens.brandWarmAmber.opacity(Opacity.ring), lineWidth: 1.5)
+                    .scaleEffect(pulseScale)
+                    .animation(
+                        .easeInOut(duration: 1.8).repeatForever(autoreverses: true),
+                        value: pulseScale
+                    )
+                    .onAppear { pulseScale = 1.04 }
                 Circle()
                     .strokeBorder(ColorTokens.glassHighlightGradient, lineWidth: 1)
                 Text(String(localized: "tracking_resume_button_label"))
@@ -33,7 +41,7 @@ struct ResumeTrackingButton: View {
             .snowlyGlass(in: Circle())
         }
         .buttonStyle(.plain)
-        .shadowStyle(.brandGlow)
+        .shadowStyle(.brandAmberGlow)
         .shadowStyle(.glassBase)
         .accessibilityIdentifier("resume_tracking_dashboard_button")
         .accessibilityLabel(String(localized: "tracking_resume_button_label"))

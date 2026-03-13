@@ -19,6 +19,8 @@ extension View {
     /// iOS 26 liquid glass surface for all floating UI — cards, pills, buttons, and banners.
     /// Matches the system tab bar treatment. Shape defines the glass boundary.
     func snowlyGlass<S: Shape>(in shape: S) -> some View {
-        glassEffect(in: shape)
+        self
+            .background(ColorTokens.surfaceOverlay, in: shape)
+            .glassEffect(in: shape)
     }
 }

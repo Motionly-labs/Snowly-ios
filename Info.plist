@@ -3,19 +3,6 @@
 <plist version="1.0">
 <dict>
 
-	<!-- MARK: - Quick Actions -->
-	<key>UIApplicationShortcutItems</key>
-	<array>
-		<dict>
-			<key>UIApplicationShortcutItemType</key>
-			<string>com.snowly.start-tracking</string>
-			<key>UIApplicationShortcutItemTitle</key>
-			<string>quick_action_start_tracking</string>
-			<key>UIApplicationShortcutItemIconSymbolName</key>
-			<string>figure.skiing.downhill</string>
-		</dict>
-	</array>
-
 	<!-- MARK: - HealthKit -->
 	<key>NSHealthShareUsageDescription</key>
 	<string>Snowly reads your heart rate and workout data to enrich your ski session stats.</string>

@@ -6,8 +6,8 @@
 import Foundation
 import SwiftData
 
-enum SchemaV5: VersionedSchema {
-    static var versionIdentifier = Schema.Version(5, 0, 0)
+enum SchemaV1: VersionedSchema {
+    static var versionIdentifier = Schema.Version(1, 0, 0)
 
     static var models: [any PersistentModel.Type] {
         [
@@ -26,7 +26,7 @@ enum SchemaV5: VersionedSchema {
 
 enum SnowlyMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV5.self]
+        [SchemaV1.self]
     }
 
     static var stages: [MigrationStage] {

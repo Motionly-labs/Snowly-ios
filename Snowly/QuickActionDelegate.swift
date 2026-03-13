@@ -15,6 +15,14 @@ final class QuickActionDelegate: NSObject, UIApplicationDelegate {
 
     func application(
         _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        Self.registerShortcutItems(for: application)
+        return true
+    }
+
+    func application(
+        _ application: UIApplication,
         configurationForConnecting connectingSceneSession: UISceneSession,
         options: UIScene.ConnectionOptions
     ) -> UISceneConfiguration {
@@ -29,6 +37,21 @@ final class QuickActionDelegate: NSObject, UIApplicationDelegate {
         )
         config.delegateClass = QuickActionSceneDelegate.self
         return config
+    }
+
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        Self.registerShortcutItems(for: application)
+    }
+
+    private static func registerShortcutItems(for application: UIApplication) {
+        application.shortcutItems = [
+            UIApplicationShortcutItem(
+                type: startTrackingType,
+                localizedTitle: String(localized: "quick_action_start_tracking"),
+                localizedSubtitle: nil,
+                icon: UIApplicationShortcutIcon(systemImageName: "figure.skiing.downhill")
+            )
+        ]
     }
 }
 
