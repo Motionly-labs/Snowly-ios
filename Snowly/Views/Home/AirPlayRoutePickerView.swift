@@ -12,8 +12,8 @@ struct AirPlayRoutePickerView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> AVRoutePickerView {
         let picker = AVRoutePickerView()
-        picker.tintColor = UIColor(ColorTokens.brandWarmOrange)
-        picker.activeTintColor = UIColor(ColorTokens.brandWarmOrange)
+        picker.tintColor = UIColor(ColorTokens.secondaryAccent)
+        picker.activeTintColor = UIColor(ColorTokens.secondaryAccent)
         return picker
     }
 

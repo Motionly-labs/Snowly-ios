@@ -24,6 +24,9 @@ final class SkiSession {
     /// Legacy single-field note kept for backward compatibility.
     var note: String?
     var healthKitWorkoutId: UUID?
+    var gearSetupId: UUID?
+    var gearSetupSnapshotName: String?
+    var gearAssetSnapshotSummary: String?
 
     var resort: Resort?
 
@@ -60,6 +63,45 @@ final class SkiSession {
         return totalDistance / skiingTime
     }
 
+    var gearSetupDisplayName: String {
+        gearSetupSnapshotName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    var hasAttachedGearSetup: Bool {
+        gearSetupId != nil || !gearSetupDisplayName.isEmpty
+    }
+
+    var gearAssetDisplaySummary: String {
+        gearAssetSnapshotSummary?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    func applyGearSnapshot(from setup: GearSetup?, lockerAssets: [GearAsset]) {
+        guard let setup else {
+            clearGearSnapshot()
+            return
+        }
+        gearSetupId = setup.id
+        gearSetupSnapshotName = setup.name.nonEmpty
+        let assetNames = lockerAssets
+            .filter { !$0.isArchived && $0.setupIDs.contains(setup.id) }
+            .sorted {
+                if $0.sortOrder == $1.sortOrder {
+                    return $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+                }
+                return $0.sortOrder < $1.sortOrder
+            }
+            .prefix(4)
+            .map(\.displayName)
+
+        gearAssetSnapshotSummary = assetNames.isEmpty ? nil : assetNames.joined(separator: ", ")
+    }
+
+    func clearGearSnapshot() {
+        gearSetupId = nil
+        gearSetupSnapshotName = nil
+        gearAssetSnapshotSummary = nil
+    }
+
     init(
         id: UUID = UUID(),
         startDate: Date = Date(),
@@ -71,6 +113,9 @@ final class SkiSession {
         noteTitle: String? = nil,
         noteBody: String? = nil,
         note: String? = nil,
+        gearSetupId: UUID? = nil,
+        gearSetupSnapshotName: String? = nil,
+        gearAssetSnapshotSummary: String? = nil,
         resort: Resort? = nil
     ) {
         self.id = id
@@ -83,6 +128,9 @@ final class SkiSession {
         self.noteTitle = noteTitle
         self.noteBody = noteBody
         self.note = note
+        self.gearSetupId = gearSetupId
+        self.gearSetupSnapshotName = gearSetupSnapshotName
+        self.gearAssetSnapshotSummary = gearAssetSnapshotSummary
         self.resort = resort
     }
 }

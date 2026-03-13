@@ -17,7 +17,10 @@ struct SegmentValidatorTests {
             timestamp: timestamp,
             latitude: 46.0, longitude: 7.0,
             altitude: altitude,
-            speed: 10.0, accuracy: 5.0, course: 180.0
+            speed: 10.0,
+            horizontalAccuracy: 5.0,
+            verticalAccuracy: 9.0,
+            course: 180.0
         )
     }
 

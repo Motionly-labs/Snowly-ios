@@ -8,7 +8,7 @@ Source file: `Snowly/Models/SchemaVersions.swift`
 
 ## When This Is Required
 
-You need a migration whenever you make a structural change to a `@Model` in the synced store (`SkiSession`, `SkiRun`, `Resort`, `GearSetup`, `GearItem`, `UserProfile`). Local-only models (`DeviceSettings`, `ServerProfile`) require the same treatment.
+You need a migration whenever you make a structural change to a `@Model` in the synced store (`SkiSession`, `SkiRun`, `Resort`, `GearSetup`, `GearAsset`, `GearMaintenanceEvent`, `UserProfile`). Local-only models (`DeviceSettings`, `ServerProfile`) require the same treatment.
 
 Changes that **require** a migration:
 - Adding a new stored property
@@ -35,11 +35,11 @@ If you add a non-optional field without a default value, the CloudKit sync will 
 
 ### Step 1 — Copy the current schema into a new version
 
-In `SchemaVersions.swift`, add `SchemaV2` by copying the entire `SchemaV1` enum:
+In `SchemaVersions.swift`, add the next version by copying the current schema enum. For example, if the live app is on `SchemaV4`, create `SchemaV5`:
 
 ```swift
-enum SchemaV2: VersionedSchema {
-    static var versionIdentifier = Schema.Version(2, 0, 0)
+enum SchemaV5: VersionedSchema {
+    static var versionIdentifier = Schema.Version(5, 0, 0)
 
     static var models: [any PersistentModel.Type] {
         [
@@ -47,7 +47,8 @@ enum SchemaV2: VersionedSchema {
             SkiRun.self,
             Resort.self,
             GearSetup.self,
-            GearItem.self,
+            GearAsset.self,
+            GearMaintenanceEvent.self,
             UserProfile.self,
             DeviceSettings.self,
             ServerProfile.self,
@@ -64,19 +65,19 @@ Edit the actual `@Model` class (e.g., `SkiRun.swift`) to add the new property wi
 var avgTurnRate: Double = 0  // degrees/second
 ```
 
-Do **not** modify `SchemaV1`. The schema enum is a snapshot — it references the model type, not a copy. `SchemaV2` is just a new version identifier pointing at the same updated models.
+Do **not** modify `SchemaV4`. The schema enum is a snapshot — it references the model type, not a copy. `SchemaV5` is just a new version identifier pointing at the same updated models.
 
-### Step 3 — Add `SchemaV2` to the migration plan
+### Step 3 — Add the new schema to the migration plan
 
 ```swift
 enum SnowlyMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self]
+        [SchemaV4.self, SchemaV5.self]
     }
 
     static var stages: [MigrationStage] {
         [
-            .lightweight(fromVersion: SchemaV1.self, toVersion: SchemaV2.self)
+            .lightweight(fromVersion: SchemaV4.self, toVersion: SchemaV5.self)
         ]
     }
 }

@@ -2,15 +2,16 @@
 //  GearEditView.swift
 //  Snowly
 //
-//  Add or edit a gear setup (name, brand, model, active status).
+//  Add or edit a checklist that selects gear from the locker.
 //
 
 import SwiftUI
 import SwiftData
 
 struct GearEditView: View {
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \GearSetup.sortOrder) private var setups: [GearSetup]
 
     enum Mode: Identifiable {
         case add
@@ -18,49 +19,46 @@ struct GearEditView: View {
 
         var id: String {
             switch self {
-            case .add: return "add"
-            case .edit(let setup): return setup.id.uuidString
+            case .add:
+                return "add"
+            case .edit(let setup):
+                return setup.id.uuidString
             }
         }
     }
 
     let mode: Mode
 
-    @State private var name: String = ""
-    @State private var brand: String = ""
-    @State private var model: String = ""
-    @State private var isActive: Bool = true
+    @State private var name = ""
+    @State private var notes = ""
+    @State private var isActive = false
 
     private var isEditing: Bool {
-        if case .edit = mode { return true }
+        if case .edit = mode {
+            return true
+        }
         return false
     }
 
     private var title: String {
-        isEditing
-            ? String(localized: "gear_edit_nav_title_edit")
-            : String(localized: "gear_edit_nav_title_new")
+        isEditing ? String(localized: "gear_edit_edit_title") : String(localized: "gear_edit_new_title")
     }
 
     var body: some View {
         NavigationStack {
             Form {
-
-                Section(String(localized: "gear_edit_section_details")) {
-                    TextField(String(localized: "gear_edit_field_setup_name"), text: $name)
-                    TextField(String(localized: "gear_edit_field_brand_optional"), text: $brand)
-                    TextField(String(localized: "gear_edit_field_model_optional"), text: $model)
-                }
-
-                Section {
-                    Toggle(String(localized: "common_active"), isOn: $isActive)
+                Section(String(localized: "gear_edit_checklist_section")) {
+                    TextField(String(localized: "gear_edit_checklist_name_placeholder"), text: $name)
+                    TextField(String(localized: "gear_edit_notes_placeholder"), text: $notes, axis: .vertical)
+                        .lineLimit(2...4)
+                    Toggle(String(localized: "gear_edit_active_toggle"), isOn: $isActive)
                 }
 
                 if isEditing {
                     Section {
-                        Button(String(localized: "gear_edit_action_add_default_items")) {
-                            addDefaultItems()
-                        }
+                        Text("gear_edit_active_hint")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -68,84 +66,56 @@ struct GearEditView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "common_cancel")) { dismiss() }
+                    Button(String(localized: "common_cancel")) {
+                        dismiss()
+                    }
                 }
+
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "common_save")) {
                         save()
                         dismiss()
                     }
-                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
-            .onAppear {
-                if case .edit(let setup) = mode {
-                    name = setup.name
-                    brand = setup.brand
-                    model = setup.model
-                    isActive = setup.isActive
-                }
-            }
+            .onAppear(perform: populate)
         }
+    }
+
+    private func populate() {
+        guard case .edit(let setup) = mode else { return }
+        name = setup.name
+        notes = setup.notes ?? ""
+        isActive = setup.isActive
     }
 
     private func save() {
-        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
         guard !trimmedName.isEmpty else { return }
+
+        if isActive {
+            for setup in setups {
+                setup.isActive = false
+            }
+        }
 
         switch mode {
         case .add:
+            let nextSortOrder = (setups.map(\.sortOrder).max() ?? -1) + 1
             let setup = GearSetup(
                 name: trimmedName,
-                brand: brand.trimmingCharacters(in: .whitespaces),
-                model: model.trimmingCharacters(in: .whitespaces),
-                isActive: isActive
+                notes: trimmedNotes,
+                isActive: isActive || setups.isEmpty,
+                sortOrder: nextSortOrder
             )
             modelContext.insert(setup)
-            addDefaultItems(to: setup)
 
         case .edit(let setup):
             setup.name = trimmedName
-            setup.brand = brand.trimmingCharacters(in: .whitespaces)
-            setup.model = model.trimmingCharacters(in: .whitespaces)
+            setup.notes = trimmedNotes
             setup.isActive = isActive
-        }
-    }
-
-    private func addDefaultItems() {
-        guard case .edit(let setup) = mode else { return }
-        addDefaultItems(to: setup)
-    }
-
-    private func addDefaultItems(to setup: GearSetup) {
-        let defaults: [(String, GearCategory)] = [
-            (String(localized: "gear.default_item.ski_jacket"), .clothing),
-            (String(localized: "gear.default_item.ski_pants"), .clothing),
-            (String(localized: "gear.default_item.base_layer_top"), .clothing),
-            (String(localized: "gear.default_item.base_layer_bottom"), .clothing),
-            (String(localized: "gear.default_item.ski_socks"), .clothing),
-            (String(localized: "gear.default_item.helmet"), .protection),
-            (String(localized: "gear.default_item.goggles"), .protection),
-            (String(localized: "gear.default_item.gloves"), .accessories),
-            (String(localized: "gear.default_item.skis"), .equipment),
-            (String(localized: "gear.default_item.poles"), .equipment),
-            (String(localized: "gear.default_item.ski_boots"), .footwear),
-            (String(localized: "gear.default_item.lift_pass"), .accessories),
-            (String(localized: "gear.default_item.sunscreen"), .accessories),
-            (String(localized: "gear.default_item.phone_charger"), .electronics),
-            (String(localized: "gear.default_item.backpack"), .backpack),
-        ]
-
-        let existingNames = Set(setup.items.map(\.name))
-        for (index, (name, category)) in defaults.enumerated() {
-            guard !existingNames.contains(name) else { continue }
-            let item = GearItem(
-                name: name,
-                category: category,
-                sortOrder: setup.items.count + index,
-                setup: setup
-            )
-            modelContext.insert(item)
         }
     }
 }

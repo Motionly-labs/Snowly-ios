@@ -28,7 +28,8 @@ struct TrackPoint: Codable, Sendable, Equatable {
     let longitude: Double
     let altitude: Double
     let speed: Double        // m/s, -1 when unknown
-    let accuracy: Double     // meters
+    let horizontalAccuracy: Double   // meters
+    let verticalAccuracy: Double     // meters
     let course: Double       // degrees, 0-360
 
     nonisolated init(
@@ -37,7 +38,8 @@ struct TrackPoint: Codable, Sendable, Equatable {
         longitude: Double,
         altitude: Double,
         speed: Double = -1,
-        accuracy: Double,
+        horizontalAccuracy: Double,
+        verticalAccuracy: Double,
         course: Double
     ) {
         self.timestamp = timestamp
@@ -45,7 +47,8 @@ struct TrackPoint: Codable, Sendable, Equatable {
         self.longitude = longitude
         self.altitude = altitude
         self.speed = speed
-        self.accuracy = accuracy
+        self.horizontalAccuracy = horizontalAccuracy
+        self.verticalAccuracy = verticalAccuracy
         self.course = course
     }
 
@@ -55,29 +58,32 @@ struct TrackPoint: Codable, Sendable, Equatable {
         case longitude
         case altitude
         case speed
-        case accuracy
+        case horizontalAccuracy
+        case verticalAccuracy
         case course
     }
 
-    init(from decoder: any Decoder) throws {
+    nonisolated init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         timestamp = try container.decode(Date.self, forKey: .timestamp)
         latitude = try container.decode(Double.self, forKey: .latitude)
         longitude = try container.decode(Double.self, forKey: .longitude)
         altitude = try container.decode(Double.self, forKey: .altitude)
         speed = try container.decodeIfPresent(Double.self, forKey: .speed) ?? -1
-        accuracy = try container.decode(Double.self, forKey: .accuracy)
+        horizontalAccuracy = try container.decode(Double.self, forKey: .horizontalAccuracy)
+        verticalAccuracy = try container.decode(Double.self, forKey: .verticalAccuracy)
         course = try container.decode(Double.self, forKey: .course)
     }
 
-    func encode(to encoder: any Encoder) throws {
+    nonisolated func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(timestamp, forKey: .timestamp)
         try container.encode(latitude, forKey: .latitude)
         try container.encode(longitude, forKey: .longitude)
         try container.encode(altitude, forKey: .altitude)
         try container.encode(speed, forKey: .speed)
-        try container.encode(accuracy, forKey: .accuracy)
+        try container.encode(horizontalAccuracy, forKey: .horizontalAccuracy)
+        try container.encode(verticalAccuracy, forKey: .verticalAccuracy)
         try container.encode(course, forKey: .course)
     }
 
@@ -87,16 +93,77 @@ struct TrackPoint: Codable, Sendable, Equatable {
     }
 }
 
-struct FilteredTrackPoint: Sendable, Equatable {
+struct FilteredTrackPoint: Codable, Sendable, Equatable {
     let rawTimestamp: Date
     let timestamp: Date
     let latitude: Double
     let longitude: Double
     let altitude: Double
     let estimatedSpeed: Double  // m/s
-    let accuracy: Double        // meters
+    let horizontalAccuracy: Double  // meters
+    let verticalAccuracy: Double    // meters
     let course: Double          // degrees, 0-360
     var speed: Double { estimatedSpeed }
+
+    nonisolated init(
+        rawTimestamp: Date,
+        timestamp: Date,
+        latitude: Double,
+        longitude: Double,
+        altitude: Double,
+        estimatedSpeed: Double,
+        horizontalAccuracy: Double,
+        verticalAccuracy: Double,
+        course: Double
+    ) {
+        self.rawTimestamp = rawTimestamp
+        self.timestamp = timestamp
+        self.latitude = latitude
+        self.longitude = longitude
+        self.altitude = altitude
+        self.estimatedSpeed = estimatedSpeed
+        self.horizontalAccuracy = horizontalAccuracy
+        self.verticalAccuracy = verticalAccuracy
+        self.course = course
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case rawTimestamp
+        case timestamp
+        case latitude
+        case longitude
+        case altitude
+        case estimatedSpeed
+        case horizontalAccuracy
+        case verticalAccuracy
+        case course
+    }
+
+    nonisolated init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        rawTimestamp = try container.decode(Date.self, forKey: .rawTimestamp)
+        timestamp = try container.decode(Date.self, forKey: .timestamp)
+        latitude = try container.decode(Double.self, forKey: .latitude)
+        longitude = try container.decode(Double.self, forKey: .longitude)
+        altitude = try container.decode(Double.self, forKey: .altitude)
+        estimatedSpeed = try container.decode(Double.self, forKey: .estimatedSpeed)
+        horizontalAccuracy = try container.decode(Double.self, forKey: .horizontalAccuracy)
+        verticalAccuracy = try container.decode(Double.self, forKey: .verticalAccuracy)
+        course = try container.decode(Double.self, forKey: .course)
+    }
+
+    nonisolated func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(rawTimestamp, forKey: .rawTimestamp)
+        try container.encode(timestamp, forKey: .timestamp)
+        try container.encode(latitude, forKey: .latitude)
+        try container.encode(longitude, forKey: .longitude)
+        try container.encode(altitude, forKey: .altitude)
+        try container.encode(estimatedSpeed, forKey: .estimatedSpeed)
+        try container.encode(horizontalAccuracy, forKey: .horizontalAccuracy)
+        try container.encode(verticalAccuracy, forKey: .verticalAccuracy)
+        try container.encode(course, forKey: .course)
+    }
 
     /// Haversine distance in meters to another filtered track point.
     nonisolated func distance(to other: FilteredTrackPoint) -> Double {
@@ -186,7 +253,8 @@ extension TrackPoint {
             longitude: longitude,
             altitude: altitude,
             estimatedSpeed: max(speed, 0),
-            accuracy: accuracy,
+            horizontalAccuracy: horizontalAccuracy,
+            verticalAccuracy: verticalAccuracy,
             course: course
         )
     }

@@ -26,7 +26,8 @@ struct RunDetectionTests {
             longitude: 7.0,
             altitude: altitude,
             speed: speed,
-            accuracy: 5.0,
+            horizontalAccuracy: 5.0,
+            verticalAccuracy: 9.0,
             course: 180.0
         )
     }
@@ -92,7 +93,7 @@ struct RunDetectionTests {
             endAltitude: 2050,
             startTime: now.addingTimeInterval(-9)
         )
-        let point = makePoint(speed: 4.0, altitude: 2055, timestamp: now)
+        let point = makePoint(speed: 4.6, altitude: 2055, timestamp: now)
 
         let result = RunDetectionService.detect(point: point, recentPoints: recentPoints)
         #expect(result == .lift)
@@ -118,10 +119,10 @@ struct RunDetectionTests {
     // MARK: - CoreMotion Enhancement
 
     @Test func mediumSpeed_flatAltitude_automotiveMotion_isChairlift() {
-        let point = makePoint(speed: 4.0, altitude: 2000)
+        let point = makePoint(speed: 4.6, altitude: 2000)
         let result = RunDetectionService.detect(
             point: point,
-            recentPoints: [makePoint(speed: 4.0, altitude: 2000)],
+            recentPoints: [makePoint(speed: 4.6, altitude: 2000)],
             motion: .automotive
         )
         #expect(result == .lift)
@@ -140,7 +141,7 @@ struct RunDetectionTests {
     @Test func previousLift_slightDescent_keepsLiftContinuity() {
         let estimate = MotionEstimate(
             duration: 8,
-            avgHorizontalSpeed: 3.8,
+            avgHorizontalSpeed: 4.6,
             avgVerticalSpeed: -0.2,
             hasReliableAltitudeTrend: true
         )
@@ -155,7 +156,7 @@ struct RunDetectionTests {
     @Test func previousLift_noReliableTrend_keepsLiftContinuity() {
         let estimate = MotionEstimate(
             duration: 2,
-            avgHorizontalSpeed: 3.1,
+            avgHorizontalSpeed: 4.5,
             avgVerticalSpeed: 0,
             hasReliableAltitudeTrend: false
         )
@@ -190,6 +191,26 @@ struct RunDetectionTests {
         let point = makePoint(speed: 3.0)
         let result = RunDetectionService.detect(point: point, recentPoints: [])
         #expect(result == .skiing)
+    }
+
+    @Test func tenKmh_withoutAltitudeTrend_isSkiingNotIdle() {
+        let point = makePoint(speed: 2.8)
+        let result = RunDetectionService.detect(point: point, recentPoints: [])
+        #expect(result == .skiing)
+    }
+
+    @Test func belowLiftSpeedThreshold_risingAltitude_isNotLift() {
+        let now = Date()
+        let recentPoints = makeRecentPoints(
+            count: 10,
+            startAltitude: 2000,
+            endAltitude: 2050,
+            startTime: now.addingTimeInterval(-9)
+        )
+        let point = makePoint(speed: 3.7, altitude: 2055, timestamp: now)
+
+        let result = RunDetectionService.detect(point: point, recentPoints: recentPoints)
+        #expect(result != .lift)
     }
 
     @Test func exactlyAtIdleThreshold_noAltitudeData_isIdle() {
@@ -248,9 +269,10 @@ struct RunDetectionTests {
         let point = makePoint(speed: 4.0, altitude: 2100, timestamp: now)
 
         // Despite strong upward trend, too few points → trend = 0.
-        // Medium speed, no trend, speed >= skiingMinSpeed → skiing.
+        // With no reliable altitude signal and no prior lift state, the ambiguous
+        // 4.0–5.8 m/s band stays neutral instead of forcing a lift verdict.
         let result = RunDetectionService.detect(point: point, recentPoints: recentPoints)
-        #expect(result == .skiing)
+        #expect(result == .walk)
     }
 
     @Test func gentleSlope_belowThreshold_noTrendDetected() {
@@ -265,9 +287,42 @@ struct RunDetectionTests {
         let point = makePoint(speed: 4.0, altitude: 2003.3, timestamp: now)
 
         // Slope ~0.1 m/s, within dead zone → no altitude verdict.
-        // Medium speed, no motion hint, speed >= skiingMinSpeed → skiing.
+        // In the ambiguous lift-speed band we now preserve state conservatively
+        // instead of defaulting to lift.
         let result = RunDetectionService.detect(point: point, recentPoints: recentPoints)
+        #expect(result == .walk)
+    }
+
+    @Test func liftSpeedBand_noAltitudeTrend_fromSkiing_staysSkiing() {
+        // Speed 4.6 m/s is in the lift speed band (4.0–5.8 m/s).
+        // Without altitude trend, the ambiguous band now inherits the prior state.
+        let estimate = MotionEstimate(
+            duration: 4,
+            avgHorizontalSpeed: 4.6,
+            avgVerticalSpeed: 0,
+            hasReliableAltitudeTrend: false
+        )
+        let result = RunDetectionService.classify(
+            estimate: estimate,
+            previousActivity: .skiing,
+            motion: .unknown
+        )
         #expect(result == .skiing)
+    }
+
+    @Test func liftSpeedBand_noAltitudeTrend_fromIdle_isWalk() {
+        let estimate = MotionEstimate(
+            duration: 4,
+            avgHorizontalSpeed: 4.6,
+            avgVerticalSpeed: 0,
+            hasReliableAltitudeTrend: false
+        )
+        let result = RunDetectionService.classify(
+            estimate: estimate,
+            previousActivity: .idle,
+            motion: .unknown
+        )
+        #expect(result == .walk)
     }
 
     @Test func rawArrayOverload_matchesTrackPointOverload() {

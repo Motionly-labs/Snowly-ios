@@ -21,7 +21,7 @@ protocol HealthKitProviding: AnyObject, Sendable {
 
     func requestAuthorization() async
     func beginWorkout(startDate: Date) async throws
-    func addRoutePoints(_ points: [TrackPoint]) async
+    func addRoutePoints(_ points: [FilteredTrackPoint]) async
     func addDistanceSample(meters: Double, start: Date, end: Date) async
     func finishWorkout(
         endDate: Date,

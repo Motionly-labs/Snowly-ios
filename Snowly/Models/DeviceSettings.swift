@@ -83,6 +83,8 @@ final class DeviceSettings {
     var liveActivityRefreshBackgroundSeconds: Int = LiveActivityRefreshIntervalOption.sec10.rawValue
     var autoPauseIdleSeconds: Int = AutoPauseOption.never.rawValue
     var trackingDashboardLayoutJSON: String = TrackingDashboardLayout.default.encoded()
+    var gearChecklistStateJSON: String = "{}"
+    var gearReminderSchedulesJSON: String = "{}"
     var createdAt: Date = Date()
 
     var resolvedAutoPause: AutoPauseOption {
@@ -128,6 +130,8 @@ final class DeviceSettings {
         liveActivityRefreshBackgroundSeconds: Int = LiveActivityRefreshIntervalOption.sec10.rawValue,
         autoPauseIdleSeconds: Int = AutoPauseOption.never.rawValue,
         trackingDashboardLayoutJSON: String = TrackingDashboardLayout.default.encoded(),
+        gearChecklistStateJSON: String = "{}",
+        gearReminderSchedulesJSON: String = "{}",
         createdAt: Date = Date()
     ) {
         self.id = id
@@ -140,6 +144,8 @@ final class DeviceSettings {
         self.liveActivityRefreshBackgroundSeconds = liveActivityRefreshBackgroundSeconds
         self.autoPauseIdleSeconds = autoPauseIdleSeconds
         self.trackingDashboardLayoutJSON = trackingDashboardLayoutJSON
+        self.gearChecklistStateJSON = gearChecklistStateJSON
+        self.gearReminderSchedulesJSON = gearReminderSchedulesJSON
         self.createdAt = createdAt
     }
 }

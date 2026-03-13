@@ -51,7 +51,6 @@ where `σ_a` is the acceleration noise standard deviation (`horizontalProcessNoi
 | `horizontalProcessNoise` | 3.0 | m/s² | Acceleration uncertainty for skiing turns and stops |
 | `verticalProcessNoise` | 1.0 | m/s² | Smoother vertical — terrain changes gradually |
 | `baseVelocityNoise` | 0.3 | m/s | Velocity measurement noise under good signal |
-| `altitudeAccuracyFactor` | 2.5 | × | GPS altitude is typically 2.5× noisier than horizontal |
 | `maxDt` | 10 | s | Cap time step; prevents covariance explosion on GPS gaps |
 | `minMeasuredSpeed` | 0.1 | m/s | Ignore Doppler velocity update when speed is too low to be reliable |
 | `metersPerDegree` | 111,320 | m/° | WGS-84 mean conversion for ENU frame |
@@ -100,13 +99,13 @@ P = F·P·Fᵀ + Q
 Convert the raw GPS lat/lon to ENU, then call `updatePosition` on each axis:
 
 ```
-Kalman gain: k = p00 / (p00 + R)   where R = accuracy²
+Kalman gain: k = p00 / (p00 + R)   where R = measurementNoise²
 position += k × (measurement − position)
 velocity += (p01 / (p00 + R)) × (measurement − position)
 P = (I − K·H) · P
 ```
 
-Altitude measurement noise is `accuracy × altitudeAccuracyFactor`.
+East/North use `horizontalAccuracy` as measurement noise. Altitude uses `verticalAccuracy` directly.
 
 **4. Velocity Update (Horizontal Only)**
 
@@ -130,7 +129,8 @@ On the first call to `update(point:)`, the filter initializes with:
 
 - Position set to the raw GPS point (ENU origin)
 - Velocity set to 0 m/s
-- Position variance set to `max(accuracy², 1.0)`
+- Horizontal position variance set to `max(horizontalAccuracy², 1.0)`
+- Vertical position variance set to `max(verticalAccuracy², 1.0)`
 - Velocity variance set to 100.0 m²/s² (≈ 10 m/s uncertainty — conservative prior)
 
 The first point is returned unmodified as a `FilteredTrackPoint`.
@@ -145,5 +145,5 @@ Call `GPSKalmanFilter.reset()` before starting a new tracking session. This zero
 
 ## Design Notes
 
-- The filter does **not** use the `speed` field from `CLLocation` (Doppler-derived). It derives velocity from position displacements between consecutive raw points, which is more robust when the Doppler lock is poor (e.g., narrow mountain valleys).
+- The filter seeds its initial horizontal velocity from raw `speed` + `course`, then prefers raw GPS speed when valid for later velocity updates.
 - `@Attribute(.externalStorage)` on `SkiRun.trackData` stores raw (unfiltered) `TrackPoint` values. Filtering is re-applied on demand via `FixtureReplayService` or on-device review.

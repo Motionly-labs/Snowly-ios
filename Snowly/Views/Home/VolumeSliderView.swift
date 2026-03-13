@@ -13,7 +13,7 @@ struct VolumeSliderView: UIViewRepresentable {
     func makeUIView(context: Context) -> MPVolumeView {
         let view = MPVolumeView(frame: .zero)
         view.showsVolumeSlider = true
-        view.tintColor = UIColor(ColorTokens.brandWarmOrange)
+        view.tintColor = UIColor(ColorTokens.secondaryAccent)
         return view
     }
 

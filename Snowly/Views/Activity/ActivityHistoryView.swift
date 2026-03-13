@@ -17,8 +17,8 @@ struct ActivityHistoryView: View {
         profiles.first?.preferredUnits ?? .metric
     }
 
-    private var seasonStats: StatsService.SeasonStats {
-        StatsService.seasonStats(from: sessions)
+    private var overallStats: StatsService.AggregateStats {
+        StatsService.aggregateStats(from: sessions)
     }
 
     var body: some View {
@@ -50,16 +50,16 @@ struct ActivityHistoryView: View {
             Section {
                 HStack(spacing: Spacing.md) {
                     StatPill(
-                        value: "\(seasonStats.totalSessions)",
+                        value: "\(overallStats.totalSessions)",
                         label: String(localized: "activity_stat_ski_days"),
                         isAccented: true
                     )
                     StatPill(
-                        value: "\(seasonStats.totalRuns)",
+                        value: "\(overallStats.totalRuns)",
                         label: String(localized: "activity_stat_runs")
                     )
                     StatPill(
-                        value: Formatters.vertical(seasonStats.totalVertical, unit: unitSystem),
+                        value: Formatters.vertical(overallStats.totalVertical, unit: unitSystem),
                         label: String(localized: "activity_stat_vertical")
                     )
                 }

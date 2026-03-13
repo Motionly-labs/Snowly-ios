@@ -14,8 +14,11 @@ import LinkPresentation
 struct SessionSummaryView: View {
     @Query(sort: \SkiSession.startDate, order: .reverse) private var sessions: [SkiSession]
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
+    @Query(sort: \GearSetup.sortOrder) private var gearSetups: [GearSetup]
+    @Query(sort: \GearAsset.sortOrder) private var gearAssets: [GearAsset]
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(SkiDataUploadService.self) private var uploadService
 
     let selectedSession: SkiSession?
     let showsDoneButton: Bool
@@ -27,6 +30,7 @@ struct SessionSummaryView: View {
     @State private var personalBestRecords: [String] = []
     @State private var hasProcessedPersonalBests = false
     @State private var isGeneratingShare = false
+    @State private var showUploadError = false
     @State private var showingNoteEditor = false
     @State private var noteTitleDraft = ""
     @State private var noteBodyDraft = ""
@@ -94,20 +98,36 @@ struct SessionSummaryView: View {
                         Button {
                             Task { await generateShareCard(session) }
                         } label: {
-                            if isGeneratingShare {
+                            if uploadService.isUploading || isGeneratingShare {
                                 ProgressView().controlSize(.small)
                             } else {
                                 Image(systemName: "square.and.arrow.up")
                             }
                         }
-                        .disabled(isGeneratingShare)
+                        .disabled(uploadService.isUploading || isGeneratingShare)
                         .accessibilityLabel(String(localized: "accessibility_share_summary_label"))
                     }
                 }
             }
             .sheet(isPresented: $showingShareSheet) {
                 if let image = shareImage {
-                    ShareSheet(items: [ShareCardActivityItem(image: image, title: String(localized: "summary_share_title"))])
+                    ShareSheet(
+                        items: [ShareCardActivityItem(image: image, title: String(localized: "summary_share_title"))],
+                        onUpload: { [displayedSession, profiles] in
+                            guard let session = displayedSession,
+                                  let profile = profiles.first else { return }
+                            Task { @MainActor in
+                                await uploadService.upload(
+                                    session: session,
+                                    userId: profile.id.uuidString,
+                                    displayName: profile.displayName
+                                )
+                                if uploadService.lastError != nil {
+                                    showUploadError = true
+                                }
+                            }
+                        }
+                    )
                 }
             }
             .sheet(isPresented: $showingExportSheet) {
@@ -129,6 +149,11 @@ struct SessionSummaryView: View {
             } message: {
                 Text(exportErrorMessage ?? String(localized: "settings_alert_export_unknown_error"))
             }
+            .alert(String(localized: "session_detail_upload_failed_title"), isPresented: $showUploadError) {
+                Button(String(localized: "common_ok"), role: .cancel) {}
+            } message: {
+                Text(uploadService.lastError ?? "")
+            }
             .sheet(isPresented: $showingNoteEditor) {
                 NavigationStack {
                     VStack(alignment: .leading, spacing: 0) {
@@ -137,7 +162,7 @@ struct SessionSummaryView: View {
                             HStack(spacing: Spacing.xs) {
                                 Image(systemName: "note.text")
                                     .font(Typography.iconBold)
-                                    .foregroundStyle(ColorTokens.brandIceBlue)
+                                    .foregroundStyle(ColorTokens.primaryAccent)
                                 Text(String(localized: "note_editor_title"))
                                     .font(Typography.headingMedium)
                             }
@@ -181,7 +206,7 @@ struct SessionSummaryView: View {
                                 showingNoteEditor = false
                             }
                             .fontWeight(.semibold)
-                            .foregroundStyle(ColorTokens.brandIceBlue)
+                            .foregroundStyle(ColorTokens.primaryAccent)
                         }
                     }
                 }
@@ -246,6 +271,9 @@ struct SessionSummaryView: View {
                 statsGridSection(session: session)
                     .padding(.horizontal)
 
+                gearSection(session: session)
+                    .padding(.horizontal)
+
                 // Track decode error notice
                 if hasAnyTrackDecodeError {
                     trackDecodeErrorNotice
@@ -286,6 +314,7 @@ struct SessionSummaryView: View {
                     userInfoSection(session: session)
                     heroDurationSection(session: session)
                     statsGridSection(session: session)
+                    gearSection(session: session)
 
                     if hasAnyTrackDecodeError {
                         trackDecodeErrorNotice
@@ -358,7 +387,7 @@ struct SessionSummaryView: View {
             } label: {
                 Image(systemName: "square.and.pencil")
                     .font(Typography.iconBold)
-                    .foregroundStyle(ColorTokens.brandIceBlue)
+                    .foregroundStyle(ColorTokens.primaryAccent)
             }
             .buttonStyle(.plain)
         } else {
@@ -452,7 +481,68 @@ struct SessionSummaryView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.lg)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+    }
+
+    // MARK: - Gear
+
+    @ViewBuilder
+    private func gearSection(session: SkiSession) -> some View {
+        if session.hasAttachedGearSetup || !gearSetups.isEmpty {
+            let attachedChecklist = gearSetups.first { $0.id == session.gearSetupId }
+            let derivedGearSummary = attachedChecklist.map { GearLockerService.coreGearSummary(for: $0, in: gearAssets) } ?? ""
+            let assetSummary = session.gearAssetDisplaySummary.nonEmpty ?? derivedGearSummary.nonEmpty ?? ""
+
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                HStack {
+                    VStack(alignment: .leading, spacing: Spacing.xxs) {
+                        Text("session_gear_section_label")
+                            .font(Typography.subheadlineMedium)
+                            .foregroundStyle(.secondary)
+                        Text(session.hasAttachedGearSetup ? session.gearSetupDisplayName : String(localized: "session_no_checklist_attached"))
+                            .font(.headline)
+                        if !assetSummary.isEmpty {
+                            Text(assetSummary)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Spacer()
+
+                    Menu {
+                        Button(String(localized: "session_none_option")) {
+                            session.clearGearSnapshot()
+                            try? modelContext.save()
+                        }
+                        ForEach(gearSetups) { setup in
+                            Button {
+                                session.applyGearSnapshot(from: setup, lockerAssets: gearAssets)
+                                try? modelContext.save()
+                            } label: {
+                                HStack {
+                                    Text(setup.name)
+                                    if session.gearSetupId == setup.id {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        Label(String(localized: "session_change_checklist_button"), systemImage: "slider.horizontal.3")
+                            .font(.caption.weight(.semibold))
+                    }
+                }
+
+                Text(session.hasAttachedGearSetup
+                    ? String(localized: "session_gear_linked_description")
+                    : String(localized: "session_gear_attach_hint"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+        }
     }
 
     // MARK: - Personal Bests
@@ -491,7 +581,7 @@ struct SessionSummaryView: View {
         }()
 
         return Group {
-            if distributions.count >= 2 {
+            if !distributions.isEmpty {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     Text(String(localized: "tracking_chart_speed_by_run"))
                         .font(Typography.subheadlineMedium)
@@ -503,8 +593,8 @@ struct SessionSummaryView: View {
                     )
                 }
                 .padding()
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
-            } else if speedData.count >= 2 {
+                .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+            } else if !speedData.isEmpty {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     Text(String(localized: "tracking_chart_speed_by_run"))
                         .font(Typography.subheadlineMedium)
@@ -514,7 +604,7 @@ struct SessionSummaryView: View {
                         .frame(height: 120)
                 }
                 .padding()
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+                .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
             }
         }
     }
@@ -549,7 +639,7 @@ struct SessionSummaryView: View {
                         }
                     }
                     .padding()
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+                    .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
                 }
             }
         }
@@ -579,7 +669,7 @@ struct SessionSummaryView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+            .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
             .disabled(isExportingData)
 
             Button(role: .destructive) {
@@ -595,7 +685,7 @@ struct SessionSummaryView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.red)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+            .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
             .disabled(isGeneratingShare || isExportingData)
         }
     }
@@ -615,18 +705,16 @@ struct SessionSummaryView: View {
     ///
     /// Notes:
     /// - Detection/statistics consume filtered points.
-    /// - Persisted and exported route data consume raw GPS points.
+    /// - Route storage is raw; export derives filtered GPS points on demand.
     @MainActor
     private func exportSessionData(_ session: SkiSession) async {
         guard !isExportingData else { return }
         isExportingData = true
         defer { isExportingData = false }
 
-        // Export reads canonical JSON-array track data.
-        let points: [TrackPoint] = session.runs
+        let points: [FilteredTrackPoint] = session.runs
             .sorted { $0.startDate < $1.startDate }
-            .compactMap(\.trackData)
-            .flatMap { (try? JSONDecoder().decode([TrackPoint].self, from: $0)) ?? [] }
+            .flatMap(\.trackPoints)
             .sorted { $0.timestamp < $1.timestamp }
 
         guard !points.isEmpty else {
@@ -637,7 +725,7 @@ struct SessionSummaryView: View {
         let resortSlug = sanitizedFilenameComponent(session.resort?.name ?? "Snowly")
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
-        let fileName = "\(resortSlug)_\(dateFormatter.string(from: session.startDate)).trackpoints.json"
+        let fileName = "\(resortSlug)_\(dateFormatter.string(from: session.startDate)).filtered-trackpoints.json"
 
         let fileURL: URL? = await Task.detached(priority: .userInitiated) {
             guard let data = try? JSONEncoder().encode(points) else { return nil }
@@ -735,12 +823,18 @@ struct SessionSummaryView: View {
             let update = StatsService.computePersonalBestUpdates(session: session, profile: profile)
             StatsService.applyPersonalBestUpdate(update, to: profile)
         }
+
+        let seasonUpdate = StatsService.computeSeasonBestUpdates(session: session, profile: profile)
+        if seasonUpdate.hasUpdates {
+            StatsService.applySeasonBestUpdate(seasonUpdate, to: profile)
+        }
+
         hasProcessedPersonalBests = true
     }
 }
 
 /// Provides the share card image as the thumbnail preview in UIActivityViewController.
-private final class ShareCardActivityItem: NSObject, UIActivityItemSource {
+final class ShareCardActivityItem: NSObject, UIActivityItemSource {
     private let image: UIImage
     private let title: String
 
@@ -768,12 +862,56 @@ private final class ShareCardActivityItem: NSObject, UIActivityItemSource {
 }
 
 /// UIKit share sheet wrapper with card thumbnail preview.
+/// Optionally includes an "Upload to Snowly" custom action.
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
+    var onUpload: (() -> Void)?
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
+        var activities: [UIActivity] = []
+        if let onUpload {
+            activities.append(UploadToSnowlyActivity(handler: onUpload))
+        }
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: activities)
+        controller.excludedActivityTypes = [
+            .addToReadingList,
+            .assignToContact,
+            .openInIBooks,
+            .print,
+        ]
+        return controller
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+/// Custom share sheet action that uploads the session to Snowly's server.
+private final class UploadToSnowlyActivity: UIActivity {
+    private let handler: () -> Void
+
+    init(handler: @escaping () -> Void) {
+        self.handler = handler
+        super.init()
+    }
+
+    override var activityType: UIActivity.ActivityType? {
+        UIActivity.ActivityType("com.Snowly.uploadToSnowly")
+    }
+
+    override var activityTitle: String? {
+        String(localized: "share_action_upload_to_snowly")
+    }
+
+    override var activityImage: UIImage? {
+        UIImage(systemName: "icloud.and.arrow.up")
+    }
+
+    override func canPerform(withActivityItems activityItems: [Any]) -> Bool {
+        true
+    }
+
+    override func perform() {
+        handler()
+        activityDidFinish(true)
+    }
 }

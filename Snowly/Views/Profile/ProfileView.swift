@@ -42,7 +42,7 @@ struct ProfileView: View {
                 .padding(.vertical, Spacing.sm)
             }
 
-            // All-time personal bests
+            // Season bests
             if let profile {
                 Section {
                     bestRow(String(localized: "profile_best_peak_speed"),
@@ -53,6 +53,25 @@ struct ProfileView: View {
                             icon: "arrow.down")
                     bestRow(String(localized: "profile_best_longest_distance"),
                             value: Formatters.distance(profile.seasonBestDistance, unit: unitSystem),
+                            icon: "point.topleft.down.to.point.bottomright.curvepath")
+                } header: {
+                    Text(String(localized: "profile_section_season_bests"))
+                } footer: {
+                    Text(profile.lastSeasonYear)
+                }
+            }
+
+            // All-time personal bests
+            if let profile {
+                Section {
+                    bestRow(String(localized: "profile_best_peak_speed"),
+                            value: Formatters.speed(profile.personalBestMaxSpeed, unit: unitSystem),
+                            icon: "gauge.with.dots.needle.67percent")
+                    bestRow(String(localized: "profile_best_most_vertical"),
+                            value: Formatters.vertical(profile.personalBestVertical, unit: unitSystem),
+                            icon: "arrow.down")
+                    bestRow(String(localized: "profile_best_longest_distance"),
+                            value: Formatters.distance(profile.personalBestDistance, unit: unitSystem),
                             icon: "point.topleft.down.to.point.bottomright.curvepath")
                     Button(role: .destructive) {
                         showingResetConfirmation = true
@@ -97,6 +116,7 @@ struct ProfileView: View {
             Button(String(localized: "common_reset"), role: .destructive) {
                 if let profile {
                     StatsService.resetPersonalBests(for: profile)
+                    StatsService.resetSeasonBests(for: profile)
                     try? modelContext.save()
                 }
             }
@@ -108,7 +128,7 @@ struct ProfileView: View {
     private func bestRow(_ label: String, value: String, icon: String) -> some View {
         HStack {
             Image(systemName: icon)
-                .foregroundStyle(ColorTokens.brandWarmAmber)
+                .foregroundStyle(ColorTokens.secondaryAccent)
                 .frame(width: Spacing.xl)
             Text(label)
             Spacer()

@@ -32,11 +32,12 @@ Flat index of every significant source file in the Snowly codebase.
 | `Snowly/Models/SkiSession.swift` | `@Model` — one day of skiing; denormalized aggregates |
 | `Snowly/Models/SkiRun.swift` | `@Model` — individual run/lift segment; `trackData: Data?` binary blob |
 | `Snowly/Models/Resort.swift` | `@Model` — resort metadata (name, location) |
-| `Snowly/Models/GearSetup.swift` | `@Model` — a complete gear configuration |
-| `Snowly/Models/GearItem.swift` | `@Model` — individual gear item (skis, boots, etc.) |
+| `Snowly/Models/GearSetup.swift` | `@Model` — internal checklist model backing the product-facing checklist concept |
+| `Snowly/Models/GearAsset.swift` | `@Model` — internal locker gear model backing the product-facing gear concept |
+| `Snowly/Models/GearMaintenanceEvent.swift` | `@Model` — compatibility-only legacy service-event model kept in the synced schema |
 | `Snowly/Models/UserProfile.swift` | `@Model` — user display name, units, personal bests |
 | `Snowly/Models/DeviceSettings.swift` | `@Model` — local-only device preferences, onboarding state, dashboard layout |
-| `Snowly/Models/SchemaVersions.swift` | `SchemaV1` definition and `SnowlyMigrationPlan` |
+| `Snowly/Models/SchemaVersions.swift` | `SchemaV4` definition and `SnowlyMigrationPlan` |
 | `Snowly/Models/TrackingDashboardLayout.swift` | `TrackingDashboardLayout` / `TrackingStatWidget` — widget configuration model |
 
 ---
@@ -46,12 +47,15 @@ Flat index of every significant source file in the Snowly codebase.
 | Path | Role |
 |---|---|
 | `Snowly/Services/SessionTrackingService.swift` | Orchestrator; owns tracking state machine, dwell-time filter, live metrics |
-| `Snowly/Services/LocationTrackingService.swift` | GPS via `CLLocationUpdate.liveUpdates` async stream |
+| `Snowly/Services/LocationTrackingService.swift` | GPS via `CLLocationManagerDelegate` callbacks |
 | `Snowly/Services/MotionDetectionService.swift` | CoreMotion accelerometer/gyroscope; emits `MotionHint` |
 | `Snowly/Services/BatteryMonitorService.swift` | Device battery level monitoring |
 | `Snowly/Services/HealthKitService.swift` | HealthKit workout session (write) |
 | `Snowly/Services/HealthKitCoordinator.swift` | Coordinates HealthKit authorization and workout finalization |
 | `Snowly/Services/GPSKalmanFilter.swift` | Three-axis constant-velocity Kalman filter for GPS smoothing |
+| `Snowly/Services/GearChecklistStore.swift` | Local persistence for visual checklist checkmarks |
+| `Snowly/Services/GearLockerService.swift` | Pure helpers for locker gear and checklist composition |
+| `Snowly/Services/GearReminderService.swift` | Local reminder schedules, persistence, and notification syncing |
 | `Snowly/Services/MotionEstimator.swift` | Pure functions: computes `MotionEstimate` over a rolling window |
 | `Snowly/Services/MotionEstimate.swift` | `MotionEstimate` and `MotionEstimateWindow` types |
 | `Snowly/Services/RunDetectionService.swift` | Pure functions: classifies activity from `MotionEstimate` |

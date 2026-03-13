@@ -119,7 +119,7 @@ final class HealthKitService: HealthKitProviding {
         self.isRecording = true
     }
 
-    func addRoutePoints(_ points: [TrackPoint]) async {
+    func addRoutePoints(_ points: [FilteredTrackPoint]) async {
         guard let routeBuilder else { return }
 
         let locations = points.map(\.clLocation)

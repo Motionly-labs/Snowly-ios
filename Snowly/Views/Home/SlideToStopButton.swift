@@ -26,13 +26,12 @@ struct SlideToStopButton: View {
 
     var body: some View {
         ZStack(alignment: .leading) {
-            Capsule()
-                .fill(.ultraThinMaterial)
-                .overlay {
-                    Capsule()
-                        .fill(ColorTokens.error.opacity(Opacity.light))
-                }
-                .frame(width: trackWidth, height: thumbSize + trackPadding * 2)
+            ZStack {
+                Capsule()
+                    .fill(ColorTokens.error.opacity(Opacity.light))
+            }
+            .frame(width: trackWidth, height: thumbSize + trackPadding * 2)
+            .snowlyGlass(in: Capsule())
 
             Text(String(localized: "tracking_slide_to_end_day"))
                 .font(.subheadline.weight(.medium))

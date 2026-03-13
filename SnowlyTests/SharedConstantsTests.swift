@@ -12,9 +12,10 @@ import Foundation
 struct SharedConstantsTests {
 
     @Test func speedThresholds_areOrdered() {
-        // idle max < skiing min < lift max
+        // idle max < skiing min < lift min < lift max
         #expect(SharedConstants.idleSpeedMax < SharedConstants.skiMinSpeed)
-        #expect(SharedConstants.skiMinSpeed < SharedConstants.liftSpeedMax)
+        #expect(SharedConstants.skiMinSpeed < SharedConstants.liftSpeedMin)
+        #expect(SharedConstants.liftSpeedMin < SharedConstants.liftSpeedMax)
         #expect(SharedConstants.walkHardMaxSpeed > SharedConstants.skiFastMin)
     }
 

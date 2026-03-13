@@ -33,7 +33,7 @@ struct CrewMemberAnnotation: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, Spacing.gap)
                 .padding(.vertical, Spacing.xxs)
-                .background(.ultraThinMaterial, in: Capsule())
+                .snowlyGlass(in: Capsule())
         }
     }
 
@@ -61,7 +61,8 @@ struct CrewMemberAnnotation: View {
         altitude: 2400,
         speed: 12.5,
         course: 180,
-        accuracy: 5,
+        horizontalAccuracy: 5,
+        verticalAccuracy: 9,
         timestamp: .now,
         activityType: .skiing,
         isStale: false

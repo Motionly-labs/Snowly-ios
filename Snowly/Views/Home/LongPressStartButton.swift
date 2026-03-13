@@ -20,81 +20,94 @@ struct LongPressStartButton: View {
     private let buttonSize = Spacing.heroButton
 
     var body: some View {
-        let buttonTitle = String(localized: "home_start_button_title")
-
-        Circle()
-            .fill(.ultraThinMaterial)
+        buttonCircle
             .frame(width: buttonSize, height: buttonSize)
-            .overlay {
-                // Glass gradient — non-pressing values are aligned with ResumeTrackingButton
-                // for visual consistency across all hero buttons.
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [
-                                Color.white.opacity(isPressing ? 0.44 : 0.42),
-                                ColorTokens.brandGold.opacity(isPressing ? 0.34 : Opacity.moderate),
-                                ColorTokens.brandWarmAmber.opacity(isPressing ? 0.24 : Opacity.muted)
-                            ],
-                            center: .center,
-                            startRadius: 10,
-                            endRadius: buttonSize * 0.56
-                        )
-                    )
-            }
-            .overlay {
-                Circle()
-                    .stroke(.white.opacity(Opacity.medium), lineWidth: 1.4)
-            }
-            .overlay {
-                // Progress ring drawn inside the glass edge
-                Circle()
-                    .trim(from: 0, to: progress)
-                    .stroke(
-                        ColorTokens.progressArcGradient,
-                        style: StrokeStyle(lineWidth: 5, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-                    .padding(Spacing.gap)
-            }
-            .overlay {
-                Text(buttonTitle)
-                    .font(Typography.buttonHero)
-                    .foregroundStyle(ColorTokens.textOnBrand)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.75)
-                    .shadowStyle(.innerGlow)
-            }
-        .scaleEffect(isPressing ? 0.95 : 1.0)
-        .animation(AnimationTokens.quickEaseInOut, value: isPressing)
-        .shadowStyle(isPressing ? .brandGlowPressed : .brandGlow)
-        .contentShape(Circle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in
-                    // Cancel if finger drifts too far
-                    let dist = sqrt(value.translation.width * value.translation.width
-                                  + value.translation.height * value.translation.height)
-                    if dist > 24 {
-                        cancelPress()
-                        return
-                    }
-                    if !isPressing {
-                        startPress()
-                    }
-                }
-                .onEnded { _ in
-                    cancelPress()
-                }
-        )
-        .onDisappear {
-            resetState()
+            .scaleEffect(isPressing ? 0.95 : 1.0)
+            .animation(AnimationTokens.quickEaseInOut, value: isPressing)
+            .shadow(
+                color: ColorTokens.primaryAccent.opacity(isPressing ? Opacity.soft : Opacity.gentle),
+                radius: isPressing ? 16 : 20, x: 0, y: isPressing ? 6 : 8
+            )
+            .shadowStyle(.glassBase)
+            .animation(AnimationTokens.quickEaseInOut, value: isPressing)
+            .contentShape(Circle())
+            .gesture(pressGesture)
+            .onDisappear { resetState() }
+            .accessibilityIdentifier("start_tracking_button")
+            .accessibilityLabel(String(localized: "home_start_button_title"))
+            .accessibilityHint(String(localized: "accessibility_long_press_to_start_hint"))
+            .accessibilityAddTraits(.isButton)
+    }
+
+    private var buttonCircle: some View {
+        ZStack {
+            accentTintOverlay
+            progressRingOverlay
+            idleBorderOverlay
+            glassHighlightOverlay
+            labelOverlay
         }
-        .accessibilityIdentifier("start_tracking_button")
-        .accessibilityLabel(String(localized: "home_start_button_title"))
-        .accessibilityHint(String(localized: "accessibility_long_press_to_start_hint"))
-        .accessibilityAddTraits(.isButton)
+        .snowlyGlass(in: Circle())
+    }
+
+    private var accentTintOverlay: some View {
+        Circle()
+            .fill(ColorTokens.primaryAccent.opacity(isPressing ? Opacity.pressingAccent : Opacity.faint))
+            .animation(AnimationTokens.quickEaseInOut, value: isPressing)
+    }
+
+    private var progressRingOverlay: some View {
+        Circle()
+            .trim(from: 0, to: progress)
+            .stroke(
+                ColorTokens.primaryAccent,
+                style: StrokeStyle(lineWidth: 3, lineCap: .round)
+            )
+            .rotationEffect(.degrees(-90))
+            .padding(Spacing.gap)
+    }
+
+    private var idleBorderOverlay: some View {
+        Circle()
+            .strokeBorder(
+                ColorTokens.primaryAccent.opacity(progress > 0 ? 0 : Opacity.mediumHigh),
+                lineWidth: 1.5
+            )
+            .animation(AnimationTokens.quickEaseInOut, value: progress)
+    }
+
+    private var glassHighlightOverlay: some View {
+        Circle()
+            .strokeBorder(ColorTokens.glassHighlightGradient, lineWidth: 1)
+    }
+
+    private var labelOverlay: some View {
+        Text(String(localized: "home_start_button_title"))
+            .font(Typography.buttonHero)
+            .foregroundStyle(.primary)
+            .multilineTextAlignment(.center)
+            .lineLimit(2)
+            .minimumScaleFactor(0.75)
+    }
+
+    private var pressGesture: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                let dist = sqrt(
+                    value.translation.width * value.translation.width
+                    + value.translation.height * value.translation.height
+                )
+                if dist > 24 {
+                    cancelPress()
+                    return
+                }
+                if !isPressing {
+                    startPress()
+                }
+            }
+            .onEnded { _ in
+                cancelPress()
+            }
     }
 
     private func startPress() {

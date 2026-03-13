@@ -45,25 +45,27 @@ The `trackpoints_resource` value is the name of a JSON file in `Debug/Fixtures/`
     "latitude": 46.0207,
     "longitude": 7.7491,
     "altitude": 3883.5,
-    "accuracy": 5.0,
+    "speed": 14.2,
+    "horizontalAccuracy": 5.0,
+    "verticalAccuracy": 9.2,
     "course": 180.0
   },
   ...
 ]
 ```
 
-Timestamps are relative seconds from the start of the recording. `FixtureReplayService` re-anchors them to `Date() - 90 minutes` at replay time so the session appears recent in the Activity tab.
+Timestamps are relative seconds from the start of the recording. The raw payload otherwise mirrors production `TrackPoint` fields captured from GPS: `latitude`, `longitude`, `altitude`, `speed`, `horizontalAccuracy`, `verticalAccuracy`, and `course`. `FixtureReplayService` re-anchors timestamps to `Date() - 90 minutes` at replay time so the session appears recent in the Activity tab.
 
 ---
 
-## Launch Argument: `-replay_fixture`
+## Launch Argument: `-replay_recap`
 
 To load a fixture into the app at launch (DEBUG builds only):
 
 1. In Xcode, edit the Snowly scheme
 2. Under **Run → Arguments**, add:
    ```
-   -replay_fixture zermatt_loop
+   -replay_recap zermatt_loop
    ```
 3. Build and run on a simulator
 
@@ -102,12 +104,10 @@ This function does not apply dwell time or segmentation — it takes a pre-class
 
 ## Generator Script
 
-`Scripts/Generators/generate-zermatt-fixtures.swift` converts a raw recorded track file into the fixture JSON format. Run it when adding a new fixture:
+`Scripts/Generators/generate-zermatt-fixtures.swift` fetches real Zermatt lift/trail geometry plus DEM elevation data, then emits fixture JSON in the production `TrackPoint` shape. Run it when refreshing a fixture:
 
 ```bash
-swift Scripts/Generators/generate-zermatt-fixtures.swift \
-    --input path/to/recorded_track.gpx \
-    --output Snowly/Resources/Debug/Fixtures/zermatt_loop_trackpoints.json
+swift Scripts/Generators/generate-zermatt-fixtures.swift --mode loop
 ```
 
 After generating the file:

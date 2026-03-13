@@ -42,15 +42,42 @@ enum ColorTokens {
     static let surfaceOverlay = Color.white.opacity(0.12)
     static let surfaceDivider = Color.white.opacity(0.15)
 
+    // MARK: - Accent Hierarchy
+    /// Primary accent — ice blue. Use for navigation, selected states, key metrics, primary CTAs.
+    static let primaryAccent = brandIceBlue
+    /// Secondary accent — warm orange. Use for secondary actions, supporting info, media controls.
+    static let secondaryAccent = brandWarmOrange
+
+    // MARK: - Activity State Semantic
+    /// Color for skiing segments in charts and activity indicators.
+    static let skiingAccent = primaryAccent
+    /// Color for lift/gondola segments in charts and activity indicators.
+    static let liftAccent = secondaryAccent
+    /// Color for walk and idle segments in charts.
+    static let walkAccent = Color.secondary.opacity(0.85)
+
+    // MARK: - Context Semantic (domain aliases — resolve to the accent hierarchy above)
+    static let sportAccent = primaryAccent       // Active sport, live tracking, skiing
+    static let completedAccent = primaryAccent   // Completed sessions, history, archived data
+
     // MARK: - Gradients
+
+    /// Top-lit edge highlight shared by all glass circular buttons.
+    /// Mimics the iOS 26 liquid-glass top-edge specular reflection.
+    static let glassHighlightGradient = LinearGradient(
+        colors: [Color.white.opacity(Opacity.mediumHigh), Color.white.opacity(Opacity.subtle)],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
     static let brandGradient = LinearGradient(
-        colors: [brandWarmAmber, brandWarmOrange],
+        colors: [Color(hex: "64B5F6"), brandIceBlue],
         startPoint: .leading,
         endPoint: .trailing
     )
 
     static let progressArcGradient = LinearGradient(
-        colors: [brandGold, brandWarmAmber, brandWarmOrange, brandRed],
+        colors: [Color(hex: "90CAF9"), brandIceBlue, Color(hex: "1565C0")],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )

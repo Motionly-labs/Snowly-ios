@@ -49,7 +49,7 @@ struct CrewEmptyState: View {
         }
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, Spacing.gutter)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+        .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
         .alert(String(localized: "crew_create_title"), isPresented: $showCreateAlert) {
             TextField(String(localized: "crew_name_placeholder"), text: $crewName)
             Button(String(localized: "common_create")) {

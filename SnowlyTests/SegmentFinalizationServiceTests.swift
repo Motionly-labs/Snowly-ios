@@ -25,7 +25,8 @@ struct SegmentFinalizationServiceTests {
             longitude: lon,
             altitude: altitude,
             speed: speed,
-            accuracy: 5.0,
+            horizontalAccuracy: 5.0,
+            verticalAccuracy: 9.0,
             course: 180.0
         )
     }

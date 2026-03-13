@@ -18,11 +18,11 @@ enum SharedConstants {
 
     // MARK: - Skiing Detection
     nonisolated static let skiFastMin: Double = 6.0                 // m/s — unconditionally skiing (too fast for lift)
-    nonisolated static let skiMinSpeed: Double = 2.8                // m/s — minimum for skiing + descent combo
+    nonisolated static let skiMinSpeed: Double = 2.5                // m/s — minimum for skiing + descent combo
     nonisolated static let skiVerticalSpeedMax: Double = -0.15      // m/s — must be descending to classify as skiing
 
     // MARK: - Lift Detection
-    nonisolated static let liftSpeedMin: Double = 1.2               // m/s — minimum horizontal speed for lift
+    nonisolated static let liftSpeedMin: Double = 4.0               // m/s — minimum horizontal speed for lift
     nonisolated static let liftSpeedMax: Double = 5.8               // m/s — must be below skiFastMin (6.0) to be reachable
     nonisolated static let liftVerticalSpeedMin: Double = -0.10     // m/s — allows horizontal and slight-descent lift transport (gondolas)
     nonisolated static let liftContinuityVerticalSpeedMin: Double = -0.35 // m/s — keep lift through brief downward transfer sections

@@ -130,12 +130,9 @@ struct SpeedCurveView: View {
 
     private func stateColor(for state: SpeedCurveState) -> Color {
         switch state {
-        case .skiing:
-            return ColorTokens.brandIceBlue
-        case .lift:
-            return ColorTokens.brandWarmAmber
-        case .others:
-            return Color.secondary.opacity(0.85)
+        case .skiing: return ColorTokens.skiingAccent
+        case .lift:   return ColorTokens.liftAccent
+        case .others: return ColorTokens.walkAccent
         }
     }
 

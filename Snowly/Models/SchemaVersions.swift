@@ -2,14 +2,12 @@
 //  SchemaVersions.swift
 //  Snowly
 //
-//  SwiftData versioned schema and migration plan.
-//
 
 import Foundation
 import SwiftData
 
-enum SchemaV1: VersionedSchema {
-    static var versionIdentifier = Schema.Version(1, 0, 0)
+enum SchemaV5: VersionedSchema {
+    static var versionIdentifier = Schema.Version(5, 0, 0)
 
     static var models: [any PersistentModel.Type] {
         [
@@ -17,7 +15,8 @@ enum SchemaV1: VersionedSchema {
             SkiRun.self,
             Resort.self,
             GearSetup.self,
-            GearItem.self,
+            GearAsset.self,
+            GearMaintenanceEvent.self,
             UserProfile.self,
             DeviceSettings.self,
             ServerProfile.self,
@@ -27,8 +26,10 @@ enum SchemaV1: VersionedSchema {
 
 enum SnowlyMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self]
+        [SchemaV5.self]
     }
 
-    static var stages: [MigrationStage] { [] }
+    static var stages: [MigrationStage] {
+        []
+    }
 }

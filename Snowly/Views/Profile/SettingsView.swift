@@ -361,6 +361,10 @@ struct SettingsView: View {
             NavigationLink(destination: PrivacyView()) {
                 Text(String(localized: "settings_about_privacy_policy"))
             }
+            Link(destination: URL(string: "https://github.com/Snowly-app/Snowly-ios")!) {
+                Label(String(localized: "settings.about.feedback_button"), systemImage: "arrow.up.right.square")
+                    .foregroundStyle(.primary)
+            }
             LabeledContent(String(localized: "settings_about_app_version")) {
                 Text(appVersionDisplay)
                     .foregroundStyle(.secondary)
@@ -426,8 +430,9 @@ struct SettingsView: View {
         do {
             try modelContext.delete(model: SkiSession.self)
             try modelContext.delete(model: SkiRun.self)
+            try modelContext.delete(model: GearMaintenanceEvent.self)
+            try modelContext.delete(model: GearAsset.self)
             try modelContext.delete(model: GearSetup.self)
-            try modelContext.delete(model: GearItem.self)
             try modelContext.delete(model: Resort.self)
             try modelContext.delete(model: UserProfile.self)
             try modelContext.delete(model: DeviceSettings.self)
@@ -461,6 +466,9 @@ struct SettingsView: View {
         let gearSetups = try modelContext.fetch(
             FetchDescriptor<GearSetup>(sortBy: [SortDescriptor(\.createdAt)])
         )
+        let gearAssets = try modelContext.fetch(
+            FetchDescriptor<GearAsset>(sortBy: [SortDescriptor(\.createdAt)])
+        )
 
         return ExportPayload(
             appVersion: appVersionDisplay,
@@ -469,7 +477,8 @@ struct SettingsView: View {
             deviceSettings: deviceSettings.map(DeviceSettingsSnapshot.init),
             sessions: sessions.map(SessionSnapshot.init),
             resorts: resorts.map(ResortSnapshot.init),
-            gearSetups: gearSetups.map(GearSetupSnapshot.init)
+            gearSetups: gearSetups.map { GearSetupSnapshot($0, assets: gearAssets) },
+            gearAssets: gearAssets.map(GearAssetSnapshot.init)
         )
     }
 
@@ -545,15 +554,20 @@ private struct ExportPayload: Codable {
     let sessions: [SessionSnapshot]
     let resorts: [ResortSnapshot]
     let gearSetups: [GearSetupSnapshot]
+    let gearAssets: [GearAssetSnapshot]
 }
 
 private struct ProfileSnapshot: Codable {
     let id: UUID
     let displayName: String
     let preferredUnits: UnitSystem
+    let personalBestMaxSpeed: Double
+    let personalBestVertical: Double
+    let personalBestDistance: Double
     let seasonBestMaxSpeed: Double
     let seasonBestVertical: Double
     let seasonBestDistance: Double
+    let lastSeasonYear: String
     let dailyGoalMinutes: Double
     let createdAt: Date
 
@@ -561,9 +575,13 @@ private struct ProfileSnapshot: Codable {
         id = profile.id
         displayName = profile.displayName
         preferredUnits = profile.preferredUnits
+        personalBestMaxSpeed = profile.personalBestMaxSpeed
+        personalBestVertical = profile.personalBestVertical
+        personalBestDistance = profile.personalBestDistance
         seasonBestMaxSpeed = profile.seasonBestMaxSpeed
         seasonBestVertical = profile.seasonBestVertical
         seasonBestDistance = profile.seasonBestDistance
+        lastSeasonYear = profile.lastSeasonYear
         dailyGoalMinutes = profile.dailyGoalMinutes
         createdAt = profile.createdAt
     }
@@ -608,6 +626,9 @@ private struct SessionSnapshot: Codable {
     let runCount: Int
     let healthKitWorkoutId: UUID?
     let resortId: UUID?
+    let gearSetupId: UUID?
+    let gearSetupSnapshotName: String?
+    let gearAssetSnapshotSummary: String?
     let runs: [RunSnapshot]
 
     @MainActor init(_ session: SkiSession) {
@@ -623,6 +644,9 @@ private struct SessionSnapshot: Codable {
         runCount = session.runCount
         healthKitWorkoutId = session.healthKitWorkoutId
         resortId = session.resort?.id
+        gearSetupId = session.gearSetupId
+        gearSetupSnapshotName = session.gearSetupSnapshotName
+        gearAssetSnapshotSummary = session.gearAssetSnapshotSummary
         runs = session.runs
             .sorted { $0.startDate < $1.startDate }
             .map(RunSnapshot.init)
@@ -638,7 +662,7 @@ private struct RunSnapshot: Codable {
     let maxSpeed: Double
     let averageSpeed: Double
     let activityType: RunActivityType
-    let trackPoints: [TrackPoint]
+    let trackPoints: [FilteredTrackPoint]
 
     @MainActor init(_ run: SkiRun) {
         id = run.id
@@ -672,39 +696,72 @@ private struct ResortSnapshot: Codable {
 private struct GearSetupSnapshot: Codable {
     let id: UUID
     let name: String
-    let brand: String
-    let model: String
+    let notes: String?
     let isActive: Bool
     let createdAt: Date
     let sortOrder: Int
-    let items: [GearItemSnapshot]
+    let assetIDs: [UUID]
 
-    @MainActor init(_ setup: GearSetup) {
+    @MainActor init(_ setup: GearSetup, assets: [GearAsset]) {
         id = setup.id
         name = setup.name
-        brand = setup.brand
-        model = setup.model
+        notes = setup.notes
         isActive = setup.isActive
         createdAt = setup.createdAt
         sortOrder = setup.sortOrder
-        items = setup.items
+        assetIDs = assets
+            .filter { $0.setupIDs.contains(setup.id) }
             .sorted { $0.sortOrder < $1.sortOrder }
-            .map(GearItemSnapshot.init)
+            .map(\.id)
     }
 }
 
-private struct GearItemSnapshot: Codable {
+private struct GearAssetSnapshot: Codable {
     let id: UUID
     let name: String
-    let category: GearCategory
-    let isChecked: Bool
+    let category: GearAssetCategory
+    let brand: String
+    let model: String
+    let notes: String?
+    let acquiredAt: Date?
+    let isArchived: Bool
+    let dueRuleType: GearMaintenanceRuleType
+    let dueEverySkiDays: Int?
+    let dueDate: Date?
     let sortOrder: Int
+    let setupIDs: [UUID]
+    let maintenanceEvents: [GearMaintenanceEventSnapshot]
 
-    @MainActor init(_ item: GearItem) {
-        id = item.id
-        name = item.name
-        category = item.category
-        isChecked = item.isChecked
-        sortOrder = item.sortOrder
+    @MainActor init(_ asset: GearAsset) {
+        id = asset.id
+        name = asset.name
+        category = asset.category
+        brand = asset.brand
+        model = asset.model
+        notes = asset.notes
+        acquiredAt = asset.acquiredAt
+        isArchived = asset.isArchived
+        dueRuleType = asset.dueRuleType
+        dueEverySkiDays = asset.dueEverySkiDays
+        dueDate = asset.dueDate
+        sortOrder = asset.sortOrder
+        setupIDs = asset.setupIDs
+        maintenanceEvents = asset.maintenanceEvents
+            .sorted { $0.date > $1.date }
+            .map(GearMaintenanceEventSnapshot.init)
+    }
+}
+
+private struct GearMaintenanceEventSnapshot: Codable {
+    let id: UUID
+    let type: GearMaintenanceEventType
+    let date: Date
+    let notes: String?
+
+    @MainActor init(_ event: GearMaintenanceEvent) {
+        id = event.id
+        type = event.type
+        date = event.date
+        notes = event.notes
     }
 }

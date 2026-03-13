@@ -124,7 +124,7 @@ struct ServerManagementView: View {
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, Spacing.gap)
                             .padding(.vertical, Spacing.xxs)
-                            .background(.ultraThinMaterial, in: Capsule())
+                            .snowlyGlass(in: Capsule())
                     }
                 }
 

@@ -417,7 +417,9 @@ final class WatchWorkoutManager: NSObject {
                 latitude: previous.latitude,
                 longitude: previous.longitude,
                 altitude: previous.altitude,
-                accuracy: previous.accuracy,
+                speed: previous.estimatedSpeed,
+                horizontalAccuracy: previous.horizontalAccuracy,
+                verticalAccuracy: previous.verticalAccuracy,
                 course: previous.course
             )
             let dt = point.timestamp.timeIntervalSince(previous.timestamp)
@@ -433,7 +435,8 @@ final class WatchWorkoutManager: NSObject {
             longitude: point.longitude,
             altitude: point.altitude,
             estimatedSpeed: estimatedSpeed,
-            accuracy: point.accuracy,
+            horizontalAccuracy: point.horizontalAccuracy,
+            verticalAccuracy: point.verticalAccuracy,
             course: point.course
         )
     }

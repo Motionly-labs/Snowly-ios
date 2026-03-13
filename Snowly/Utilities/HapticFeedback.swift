@@ -10,7 +10,7 @@
 import UIKit
 
 enum HapticFeedback {
-    nonisolated static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
+    @MainActor static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
         UIImpactFeedbackGenerator(style: style).impactOccurred()
     }
 }

@@ -13,6 +13,7 @@ import SwiftData
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(CrewService.self) private var crewService
+    @Environment(GearReminderService.self) private var gearReminderService
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
     @Query(sort: \DeviceSettings.createdAt) private var deviceSettings: [DeviceSettings]
 
@@ -36,6 +37,8 @@ struct RootView: View {
             normalizeProfiles()
             normalizeDeviceSettings()
             configureCrewService()
+            resetSeasonBestsIfNeeded()
+            gearReminderService.syncAll(using: modelContext)
         }
         .onChange(of: profiles.first?.id) { _, _ in
             configureCrewService()
@@ -67,6 +70,9 @@ struct RootView: View {
                     primary.displayName = duplicateName
                 }
             }
+            primary.personalBestMaxSpeed = max(primary.personalBestMaxSpeed, duplicate.personalBestMaxSpeed)
+            primary.personalBestVertical = max(primary.personalBestVertical, duplicate.personalBestVertical)
+            primary.personalBestDistance = max(primary.personalBestDistance, duplicate.personalBestDistance)
             primary.seasonBestMaxSpeed = max(primary.seasonBestMaxSpeed, duplicate.seasonBestMaxSpeed)
             primary.seasonBestVertical = max(primary.seasonBestVertical, duplicate.seasonBestVertical)
             primary.seasonBestDistance = max(primary.seasonBestDistance, duplicate.seasonBestDistance)
@@ -94,6 +100,16 @@ struct RootView: View {
             primary.hasCompletedOnboarding = primary.hasCompletedOnboarding || duplicate.hasCompletedOnboarding
             primary.healthKitEnabled = primary.healthKitEnabled || duplicate.healthKitEnabled
             modelContext.delete(duplicate)
+        }
+    }
+
+    private func resetSeasonBestsIfNeeded() {
+        guard let profile = profiles.first else { return }
+        let currentSeason = Date().seasonYear
+        if profile.lastSeasonYear != currentSeason {
+            StatsService.resetSeasonBests(for: profile)
+            profile.lastSeasonYear = currentSeason
+            try? modelContext.save()
         }
     }
 
@@ -156,9 +172,10 @@ struct RootView: View {
         .environment(syncMonitor)
         .environment(musicPlayer)
         .environment(crew)
+        .environment(GearReminderService())
         .modelContainer(for: [
             SkiSession.self, SkiRun.self, Resort.self,
-            GearSetup.self, GearItem.self, UserProfile.self,
+            GearSetup.self, GearAsset.self, GearMaintenanceEvent.self, UserProfile.self,
             DeviceSettings.self,
         ], inMemory: true)
 }

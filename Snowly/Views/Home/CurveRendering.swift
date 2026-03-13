@@ -123,7 +123,7 @@ struct CurveSelectionOverlay: View {
                 .lineLimit(1)
                 .padding(.horizontal, Spacing.sm)
                 .padding(.vertical, Spacing.xs)
-                .background(.ultraThinMaterial, in: Capsule())
+                .snowlyGlass(in: Capsule())
                 .overlay {
                     Capsule()
                         .stroke(tint.opacity(0.2), lineWidth: 1)

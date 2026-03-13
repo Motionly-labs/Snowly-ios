@@ -3,53 +3,70 @@
 //  Snowly
 //
 //  Draggable, editable stat widget grid for the active tracking dashboard.
-//  Mirrors the iOS home screen widget editing interaction:
-//  long-press enters edit mode, cards wiggle and expose delete controls,
-//  dragging reorders in real time using positional hit-testing.
-//
-//  Drag implementation uses a floating overlay strategy to prevent jitter:
-//  the dragging card is removed from grid flow (opacity 0) and rendered as
-//  an absolutely-positioned overlay at `dragStartCenter + translation`.
-//  This decouples the drag-card's visual position from its index in the
-//  array, eliminating the offset jump that occurred when the array reordered
-//  mid-drag under the old offset-from-naturalCenter approach.
+//  Interactive reorder state stays local to this view while dragging; the
+//  parent layout is only updated once on drop so persistence does not run in
+//  the middle of the gesture.
 //
 
 import SwiftUI
 
 struct TrackingStatGrid: View {
 
+    private struct WiggleAnimationState: Equatable {
+        let isActive: Bool
+        let isEvenIndex: Bool
+    }
+
     // MARK: Inputs
 
-    @Binding var gridInstances: [ActiveTrackingCardInstance]
+    let instances: [ActiveTrackingCardInstance]
     let snapshots: [UUID: ActiveTrackingCardSnapshot]
     let isEditing: Bool
     let cardsAppeared: Bool
+    let onReorder: ([ActiveTrackingCardInstance]) -> Void
     let onRemove: (ActiveTrackingCardInstance) -> Void
     let onAdd: (ActiveTrackingCardKind) -> Void
 
-    // MARK: Drag State
+    // MARK: State
 
-    @State private var draggingId: UUID? = nil
-    @State private var dragTranslation: CGSize = .zero
-    @State private var dragStartCenter: CGPoint = .zero
-    @GestureState private var dragGestureActive: Bool = false
-
-    // MARK: Layout
-
+    @State private var displayInstances: [ActiveTrackingCardInstance]
+    @State private var dragSession: TrackingGridDragSession?
     @State private var gridWidth: CGFloat = 300
-
-    // MARK: Wiggle
-
-    @State private var wigglePhase: Bool = false
 
     private static let cardHeight: CGFloat = 88
     private static let gridColumns = [GridItem(.flexible()), GridItem(.flexible())]
 
-    private var colWidth: CGFloat { (gridWidth - Spacing.gutter) / 2 }
+    init(
+        instances: [ActiveTrackingCardInstance],
+        snapshots: [UUID: ActiveTrackingCardSnapshot],
+        isEditing: Bool,
+        cardsAppeared: Bool,
+        onReorder: @escaping ([ActiveTrackingCardInstance]) -> Void,
+        onRemove: @escaping (ActiveTrackingCardInstance) -> Void,
+        onAdd: @escaping (ActiveTrackingCardKind) -> Void
+    ) {
+        self.instances = instances
+        self.snapshots = snapshots
+        self.isEditing = isEditing
+        self.cardsAppeared = cardsAppeared
+        self.onReorder = onReorder
+        self.onRemove = onRemove
+        self.onAdd = onAdd
+        _displayInstances = State(initialValue: instances)
+    }
+
+    private var layoutMetrics: TrackingGridLayoutMetrics {
+        TrackingGridLayoutMetrics(
+            gridWidth: gridWidth,
+            cardHeight: Self.cardHeight,
+            gutter: Spacing.gutter
+        )
+    }
+
+    private var colWidth: CGFloat { layoutMetrics.columnWidth }
 
     private var hiddenGridKinds: [ActiveTrackingCardKind] {
-        let presentKinds = Set(gridInstances.map(\.kind))
+        let presentKinds = Set(displayInstances.map(\.kind))
         return ActiveTrackingCardRegistry.allGridKinds.filter { !presentKinds.contains($0) }
     }
 
@@ -57,17 +74,13 @@ struct TrackingStatGrid: View {
 
     var body: some View {
         VStack(spacing: Spacing.gutter) {
-            // ZStack hosts both the grid and the floating drag card.
-            // The floating card is a direct ZStack child so it shares the
-            // same coordinate origin as the grid, letting cardCenter(at:)
-            // feed directly into .position().
             ZStack(alignment: .topLeading) {
                 LazyVGrid(columns: Self.gridColumns, spacing: Spacing.gutter) {
-                    ForEach(Array(gridInstances.enumerated()), id: \.element.instanceId) { displayIndex, instance in
+                    ForEach(Array(displayInstances.enumerated()), id: \.element.instanceId) { displayIndex, instance in
                         widgetCell(instance: instance, displayIndex: displayIndex)
                     }
                 }
-                .animation(AnimationTokens.gentleSpring, value: gridInstances.map(\.instanceId))
+                .animation(AnimationTokens.gentleSpring, value: displayInstances.map(\.instanceId))
 
                 floatingDragCard
             }
@@ -84,44 +97,34 @@ struct TrackingStatGrid: View {
                     .onChange(of: geo.size.width) { _, w in gridWidth = w }
             }
         }
-        .onChange(of: isEditing) { _, editing in
-            if editing {
-                wigglePhase = true
-            } else {
-                withAnimation(AnimationTokens.quickEaseOut) {
-                    wigglePhase = false
-                }
-                withAnimation(AnimationTokens.gentleSpring) {
-                    draggingId = nil
-                    dragTranslation = .zero
-                }
-            }
+        .onChange(of: instances) { _, latest in
+            guard dragSession == nil else { return }
+            displayInstances = latest
         }
-        .onChange(of: dragGestureActive) { _, active in
-            guard !active else { return }
+        .onChange(of: isEditing) { _, editing in
+            guard !editing else { return }
+            if dragSession != nil {
+                commitDisplayOrderIfNeeded()
+            }
             withAnimation(AnimationTokens.gentleSpring) {
-                draggingId = nil
-                dragTranslation = .zero
+                dragSession = nil
             }
         }
     }
 
     // MARK: - Floating Drag Card
 
-    /// The card currently being dragged, rendered at absolute position.
-    /// Positioned via .position() so its center tracks the finger exactly,
-    /// independent of any reordering happening in the grid below.
     @ViewBuilder
     private var floatingDragCard: some View {
-        if let dragId = draggingId,
-           let instance = gridInstances.first(where: { $0.instanceId == dragId }) {
+        if let dragSession,
+           let instance = displayInstances.first(where: { $0.instanceId == dragSession.draggingId }) {
             statCardBody(instance: instance)
                 .frame(width: colWidth, height: Self.cardHeight)
                 .scaleEffect(1.05)
                 .shadow(color: .black.opacity(Opacity.moderate), radius: 14, x: 0, y: 6)
                 .position(
-                    x: dragStartCenter.x + dragTranslation.width,
-                    y: dragStartCenter.y + dragTranslation.height
+                    x: dragSession.fingerCenter.x,
+                    y: dragSession.fingerCenter.y
                 )
                 .allowsHitTesting(false)
         }
@@ -131,23 +134,17 @@ struct TrackingStatGrid: View {
 
     @ViewBuilder
     private func widgetCell(instance: ActiveTrackingCardInstance, displayIndex: Int) -> some View {
-        let isDragging = draggingId == instance.instanceId
-        let isEvenIndex = displayIndex.isMultiple(of: 2)
+        let isDragging = dragSession?.draggingId == instance.instanceId
+        let wiggleState = WiggleAnimationState(
+            isActive: isEditing && !isDragging,
+            isEvenIndex: displayIndex.isMultiple(of: 2)
+        )
 
         statCardBody(instance: instance)
-            // Hidden in grid while floating — preserves its slot so siblings
-            // animate into the correct gap position during live reorder.
             .opacity(isDragging ? 0 : 1)
-            // Drive rotationEffect from wigglePhase, not isEditing.
-            // This ensures the target value AND the animation fire in the same
-            // render pass when wigglePhase → false, so quickEaseOut can
-            // interrupt the in-flight repeatForever. If isEditing were used
-            // instead, isEditing changes to false first (zeroing the target),
-            // then wigglePhase changes — but the target is already zero so
-            // SwiftUI sees no delta and never fires the interrupting animation.
             .rotationEffect(
-                wigglePhase && !isDragging
-                    ? .degrees(isEvenIndex ? 1.5 : -1.5)
+                wiggleState.isActive
+                    ? .degrees(wiggleState.isEvenIndex ? 1.5 : -1.5)
                     : .zero
             )
             .overlay(alignment: .topLeading) {
@@ -158,25 +155,24 @@ struct TrackingStatGrid: View {
                 }
             }
             .animation(
-                wigglePhase && !isDragging
+                wiggleState.isActive
                     ? Animation.easeInOut(duration: 0.13)
                         .repeatForever(autoreverses: true)
-                        .delay(isEvenIndex ? 0.0 : 0.07)
+                        .delay(wiggleState.isEvenIndex ? 0.0 : 0.07)
                     : AnimationTokens.quickEaseOut,
-                value: wigglePhase
+                value: wiggleState
             )
             .gesture(
                 isEditing
                     ? DragGesture(minimumDistance: 4)
-                        .updating($dragGestureActive) { _, state, _ in state = true }
                         .onChanged { value in
-                            onDragChanged(instance: instance, translation: value.translation)
+                            onDragChanged(
+                                instanceId: instance.instanceId,
+                                translation: value.translation
+                            )
                         }
                         .onEnded { _ in
-                            withAnimation(AnimationTokens.gentleSpring) {
-                                draggingId = nil
-                                dragTranslation = .zero
-                            }
+                            onDragEnded()
                         }
                     : nil
             )
@@ -184,55 +180,50 @@ struct TrackingStatGrid: View {
 
     // MARK: - Drag Logic
 
-    private func onDragChanged(instance: ActiveTrackingCardInstance, translation: CGSize) {
-        if draggingId == nil {
-            guard let idx = gridInstances.firstIndex(where: { $0.instanceId == instance.instanceId }) else { return }
-            draggingId = instance.instanceId
-            dragStartCenter = cardCenter(at: idx)
+    private func onDragChanged(instanceId: UUID, translation: CGSize) {
+        if dragSession == nil {
+            guard let session = TrackingGridReorderCoordinator.makeDragSession(
+                for: instanceId,
+                in: displayInstances,
+                metrics: layoutMetrics
+            ) else {
+                return
+            }
+            dragSession = session
             HapticFeedback.impact()
         }
-        guard draggingId == instance.instanceId else { return }
 
-        // Update translation — the floating card reads this directly,
-        // so its visual position is always dragStartCenter + translation.
-        dragTranslation = translation
+        guard var session = dragSession, session.draggingId == instanceId else { return }
+        session.translation = translation
 
-        let fingerCenter = CGPoint(
-            x: dragStartCenter.x + translation.width,
-            y: dragStartCenter.y + translation.height
-        )
-        guard let currentIdx = gridInstances.firstIndex(where: { $0.instanceId == instance.instanceId }) else { return }
-        guard let targetIdx = computeTargetIndex(at: fingerCenter, excluding: currentIdx) else { return }
+        if let targetIndex = layoutMetrics.targetIndex(
+            for: session.fingerCenter,
+            itemCount: displayInstances.count,
+            excluding: session.currentIndex
+        ) {
+            withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
+                displayInstances = TrackingGridReorderCoordinator.reorder(
+                    displayInstances,
+                    from: session.currentIndex,
+                    to: targetIndex
+                )
+            }
+            session.currentIndex = targetIndex
+        }
 
-        // Reorder the array — only non-dragging cards animate (dragging card
-        // is opacity-0 in the grid, so its slot shifts without visual artifact).
+        dragSession = session
+    }
+
+    private func onDragEnded() {
+        commitDisplayOrderIfNeeded()
         withAnimation(AnimationTokens.gentleSpring) {
-            var updated = gridInstances
-            updated.move(
-                fromOffsets: IndexSet(integer: currentIdx),
-                toOffset: targetIdx > currentIdx ? targetIdx + 1 : targetIdx
-            )
-            gridInstances = updated
+            dragSession = nil
         }
     }
 
-    private func computeTargetIndex(at position: CGPoint, excluding sourceIdx: Int) -> Int? {
-        let rowHeight = Self.cardHeight + Spacing.gutter
-        let totalColWidth = colWidth * 2 + Spacing.gutter
-        let col = position.x > totalColWidth / 2 ? 1 : 0
-        let maxRow = (gridInstances.count - 1) / 2
-        let row = max(0, min(Int(position.y / rowHeight), maxRow))
-        let candidate = min(row * 2 + col, gridInstances.count - 1)
-        return candidate != sourceIdx ? candidate : nil
-    }
-
-    private func cardCenter(at index: Int) -> CGPoint {
-        let rowHeight = Self.cardHeight + Spacing.gutter
-        let col = index % 2
-        let row = index / 2
-        let x = col == 0 ? colWidth / 2 : colWidth + Spacing.gutter + colWidth / 2
-        let y = CGFloat(row) * rowHeight + Self.cardHeight / 2
-        return CGPoint(x: x, y: y)
+    private func commitDisplayOrderIfNeeded() {
+        guard displayInstances.map(\.instanceId) != instances.map(\.instanceId) else { return }
+        onReorder(displayInstances)
     }
 
     // MARK: - Stat Card
@@ -353,28 +344,22 @@ struct TrackingStatGrid: View {
 
                 Image(systemName: "plus.circle.fill")
                     .font(.title3)
-                    .foregroundStyle(ColorTokens.brandWarmAmber)
+                    .foregroundStyle(ColorTokens.secondaryAccent)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Spacing.card)
             .padding(.vertical, Spacing.lg)
-            .dashboardGridCardBackground(accent: ColorTokens.brandWarmAmber)
+            .dashboardGridCardBackground(accent: ColorTokens.secondaryAccent)
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous)
                     .strokeBorder(
-                        ColorTokens.brandWarmAmber.opacity(Opacity.moderate),
+                        ColorTokens.secondaryAccent.opacity(Opacity.moderate),
                         lineWidth: 1.5
                     )
             )
         }
         .buttonStyle(.plain)
     }
-
-    // MARK: - Wiggle
-
-    // Wiggle is driven by wigglePhase via .animation(value: wigglePhase) on each cell.
-    // Both rotationEffect target and animation condition use wigglePhase (not isEditing),
-    // so the target change and the animation interruption are always in the same render pass.
 
 }
 
@@ -394,9 +379,9 @@ struct AltitudeSparkline: View {
 
     private func color(for state: SpeedCurveState) -> Color {
         switch state {
-        case .skiing: return ColorTokens.brandIceBlue
-        case .lift:   return ColorTokens.brandWarmAmber
-        case .others: return Color.secondary.opacity(0.85)
+        case .skiing: return ColorTokens.skiingAccent
+        case .lift:   return ColorTokens.liftAccent
+        case .others: return ColorTokens.walkAccent
         }
     }
 

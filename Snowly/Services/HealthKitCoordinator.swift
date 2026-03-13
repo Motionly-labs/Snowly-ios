@@ -21,7 +21,7 @@ final class HealthKitCoordinator {
     private var activeFlushTask: Task<Void, Never>?
     private var totalVerticalAscent: Double = 0
     private var totalVerticalDescent: Double = 0
-    private var pendingRoutePoints: [TrackPoint] = []
+    private var pendingRoutePoints: [FilteredTrackPoint] = []
     private var pendingDistanceSamples: [(meters: Double, start: Date, end: Date)] = []
     private var flushTask: Task<Void, Never>?
     private var workoutRequested = false
@@ -62,8 +62,8 @@ final class HealthKitCoordinator {
 
     /// Buffer a track point for batched HealthKit submission.
     func forwardPoint(
-        _ point: TrackPoint,
-        previousPoint: TrackPoint,
+        _ point: FilteredTrackPoint,
+        previousPoint: FilteredTrackPoint,
         distance: Double,
         isSkiing: Bool
     ) {

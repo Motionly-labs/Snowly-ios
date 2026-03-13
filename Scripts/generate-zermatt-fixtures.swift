@@ -30,7 +30,9 @@ struct FixtureTrackPoint: Codable {
     let latitude: Double
     let longitude: Double
     let altitude: Double
-    let accuracy: Double
+    let speed: Double
+    let horizontalAccuracy: Double
+    let verticalAccuracy: Double
     let course: Double
 }
 
@@ -112,10 +114,10 @@ private let loopCount = 4
 // Keep fixture sampling near real GPS cadence (~1 Hz), so production
 // motion estimation gets enough in-window points for altitude trend detection.
 private let sampleInterval: TimeInterval = 1.0
-private let defaultLoopOutputPath = "Snowly/Debug/Fixtures/ZermattLoop.trackpoints.json"
-private let defaultLoopGPXPath = "Snowly/Debug/Locations/ZermattLoop.gpx"
-private let defaultSummaryOutputPath = "Snowly/Debug/Fixtures/ZermattSkiDay.trackpoints.json"
-private let defaultSummaryGPXPath = "Snowly/Debug/Locations/ZermattSkiDay.gpx"
+private let defaultLoopOutputPath = "/tmp/Snowly/Fixtures/ZermattLoop.trackpoints.json"
+private let defaultLoopGPXPath = "/tmp/Snowly/Locations/ZermattLoop.gpx"
+private let defaultSummaryOutputPath = "/tmp/Snowly/Fixtures/ZermattSkiDay.trackpoints.json"
+private let defaultSummaryGPXPath = "/tmp/Snowly/Locations/ZermattSkiDay.gpx"
 
 private enum FixtureMode: String {
     case loop
@@ -682,53 +684,24 @@ private func meanDownhillSpeed(for trailID: Int64) -> Double {
 
 private func meanLiftSpeed(for liftID: Int64) -> Double {
     let seed = Int(truncatingIfNeeded: liftID)
-    return 3.1 + stableUnitRandom(seed: seed, salt: 0x202) * 0.55
+    // Major Zermatt lifts are typically in the 16-19 km/h band.
+    return 4.95 + stableUnitRandom(seed: seed, salt: 0x202) * 0.25
 }
 
-private func applyLowFrequencySpeedNoise(
-    to output: inout [FixtureTrackPoint],
-    range: Range<Int>,
+private func instantaneousSpeed(
     baseSpeed: Double,
     speedJitter: Double,
+    phase: Double,
     profile: PathNoiseProfile
-) {
-    guard !range.isEmpty else { return }
+) -> Double {
+    let slow = sin(phase * profile.speedFreq1 + profile.speedPhase1)
+    let slower = 0.65 * cos(phase * profile.speedFreq2 + profile.speedPhase2)
+    return max(0.35, baseSpeed + (slow + slower) * speedJitter)
+}
 
-    let count = range.count
-    var modulation = Array(repeating: 0.0, count: count)
-    for offset in 0..<count {
-        let phase = Double(offset)
-        let slow = sin(phase * profile.speedFreq1 + profile.speedPhase1)
-        let slower = 0.65 * cos(phase * profile.speedFreq2 + profile.speedPhase2)
-        modulation[offset] = slow + slower
-    }
-
-    let meanModulation = modulation.reduce(0.0, +) / Double(count)
-    var candidateSpeeds = modulation.map { baseSpeed + ($0 - meanModulation) * speedJitter }
-
-    // First-order correction to keep per-path mean speed equal to baseSpeed.
-    let currentMean = candidateSpeeds.reduce(0.0, +) / Double(count)
-    let correction = baseSpeed - currentMean
-    candidateSpeeds = candidateSpeeds.map { max(0.35, $0 + correction) }
-
-    // Small residual can appear after clamping.
-    let correctedMean = candidateSpeeds.reduce(0.0, +) / Double(count)
-    let residual = baseSpeed - correctedMean
-    if abs(residual) > 1e-4 {
-        candidateSpeeds = candidateSpeeds.map { max(0.35, $0 + residual) }
-    }
-
-    for pointIndex in range {
-        let original = output[pointIndex]
-        output[pointIndex] = FixtureTrackPoint(
-            timestamp: original.timestamp,
-            latitude: original.latitude,
-            longitude: original.longitude,
-            altitude: original.altitude,
-            accuracy: original.accuracy,
-            course: original.course
-        )
-    }
+private func simulatedVerticalAccuracy(horizontalAccuracy: Double, phase: Double) -> Double {
+    let wobble = abs(cos(phase * 0.11)) * 1.8 + abs(sin(phase * 0.047)) * 1.2
+    return max(4.0, horizontalAccuracy * 1.7 + wobble)
 }
 
 private func appendSegment(
@@ -750,8 +723,8 @@ private func appendSegment(
     let distance = distanceMeters(startCoord, endCoord)
     let duration = max(distance / max(baseSpeed, 0.2), sampleInterval)
     let sampleCount = max(Int(duration / sampleInterval), 1)
-    let baseCourse = bearingDegrees(from: startCoord, to: endCoord)
     let startIndex = includeStartPoint ? 0 : 1
+    var previousCoordinate = includeStartPoint ? nil : startCoord
 
     for i in startIndex...sampleCount {
         let progress = Double(i) / Double(sampleCount)
@@ -767,9 +740,31 @@ private func appendSegment(
         let microY = microAmplitude * cos(phase * 0.27 + noiseProfile.microPhase * 0.71)
         let lat = p.latitude + metersToLatitudeDelta(lowFreqY + microY)
         let lon = p.longitude + metersToLongitudeDelta(lowFreqX + microX, atLatitude: p.latitude)
+        let coord = Coordinate(latitude: lat, longitude: lon)
 
         let wobble = sin(phase * 0.19 + noiseProfile.microPhase * 0.58)
-        let accuracy = max(3, baseAccuracy + abs(wobble) * accuracyJitter + microAmplitude * 0.55)
+        let horizontalAccuracy = max(3, baseAccuracy + abs(wobble) * accuracyJitter + microAmplitude * 0.55)
+        let verticalAccuracy = simulatedVerticalAccuracy(horizontalAccuracy: horizontalAccuracy, phase: phase)
+        let observedSpeed = instantaneousSpeed(
+            baseSpeed: baseSpeed,
+            speedJitter: speedJitter,
+            phase: phase,
+            profile: noiseProfile
+        )
+
+        if let previousCoordinate {
+            let stepDistance = distanceMeters(previousCoordinate, coord)
+            currentTime += max(stepDistance / observedSpeed, 0.2)
+        }
+
+        let course: Double
+        if let previousCoordinate, distanceMeters(previousCoordinate, coord) >= 0.5 {
+            course = bearingDegrees(from: previousCoordinate, to: coord)
+        } else if let lastCourse = output.last?.course {
+            course = lastCourse
+        } else {
+            course = 0
+        }
 
         output.append(
             FixtureTrackPoint(
@@ -777,11 +772,13 @@ private func appendSegment(
                 latitude: lat,
                 longitude: lon,
                 altitude: p.altitude,
-                accuracy: accuracy,
-                course: baseCourse
+                speed: observedSpeed,
+                horizontalAccuracy: horizontalAccuracy,
+                verticalAccuracy: verticalAccuracy,
+                course: course
             )
         )
-        currentTime += sampleInterval
+        previousCoordinate = coord
     }
 }
 
@@ -800,7 +797,6 @@ private func appendPath(
 ) {
     guard path.count > 1 else { return }
     let profile = makePathNoiseProfile(seed: noiseSeed)
-    let startIndex = output.count
     for i in 0..<(path.count - 1) {
         appendSegment(
             from: path[i],
@@ -817,14 +813,6 @@ private func appendPath(
             noiseProfile: profile
         )
     }
-    let endIndex = output.count
-    applyLowFrequencySpeedNoise(
-        to: &output,
-        range: startIndex..<endIndex,
-        baseSpeed: baseSpeed,
-        speedJitter: speedJitter,
-        profile: profile
-    )
 }
 
 private func appendPause(
@@ -847,10 +835,11 @@ private func appendPause(
         let lon = anchor.longitude + metersToLongitudeDelta(driftX, atLatitude: anchor.latitude)
         let coord = Coordinate(latitude: lat, longitude: lon)
         let course = bearingDegrees(from: previous, to: coord)
-        previous = coord
+        let observedSpeed = max(0.0, distanceMeters(previous, coord) / max(sampleInterval, 0.2))
 
         let wobble = abs(sin(phase * 0.22))
-        let accuracy = baseAccuracy + wobble * max(2.0, driftMeters * 0.4)
+        let horizontalAccuracy = baseAccuracy + wobble * max(2.0, driftMeters * 0.4)
+        let verticalAccuracy = simulatedVerticalAccuracy(horizontalAccuracy: horizontalAccuracy, phase: phase)
 
         output.append(
             FixtureTrackPoint(
@@ -858,12 +847,59 @@ private func appendPause(
                 latitude: lat,
                 longitude: lon,
                 altitude: anchor.altitude + sin(phase * 0.12) * 0.8,
-                accuracy: accuracy,
+                speed: observedSpeed,
+                horizontalAccuracy: horizontalAccuracy,
+                verticalAccuracy: verticalAccuracy,
                 course: course
             )
         )
+        previous = coord
         currentTime += sampleInterval
     }
+}
+
+private func alignSensorFieldsWithLiveCollection(_ points: [FixtureTrackPoint]) -> [FixtureTrackPoint] {
+    guard !points.isEmpty else { return [] }
+
+    var aligned: [FixtureTrackPoint] = []
+    aligned.reserveCapacity(points.count)
+
+    for (index, point) in points.enumerated() {
+        let speed: Double
+        let course: Double
+
+        if index == 0 {
+            speed = max(0, point.speed)
+            course = max(0, point.course)
+        } else {
+            let previous = points[index - 1]
+            let previousCoord = Coordinate(latitude: previous.latitude, longitude: previous.longitude)
+            let currentCoord = Coordinate(latitude: point.latitude, longitude: point.longitude)
+            let dt = max(point.timestamp - previous.timestamp, 0.2)
+            let distance = distanceMeters(previousCoord, currentCoord)
+            speed = max(0, distance / dt)
+            if distance >= 0.5 {
+                course = bearingDegrees(from: previousCoord, to: currentCoord)
+            } else {
+                course = aligned.last?.course ?? 0
+            }
+        }
+
+        aligned.append(
+            FixtureTrackPoint(
+                timestamp: point.timestamp,
+                latitude: point.latitude,
+                longitude: point.longitude,
+                altitude: point.altitude,
+                speed: speed,
+                horizontalAccuracy: point.horizontalAccuracy,
+                verticalAccuracy: point.verticalAccuracy,
+                course: course
+            )
+        )
+    }
+
+    return aligned
 }
 
 private func appendConnectorIfNeeded(
@@ -912,9 +948,9 @@ private func generateGPX(from points: [FixtureTrackPoint]) -> String {
         """
     }
 
-    // Sample every 3rd point to keep file size reasonable.
-    // With 2s base interval this gives ~6s between GPX waypoints — Xcode interpolates the rest.
-    let strideStep = 3
+    // Preserve every generated point.
+    // Xcode already interpolates between waypoints; extra decimation amplifies lift-speed jitter.
+    let strideStep = 1
     var sampled: [FixtureTrackPoint] = []
     var idx = 0
     while idx < points.count {
@@ -1035,6 +1071,7 @@ private func selectDistinctTrailPairs(
 }
 
 private func writeFixture(points: [FixtureTrackPoint], jsonPath: String, gpxPath: String) throws {
+    let alignedPoints = alignSensorFieldsWithLiveCollection(points)
     let outputURL = URL(fileURLWithPath: jsonPath)
     try FileManager.default.createDirectory(
         at: outputURL.deletingLastPathComponent(),
@@ -1043,7 +1080,7 @@ private func writeFixture(points: [FixtureTrackPoint], jsonPath: String, gpxPath
 
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    let jsonData = try encoder.encode(points)
+    let jsonData = try encoder.encode(alignedPoints)
     try jsonData.write(to: outputURL)
 
     let gpxURL = URL(fileURLWithPath: gpxPath)
@@ -1051,9 +1088,9 @@ private func writeFixture(points: [FixtureTrackPoint], jsonPath: String, gpxPath
         at: gpxURL.deletingLastPathComponent(),
         withIntermediateDirectories: true
     )
-    try generateGPX(from: points).write(to: gpxURL, atomically: true, encoding: .utf8)
+    try generateGPX(from: alignedPoints).write(to: gpxURL, atomically: true, encoding: .utf8)
 
-    print("Generated \(points.count) real-trail track points")
+    print("Generated \(alignedPoints.count) real-trail track points")
     print("JSON: \(outputURL.path)")
     print("GPX:  \(gpxURL.path)")
 }
@@ -1072,12 +1109,14 @@ private func buildLoopFixturePoints(selection: LiftTrailSelection) throws -> [Fi
     var currentTime = startDate.timeIntervalSinceReferenceDate
     var points: [FixtureTrackPoint] = []
     points.reserveCapacity(loopCount * 450)
+    let downhillBaseSpeed = meanDownhillSpeed(for: selection.trailWay.id)
+    let liftBaseSpeed = meanLiftSpeed(for: selection.liftWay.id)
 
     for lap in 0..<loopCount {
         appendPath(
             downhillPath,
-            baseSpeed: 14.8,
-            speedJitter: 2.5,
+            baseSpeed: downhillBaseSpeed,
+            speedJitter: 2.4,
             baseAccuracy: 5.8,
             accuracyJitter: 2.0,
             lateralNoiseMeters: 3.2,
@@ -1111,11 +1150,11 @@ private func buildLoopFixturePoints(selection: LiftTrailSelection) throws -> [Fi
 
         appendPath(
             liftPath,
-            baseSpeed: 3.4,
-            speedJitter: 0.45,
-            baseAccuracy: 9.5,
-            accuracyJitter: 2.6,
-            lateralNoiseMeters: 3.8,
+            baseSpeed: liftBaseSpeed,
+            speedJitter: 0.06,
+            baseAccuracy: 7.2,
+            accuracyJitter: 1.4,
+            lateralNoiseMeters: 1.1,
             sampleInterval: sampleInterval,
             currentTime: &currentTime,
             output: &points,
@@ -1165,6 +1204,8 @@ private func buildSummaryFixturePoints(selections: [LiftTrailSelection]) throws 
         )
         let liftPath = elevated.liftPath
         let downhillPath = elevated.downhillPath
+        let downhillBaseSpeed = meanDownhillSpeed(for: selection.trailWay.id)
+        let liftBaseSpeed = meanLiftSpeed(for: selection.liftWay.id)
 
         if let previousDownhillBase, let liftBase = liftPath.first {
             appendConnectorIfNeeded(
@@ -1190,11 +1231,11 @@ private func buildSummaryFixturePoints(selections: [LiftTrailSelection]) throws 
 
         appendPath(
             liftPath,
-            baseSpeed: 3.3,
-            speedJitter: 0.35,
-            baseAccuracy: 8.8,
-            accuracyJitter: 2.2,
-            lateralNoiseMeters: 2.8,
+            baseSpeed: liftBaseSpeed,
+            speedJitter: 0.05,
+            baseAccuracy: 6.8,
+            accuracyJitter: 1.2,
+            lateralNoiseMeters: 0.9,
             sampleInterval: sampleInterval,
             currentTime: &currentTime,
             output: &points,
@@ -1213,7 +1254,7 @@ private func buildSummaryFixturePoints(selections: [LiftTrailSelection]) throws 
 
         appendPath(
             downhillPath,
-            baseSpeed: 15.3 + Double(idx % 3) * 0.5,
+            baseSpeed: downhillBaseSpeed + Double(idx % 3) * 0.25,
             speedJitter: 2.2,
             baseAccuracy: 5.7,
             accuracyJitter: 1.9,

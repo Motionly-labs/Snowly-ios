@@ -97,7 +97,7 @@ For a `Double` with a default value, the migration is three lines:
 
 ```swift
 // In SnowlyMigrationPlan.stages:
-.lightweight(fromVersion: SchemaV1.self, toVersion: SchemaV2.self)
+.lightweight(fromVersion: SchemaV4.self, toVersion: SchemaV5.self)
 ```
 
 ---
@@ -122,22 +122,22 @@ session.sessionAvgTurnRate = skiingRuns.isEmpty ? 0
 
 ---
 
-## Step 6 — Add to `StatsService` Season Stats
+## Step 6 — Add to `StatsService` Aggregate Stats
 
-If the metric should appear in the season summary (e.g., `ProfileView`), add it to `SeasonStats` in `StatsService.swift` and compute it in `seasonStats(sessions:)`:
+If the metric should appear in the aggregate summary (e.g., `ActivityHistoryView`), add it to `AggregateStats` in `StatsService.swift` and compute it in `aggregateStats(from:)`:
 
 ```swift
-struct SeasonStats {
+struct AggregateStats {
     // ...existing fields...
     let avgTurnRate: Double
 }
 
-static func seasonStats(sessions: [SkiSession]) -> SeasonStats {
+static func aggregateStats(from sessions: [SkiSession]) -> AggregateStats {
     // ...
     let allSkiRuns = sessions.flatMap(\.runs).filter { $0.activityType == .skiing }
     let avgTurnRate = allSkiRuns.isEmpty ? 0
         : allSkiRuns.map(\.avgTurnRate).reduce(0, +) / Double(allSkiRuns.count)
-    return SeasonStats(
+    return AggregateStats(
         // ...
         avgTurnRate: avgTurnRate
     )

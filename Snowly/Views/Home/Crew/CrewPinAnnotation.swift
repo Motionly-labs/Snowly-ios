@@ -31,7 +31,7 @@ struct CrewPinAnnotation: View {
             .foregroundStyle(.white)
             .padding(.horizontal, Spacing.gap)
             .padding(.vertical, 3)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
+            .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous))
         }
         .contextMenu {
             if let onResend {

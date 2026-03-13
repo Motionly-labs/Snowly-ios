@@ -63,8 +63,16 @@ struct HeartRateSample: Sendable, Equatable {
     let bpm: Double
 }
 
+private protocol TimestampedSample {
+    var time: Date { get }
+}
+
+extension SpeedSample: TimestampedSample {}
+extension AltitudeSample: TimestampedSample {}
+
 private struct TrackingPointIngestResult: Sendable {
-    let previousPoint: TrackPoint?
+    let point: FilteredTrackPoint?
+    let previousPoint: FilteredTrackPoint?
     let distance: Double
     let activity: DetectedActivity
     let scalar: ScalarSnapshot
@@ -82,6 +90,7 @@ private struct MaterializedCompletedRun: Sendable {
 
 private struct ScalarSnapshot: Sendable {
     let currentSpeed: Double
+    let currentAltitude: Double
     let maxSpeed: Double
     let totalDistance: Double
     let totalVertical: Double
@@ -89,7 +98,6 @@ private struct ScalarSnapshot: Sendable {
     let currentActivity: DetectedActivity
     let runCount: Int
     let completedRunsVersion: Int
-    let speedSamplesVersion: Int
 }
 
 private struct TrackingEngineSnapshot: Sendable {
@@ -101,7 +109,6 @@ private struct TrackingEngineSnapshot: Sendable {
     let currentActivity: DetectedActivity
     let runCount: Int
     let completedRuns: [CompletedRunData]
-    let speedSamples: [SpeedSample]
 }
 
 private extension DetectedActivity {
@@ -158,11 +165,11 @@ private actor TrackingEngine {
 
     // MARK: - GPS filtering
     private var gpsFilter = GPSKalmanFilter()
+    private var currentAltitude: Double = 0
 
     // MARK: - Detection state
     private var recentPoints: [FilteredTrackPoint] = []
     private var previousFilteredPoint: FilteredTrackPoint?
-    private var previousRawPoint: TrackPoint?
     private var candidateActivity: DetectedActivity?
     private var candidateStartTime: Date?
     /// Timestamp of the last point seeded via primeRecentWindow. Points with timestamp ≤ this
@@ -174,13 +181,8 @@ private actor TrackingEngine {
     private var completedRunFiles: [URL?] = []
     private var runCount: Int = 0
 
-    // MARK: - Speed curve
-    private var speedSamples: [SpeedSample] = []
-    private static let speedSampleWindow: TimeInterval = SharedConstants.speedSampleWindowSeconds
-
     // MARK: - Version counters
     private var completedRunsVersion: Int = 0
-    private var speedSamplesVersion: Int = 0
 
     // MARK: - Active segment (streamed to temp file)
     private var currentSegmentType: RunActivityType?
@@ -192,26 +194,6 @@ private actor TrackingEngine {
     private var segmentTrackFileURL: URL?
     private var segmentTrackFileHandle: FileHandle?
     private var lastActiveTime: Date?
-
-    private struct NDJSONTrackPoint: Encodable {
-        let timestamp: Double
-        let latitude: Double
-        let longitude: Double
-        let altitude: Double
-        let speed: Double
-        let accuracy: Double
-        let course: Double
-
-        init(_ point: TrackPoint) {
-            timestamp = point.timestamp.timeIntervalSinceReferenceDate
-            latitude = point.latitude
-            longitude = point.longitude
-            altitude = point.altitude
-            speed = point.speed
-            accuracy = point.accuracy
-            course = point.course
-        }
-    }
 
     private let encoder = JSONEncoder()
 
@@ -243,8 +225,11 @@ private actor TrackingEngine {
         // the seeded history, preventing double-processing through the Kalman filter.
         primeEndTimestamp = sortedPoints.last?.timestamp
 
+        // Seed the current altitude from the last primed filtered point so the
+        // altitude card has an immediate value before the first live GPS tick.
+        currentAltitude = recentPoints.last?.altitude ?? 0
+
         previousFilteredPoint = nil
-        previousRawPoint = nil
         candidateActivity = nil
         candidateStartTime = nil
         currentActivity = .idle
@@ -258,16 +243,18 @@ private actor TrackingEngine {
         if let cutoff = primeEndTimestamp {
             if point.timestamp <= cutoff {
                 return TrackingPointIngestResult(
-                    previousPoint: nil, distance: 0,
+                    point: nil,
+                    previousPoint: nil,
+                    distance: 0,
                     activity: currentActivity, scalar: scalarSnapshot()
                 )
             }
             primeEndTimestamp = nil
         }
 
-        let rawPoint = point
-        let filteredPoint = gpsFilter.update(point: rawPoint)
+        let filteredPoint = gpsFilter.update(point: point)
         currentSpeed = filteredPoint.estimatedSpeed
+        currentAltitude = filteredPoint.altitude
 
         // Consumer pattern invariant: filteredPoint is NOT in recentPoints here.
         // Detection reads history before append so the current point cannot bias its own
@@ -302,7 +289,7 @@ private actor TrackingEngine {
         // window (e.g. 14s skiing→lift at ~3 m/s = ~42m that would otherwise be miscounted).
         // Segment boundaries still use currentActivity for stability.
         var distance = 0.0
-        let previousForHealthKit = previousRawPoint
+        let previousForHealthKit = previousFilteredPoint
         if let prev = previousFilteredPoint {
             distance = prev.distance(to: filteredPoint)
             switch rawActivity {
@@ -321,11 +308,10 @@ private actor TrackingEngine {
             maxSpeed = filteredPoint.estimatedSpeed
         }
 
-        processSegment(filteredPoint: filteredPoint, rawPoint: rawPoint, activity: currentActivity)
+        processSegment(filteredPoint: filteredPoint, rawPoint: point, activity: currentActivity)
         previousFilteredPoint = filteredPoint
-        previousRawPoint = rawPoint
-
         return TrackingPointIngestResult(
+            point: filteredPoint,
             previousPoint: previousForHealthKit,
             distance: distance,
             activity: currentActivity,
@@ -352,23 +338,19 @@ private actor TrackingEngine {
         )
         return ScalarSnapshot(
             currentSpeed: currentSpeed,
+            currentAltitude: currentAltitude,
             maxSpeed: maxSpeed,
             totalDistance: totalDistance,
             totalVertical: totalVertical,
             skiingMetrics: metrics,
             currentActivity: currentActivity,
             runCount: runCount,
-            completedRunsVersion: completedRunsVersion,
-            speedSamplesVersion: speedSamplesVersion
+            completedRunsVersion: completedRunsVersion
         )
     }
 
     func fetchCompletedRuns() -> [CompletedRunData] {
         completedRuns
-    }
-
-    func fetchSpeedSamples() -> [SpeedSample] {
-        speedSamples
     }
 
     func snapshot() -> TrackingEngineSnapshot {
@@ -386,26 +368,8 @@ private actor TrackingEngine {
             skiingMetrics: metrics,
             currentActivity: currentActivity,
             runCount: runCount,
-            completedRuns: completedRuns,
-            speedSamples: speedSamples
+            completedRuns: completedRuns
         )
-    }
-
-    func recordSpeedSample() {
-        let now = Date.now
-        speedSamples.append(
-            SpeedSample(
-                time: now,
-                speed: max(currentSpeed, 0),
-                state: currentActivity.speedCurveState
-            )
-        )
-        let cutoff = now.addingTimeInterval(-Self.speedSampleWindow)
-        if let firstValid = speedSamples.firstIndex(where: { $0.time >= cutoff }),
-           firstValid > 0 {
-            speedSamples.removeSubrange(0..<firstValid)
-        }
-        speedSamplesVersion += 1
     }
 
     func completedRunStorage() -> [CompletedRunStorage] {
@@ -420,6 +384,7 @@ private actor TrackingEngine {
     func reset() {
         gpsFilter.reset()
         currentSpeed = 0
+        currentAltitude = 0
         maxSpeed = 0
         totalDistance = 0
         totalVertical = 0
@@ -427,13 +392,11 @@ private actor TrackingEngine {
 
         recentPoints = []
         previousFilteredPoint = nil
-        previousRawPoint = nil
         candidateActivity = nil
         candidateStartTime = nil
 
         completedRuns = []
         runCount = 0
-        speedSamples = []
 
         closeSegmentHandle()
         deleteSegmentFileIfPresent()
@@ -450,7 +413,11 @@ private actor TrackingEngine {
 
     // MARK: - Segment processing
 
-    private func processSegment(filteredPoint: FilteredTrackPoint, rawPoint: TrackPoint, activity: DetectedActivity) {
+    private func processSegment(
+        filteredPoint: FilteredTrackPoint,
+        rawPoint: TrackPoint,
+        activity: DetectedActivity
+    ) {
         let targetType: RunActivityType?
         switch activity {
         case .skiing: targetType = .skiing
@@ -569,7 +536,6 @@ private actor TrackingEngine {
     private func clearRealtimeState() {
         gpsFilter.reset()
         previousFilteredPoint = nil
-        previousRawPoint = nil
         recentPoints = []
         candidateActivity = nil
         candidateStartTime = nil
@@ -581,7 +547,7 @@ private actor TrackingEngine {
 
     private func appendPointToSegmentFile(_ point: TrackPoint) {
         guard let handle = segmentTrackFileHandle else { return }
-        guard let encoded = try? encoder.encode(NDJSONTrackPoint(point)) else { return }
+        guard let encoded = try? encoder.encode(point) else { return }
         var line = encoded
         line.append(0x0A)
         try? handle.write(contentsOf: line)
@@ -651,6 +617,8 @@ final class SessionTrackingService {
     // MARK: - Published state
     private(set) var state: TrackingState = .idle
     private(set) var currentSpeed: Double = 0
+    /// Kalman-filtered altitude in meters. Always read this — never locationService.currentAltitude.
+    private(set) var currentAltitude: Double = 0
     private(set) var maxSpeed: Double = 0
     private(set) var totalDistance: Double = 0
     private(set) var totalVertical: Double = 0
@@ -668,11 +636,11 @@ final class SessionTrackingService {
     private(set) var skiingMetrics: SessionSkiingMetrics = .zero
     var pendingHealthKitWorkoutId: UUID? { healthKitCoordinator.pendingWorkoutId }
 
-    /// Rolling 10-minute window of time-stamped speed samples for the live curve.
-    /// Each sample carries a coarse activity state for curve coloring.
+    /// Rolling 10-minute window of GPS-driven speed samples for the live curve.
+    /// Samples are bucketed by arrival time to avoid timer-generated plateaus.
     private(set) var speedSamples: [SpeedSample] = []
 
-    /// Rolling 1-hour window of time-stamped altitude samples for the altitude curve widget.
+    /// Rolling 1-hour window of GPS-driven altitude samples for the profile widget.
     private(set) var altitudeSamples: [AltitudeSample] = []
 
     // MARK: - Internal state
@@ -683,9 +651,7 @@ final class SessionTrackingService {
 
     private(set) var pauseStartTime: Date?
     private(set) var totalPausedTime: TimeInterval = 0
-    private var speedSampleAccumulator: TimeInterval = 0
     private var lastSyncedRunsVersion: Int = 0
-    private var lastSyncedSamplesVersion: Int = 0
     private var liveActivityUnitSystem: UnitSystem = .metric
     private var trackingUpdateIntervalSeconds: TimeInterval = 1.0
     private var autoPauseIdleThreshold: TimeInterval = 0
@@ -694,6 +660,7 @@ final class SessionTrackingService {
     private var isDashboardVisible = false
     private var isAppActive = true
 
+    private static let curveSampleIntervalSeconds: TimeInterval = 2
     private static let recoveryStateMaxAge: TimeInterval = 12 * 3600
     nonisolated private static let logger = Logger(subsystem: "com.Snowly", category: "SessionTracking")
 
@@ -765,10 +732,9 @@ final class SessionTrackingService {
 
         state = .paused
         pauseStartTime = Date()
-        speedSampleAccumulator = 0
         idleSinceDate = nil
 
-        await syncPublishedSnapshot(recordSpeedSample: false)
+        await syncPublishedSnapshot()
     }
 
     func resumeTracking(unitSystem: UnitSystem? = nil) async {
@@ -796,31 +762,39 @@ final class SessionTrackingService {
         state = .tracking
         ensureLiveActivityStarted(unitSystem: unitSystem ?? liveActivityUnitSystem)
 
-        await syncPublishedSnapshot(recordSpeedSample: false)
+        await syncPublishedSnapshot()
     }
 
     func stopTracking() async {
         guard state != .idle else { return }
 
+        // Finish the location stream first so the consumer task can drain any
+        // already-buffered GPS points before segment finalization.
+        locationService.stopTracking()
+        if let trackingTask {
+            await trackingTask.value
+        }
+
         await trackingEngine.stopTracking()
 
-        trackingTask?.cancel()
         timerTask?.cancel()
         persistenceTask?.cancel()
         trackingTask = nil
         timerTask = nil
         persistenceTask = nil
 
-        locationService.stopTracking()
         motionService.stopMonitoring()
         batteryService.stopMonitoring()
-        TrackingStatePersistence.clear()
 
-        await syncPublishedSnapshot(recordSpeedSample: false)
-        liveActivityService?.endLiveActivity(finalState: buildLiveActivityState())
-
+        // Set state = .idle BEFORE clear() so that any persistence task that slipped
+        // through cancellation fails its `guard state != .idle` check and cannot
+        // re-write isActive: true after the clear.
         state = .idle
         pauseStartTime = nil
+        TrackingStatePersistence.clear()
+
+        await syncPublishedSnapshot()
+        liveActivityService?.endLiveActivity(finalState: buildLiveActivityState())
     }
 
     /// Finalizes the HealthKit workout asynchronously.
@@ -843,10 +817,12 @@ final class SessionTrackingService {
         guard let sessionId = activeSessionId,
               let start = startDate else { return }
 
-        await syncPublishedSnapshot(recordSpeedSample: false)
+        await syncPublishedSnapshot()
 
         let runStorage = await trackingEngine.completedRunStorage()
         let materializedRuns = await loadTrackData(for: runStorage)
+        let activeGearSetup = fetchActiveGearSetup(in: context)
+        let lockerAssets = fetchLockerAssets(in: context)
 
         let session = SkiSession(
             id: sessionId,
@@ -863,6 +839,7 @@ final class SessionTrackingService {
         }
 
         session.resort = resort
+        session.applyGearSnapshot(from: activeGearSetup, lockerAssets: lockerAssets)
 
         context.insert(session)
 
@@ -935,6 +912,29 @@ final class SessionTrackingService {
         }
     }
 
+    private func fetchActiveGearSetup(in context: ModelContext) -> GearSetup? {
+        var descriptor = FetchDescriptor<GearSetup>(
+            sortBy: [SortDescriptor(\.sortOrder)]
+        )
+        descriptor.fetchLimit = 1
+
+        if let active = (try? context.fetch(FetchDescriptor<GearSetup>(
+            predicate: #Predicate<GearSetup> { $0.isActive },
+            sortBy: [SortDescriptor(\.sortOrder)]
+        )))?.first {
+            return active
+        }
+
+        return (try? context.fetch(descriptor))?.first
+    }
+
+    private func fetchLockerAssets(in context: ModelContext) -> [GearAsset] {
+        let descriptor = FetchDescriptor<GearAsset>(
+            sortBy: [SortDescriptor(\.sortOrder)]
+        )
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
     private func ensureLiveActivityStarted(unitSystem: UnitSystem) {
         liveActivityUnitSystem = unitSystem
         guard let liveActivityService else {
@@ -953,12 +953,21 @@ final class SessionTrackingService {
         let motionHint: MotionHint = motionService.currentMotion == .automotive ? .automotive : .unknown
         let ingestResult = await trackingEngine.ingest(point: point, motion: motionHint)
 
-        if let previous = ingestResult.previousPoint {
+        if let point = ingestResult.point, let previous = ingestResult.previousPoint {
             healthKitCoordinator.forwardPoint(
                 point,
                 previousPoint: previous,
                 distance: ingestResult.distance,
                 isSkiing: ingestResult.activity == .skiing
+            )
+        }
+
+        applyScalarSnapshot(ingestResult.scalar)
+        await syncCompletedRunsIfNeeded(version: ingestResult.scalar.completedRunsVersion)
+        if let filteredPoint = ingestResult.point {
+            appendCurveSample(
+                point: filteredPoint,
+                state: ingestResult.activity.speedCurveState
             )
         }
 
@@ -983,7 +992,6 @@ final class SessionTrackingService {
     }
 
     private func startTimer() {
-        speedSampleAccumulator = 0
         timerTask = Task { [weak self] in
             while !Task.isCancelled {
                 guard let self else { break }
@@ -1000,24 +1008,13 @@ final class SessionTrackingService {
         return trackingUpdateIntervalSeconds
     }
 
-    private func handleTimerTick(interval: TimeInterval) async {
+    private func handleTimerTick(interval _: TimeInterval) async {
         guard startDate != nil else { return }
 
-        var shouldRecordSpeedSample = false
-        if state == .tracking {
-            speedSampleAccumulator += interval
-            if speedSampleAccumulator >= 2 {
-                shouldRecordSpeedSample = true
-                speedSampleAccumulator.formTruncatingRemainder(dividingBy: 2)
-            }
-        }
-
         // Skip full UI sync when dashboard not visible and app inactive
-        if !isDashboardVisible && !isAppActive && !shouldRecordSpeedSample {
-            return
+        if isDashboardVisible || isAppActive {
+            await syncPublishedSnapshot()
         }
-
-        await syncPublishedSnapshot(recordSpeedSample: shouldRecordSpeedSample)
 
         // Auto-pause when idle exceeds threshold
         if state == .tracking && autoPauseIdleThreshold > 0 {
@@ -1038,58 +1035,27 @@ final class SessionTrackingService {
         persistenceTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(SharedConstants.statePersistenceInterval))
+                // try? swallows CancellationError, so re-check after sleep.
+                guard !Task.isCancelled else { break }
                 guard let self else { continue }
                 await self.persistCurrentStateSnapshot(lastUpdateDate: Date())
             }
         }
     }
 
-    private func recordAltitudeSample() {
-        guard state == .tracking else { return }
-        let raw = locationService.currentAltitude
-        let display = liveActivityUnitSystem == .imperial ? UnitConversion.metersToFeet(raw) : raw
-        let sample = AltitudeSample(
-            time: .now,
-            altitude: display,
-            state: speedSamples.last?.state ?? .others
-        )
-        var updated = altitudeSamples
-        updated.append(sample)
-        let cutoff = Date.now.addingTimeInterval(-SharedConstants.altitudeSampleWindowSeconds)
-        if let firstValid = updated.firstIndex(where: { $0.time >= cutoff }), firstValid > 0 {
-            updated.removeSubrange(0..<firstValid)
-        }
-        altitudeSamples = updated
+    private func syncPublishedSnapshot() async {
+        let scalar = await trackingEngine.scalarSnapshot()
+        applyScalarSnapshot(scalar)
+        await syncCompletedRunsIfNeeded(version: scalar.completedRunsVersion)
+        liveActivityService?.update(state: buildLiveActivityState())
     }
 
-    private func syncPublishedSnapshot(recordSpeedSample: Bool) async {
-        if recordSpeedSample {
-            await trackingEngine.recordSpeedSample()
-            recordAltitudeSample()
-        }
-
-        let scalar = await trackingEngine.scalarSnapshot()
-
-        // Fetch arrays only when their version has changed
-        let newRuns: [CompletedRunData]?
-        if scalar.completedRunsVersion != lastSyncedRunsVersion {
-            newRuns = await trackingEngine.fetchCompletedRuns()
-            lastSyncedRunsVersion = scalar.completedRunsVersion
-        } else {
-            newRuns = nil
-        }
-
-        let newSamples: [SpeedSample]?
-        if scalar.speedSamplesVersion != lastSyncedSamplesVersion {
-            newSamples = await trackingEngine.fetchSpeedSamples()
-            lastSyncedSamplesVersion = scalar.speedSamplesVersion
-        } else {
-            newSamples = nil
-        }
-
-        // Batch all MainActor mutations in one synchronous block
+    private func applyScalarSnapshot(_ scalar: ScalarSnapshot) {
         if currentSpeed != scalar.currentSpeed {
             currentSpeed = scalar.currentSpeed
+        }
+        if currentAltitude != scalar.currentAltitude {
+            currentAltitude = scalar.currentAltitude
         }
         if skiingMetrics != scalar.skiingMetrics {
             skiingMetrics = scalar.skiingMetrics
@@ -1109,14 +1075,61 @@ final class SessionTrackingService {
         if runCount != scalar.runCount {
             runCount = scalar.runCount
         }
-        if let newRuns {
-            completedRuns = newRuns
-        }
-        if let newSamples {
-            speedSamples = newSamples
+    }
+
+    private func syncCompletedRunsIfNeeded(version: Int) async {
+        guard version != lastSyncedRunsVersion else { return }
+        completedRuns = await trackingEngine.fetchCompletedRuns()
+        lastSyncedRunsVersion = version
+    }
+
+    private func appendCurveSample(point: FilteredTrackPoint, state: SpeedCurveState) {
+        let timestamp = point.timestamp
+        let speedSample = SpeedSample(
+            time: timestamp,
+            speed: max(point.estimatedSpeed, 0),
+            state: state
+        )
+        upsertCurveSample(
+            into: &speedSamples,
+            sample: speedSample,
+            minimumSpacing: Self.curveSampleIntervalSeconds,
+            retention: SharedConstants.speedSampleWindowSeconds
+        )
+
+        let displayAltitude = liveActivityUnitSystem == .imperial
+            ? UnitConversion.metersToFeet(point.altitude)
+            : point.altitude
+        let altitudeSample = AltitudeSample(
+            time: timestamp,
+            altitude: displayAltitude,
+            state: state
+        )
+        upsertCurveSample(
+            into: &altitudeSamples,
+            sample: altitudeSample,
+            minimumSpacing: Self.curveSampleIntervalSeconds,
+            retention: SharedConstants.altitudeSampleWindowSeconds
+        )
+    }
+
+    private func upsertCurveSample<T>(
+        into samples: inout [T],
+        sample: T,
+        minimumSpacing: TimeInterval,
+        retention: TimeInterval
+    ) where T: TimestampedSample {
+        if let last = samples.last {
+            guard sample.time.timeIntervalSince(last.time) >= minimumSpacing else { return }
+            samples.append(sample)
+        } else {
+            samples.append(sample)
         }
 
-        liveActivityService?.update(state: buildLiveActivityState())
+        let cutoff = sample.time.addingTimeInterval(-retention)
+        if let firstValid = samples.firstIndex(where: { $0.time >= cutoff }), firstValid > 0 {
+            samples.removeSubrange(0..<firstValid)
+        }
     }
 
     private func buildLiveActivityState() -> SnowlyActivityAttributes.ContentState {
@@ -1168,36 +1181,19 @@ final class SessionTrackingService {
 
     private func loadTrackData(for runStorage: [CompletedRunStorage]) async -> [MaterializedCompletedRun] {
         await Task.detached(priority: .utility) {
-            func decodeNDJSONTrackPoints(from data: Data) -> [TrackPoint]? {
+            func decodeNDJSON<T: Decodable>(from data: Data, as _: T.Type) -> [T]? {
                 let lines = data.split(separator: 0x0A)
                 guard !lines.isEmpty else { return [] }
 
-                var points: [TrackPoint] = []
+                let decoder = JSONDecoder()
+                var points: [T] = []
                 points.reserveCapacity(lines.count)
 
                 for line in lines where !line.isEmpty {
-                    guard
-                        let object = try? JSONSerialization.jsonObject(with: Data(line)),
-                        let dict = object as? [String: Any],
-                        let timestamp = dict["timestamp"] as? Double,
-                        let latitude = dict["latitude"] as? Double,
-                        let longitude = dict["longitude"] as? Double,
-                        let altitude = dict["altitude"] as? Double,
-                        let speed = dict["speed"] as? Double,
-                        let accuracy = dict["accuracy"] as? Double,
-                        let course = dict["course"] as? Double
-                    else {
+                    guard let point = try? decoder.decode(T.self, from: Data(line)) else {
                         return nil
                     }
-                    points.append(TrackPoint(
-                        timestamp: Date(timeIntervalSinceReferenceDate: timestamp),
-                        latitude: latitude,
-                        longitude: longitude,
-                        altitude: altitude,
-                        speed: speed,
-                        accuracy: accuracy,
-                        course: course
-                    ))
+                    points.append(point)
                 }
                 return points
             }
@@ -1209,10 +1205,21 @@ final class SessionTrackingService {
                     return try? JSONEncoder().encode(points)
                 }
 
-                guard let points = decodeNDJSONTrackPoints(from: rawData) else {
-                    return nil
+                if let points = decodeNDJSON(from: rawData, as: TrackPoint.self) {
+                    return try? JSONEncoder().encode(points)
                 }
-                return try? JSONEncoder().encode(points)
+
+                // Keep legacy filtered blobs readable during migration, but new runs
+                // now canonicalize to raw TrackPoint arrays.
+                if let points = try? JSONDecoder().decode([FilteredTrackPoint].self, from: rawData) {
+                    return try? JSONEncoder().encode(points)
+                }
+
+                if let points = decodeNDJSON(from: rawData, as: FilteredTrackPoint.self) {
+                    return try? JSONEncoder().encode(points)
+                }
+
+                return nil
             }
 
             return runStorage.map { storedRun in
@@ -1356,6 +1363,7 @@ final class SessionTrackingService {
 
     private func resetPublishedStats() {
         currentSpeed = 0
+        currentAltitude = 0
         maxSpeed = 0
         totalDistance = 0
         totalVertical = 0
@@ -1369,9 +1377,7 @@ final class SessionTrackingService {
         totalPausedTime = 0
         pauseStartTime = nil
         idleSinceDate = nil
-        speedSampleAccumulator = 0
         lastSyncedRunsVersion = 0
-        lastSyncedSamplesVersion = 0
 
         healthKitCoordinator.reset()
     }

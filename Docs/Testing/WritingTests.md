@@ -28,7 +28,8 @@ struct RunDetectionServiceTests {
             longitude: lon,
             altitude: altitude,
             estimatedSpeed: max(speed, 0),
-            accuracy: 5.0,
+            horizontalAccuracy: 5.0,
+            verticalAccuracy: 9.0,
             course: 180.0
         )
     }
@@ -78,7 +79,8 @@ struct MotionEstimatorTests {
             latitude: 46.0, longitude: 7.0,
             altitude: altitude,
             speed: speed,
-            accuracy: 5.0,
+            horizontalAccuracy: 5.0,
+            verticalAccuracy: 9.0,
             course: 180.0
         )
     }
@@ -187,7 +189,7 @@ struct SegmentValidatorTests {
 
     private func makePoint(altitude: Double, timestamp: Date = Date()) -> TrackPoint {
         TrackPoint(timestamp: timestamp, latitude: 46.0, longitude: 7.0,
-                   altitude: altitude, accuracy: 5.0, course: 0)
+                   altitude: altitude, horizontalAccuracy: 5.0, verticalAccuracy: 9.0, course: 0)
     }
 
     @Test func skiing_shortDuration_demotedToWalk() {

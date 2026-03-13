@@ -14,14 +14,16 @@ struct HealthKitCoordinatorTests {
         speed: Double = 5,
         altitude: Double = 2000,
         timestamp: Date = Date()
-    ) -> TrackPoint {
-        TrackPoint(
+    ) -> FilteredTrackPoint {
+        FilteredTrackPoint(
+            rawTimestamp: timestamp,
             timestamp: timestamp,
             latitude: 46.0,
             longitude: 7.0,
             altitude: altitude,
-            speed: speed,
-            accuracy: 5,
+            estimatedSpeed: speed,
+            horizontalAccuracy: 5,
+            verticalAccuracy: 9,
             course: 180
         )
     }

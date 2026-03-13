@@ -111,7 +111,8 @@ struct GPSKalmanFilterTests {
         lon: Double = 7.0,
         altitude: Double = 2000,
         speed: Double = 0,
-        accuracy: Double = 5.0,
+        horizontalAccuracy: Double = 5.0,
+        verticalAccuracy: Double = 9.0,
         course: Double = 180.0,
         timestamp: Date = Date()
     ) -> TrackPoint {
@@ -121,7 +122,8 @@ struct GPSKalmanFilterTests {
             longitude: lon,
             altitude: altitude,
             speed: speed,
-            accuracy: accuracy,
+            horizontalAccuracy: horizontalAccuracy,
+            verticalAccuracy: verticalAccuracy,
             course: course
         )
     }
@@ -332,6 +334,42 @@ struct GPSKalmanFilterTests {
         // After recovery, speed should be back near baseline
         #expect(lastResult!.speed < 15)
         #expect(lastResult!.speed > 1)
+    }
+
+    // MARK: - Physical Speed Cap
+
+    @Test func dopplerSpike_cappedAtMaxPhysicalSpeed() {
+        var filter = GPSKalmanFilter()
+        let now = Date()
+
+        _ = filter.update(point: makePoint(speed: 5.0, timestamp: now))
+
+        // Spurious Doppler spike at 120 m/s (> world record 70 m/s)
+        let spiked = filter.update(point: makePoint(
+            lat: 46.000045, speed: 120.0, course: 0,
+            timestamp: now.addingTimeInterval(1)
+        ))
+
+        #expect(spiked.speed <= 70.0)
+    }
+
+    @Test func subHalfSecondDt_noDisplacementVelocityInjected() {
+        var filter = GPSKalmanFilter()
+        let now = Date()
+
+        // Initialize with no Doppler
+        _ = filter.update(point: makePoint(lat: 46.0, speed: -1, timestamp: now))
+
+        // Point arrives 0.1s later, no Doppler (speed < 0), 10m displacement
+        // → raw 100 m/s if not guarded; guard returns 0 instead
+        let metersPerDegreeLat = 111_320.0
+        let newLat = 46.0 + 10.0 / metersPerDegreeLat
+        let result = filter.update(point: makePoint(
+            lat: newLat, speed: -1.0, course: 0,
+            timestamp: now.addingTimeInterval(0.1)
+        ))
+
+        #expect(result.speed <= 70.0)
     }
 
     // MARK: - Zero-dt Edge Case

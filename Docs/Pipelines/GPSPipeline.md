@@ -10,10 +10,11 @@ This document is the entry point for understanding the tracking pipeline. Each s
 
 ```
 CLLocationManager
-  │  (CLLocationUpdate.liveUpdates async stream)
+  │  (delegate callbacks)
   ▼
 LocationTrackingService
-  │  emits TrackPoint (timestamp, lat, lon, alt, speed, accuracy, course)
+  │  emits TrackPoint (timestamp, lat, lon, alt, speed,
+  │                    horizontalAccuracy, verticalAccuracy, course)
   ▼
 TrackingEngine  (Swift actor — off MainActor)
   │
@@ -38,7 +39,7 @@ TrackingEngine  (Swift actor — off MainActor)
   │
   └─ (batched back to @MainActor ~1 Hz)
        SessionTrackingService publishes:
-         currentSpeed, maxSpeed, totalDistance, totalVertical, runCount
+         currentSpeed, currentAltitude, maxSpeed, totalDistance, totalVertical, runCount
 
   ▼
 (session end — stopTracking() called)
@@ -57,11 +58,12 @@ SwiftData ModelContext.save()
 
 ## Stage 1: GPS Acquisition
 
-`LocationTrackingService` uses `CLLocationUpdate.liveUpdates()` — the Swift concurrency async stream API introduced in iOS 17. Configuration:
+`LocationTrackingService` uses `CLLocationManagerDelegate` and converts each `didUpdateLocations` callback into a `TrackPoint`. Configuration:
 
-- `distanceFilter = kCLDistanceFilterNone` (every update delivered)
+- `distanceFilter = 5`
 - Accuracy: `.best`
-- Background modes: Location updates entitlement enabled
+- Activity type: `.fitness`
+- Background modes enabled only during active tracking
 
 Each update is converted to a `TrackPoint` value type and emitted on the stream.
 
@@ -126,13 +128,32 @@ Lift and walk segments are recorded in `SkiRun` for map visualization and sessio
 
 ---
 
+## Data Flow Invariant
+
+**All downstream consumers must read GPS-derived values exclusively from `SessionTrackingService`, never directly from `LocationTrackingService`.**
+
+| Property | Source | DO NOT use |
+|----------|--------|-----------|
+| `currentSpeed` | `SessionTrackingService.currentSpeed` (Kalman-filtered) | `LocationTrackingService.currentSpeed` (raw GPS) |
+| `currentAltitude` | `SessionTrackingService.currentAltitude` (Kalman-filtered) | `LocationTrackingService.currentAltitude` (raw GPS) |
+
+`LocationTrackingService` is a GPS hardware adapter. Its raw values bypass the Kalman filter and must not be consumed by views, other services, or analytics. The only consumers of raw `TrackPoint` data are:
+
+1. `TrackingEngine.ingest()` — feeds them into the Kalman filter
+2. `TrackingEngine.primeRecentWindow()` — seeds the detection history buffer
+3. `CrewService.buildLocationUpload()` — location-sharing (different domain; raw GPS position is correct here)
+
+The `LocationProviding` protocol deliberately exposes **no raw GPS sensor values** — only stream and authorization APIs.
+
+---
+
 ## GPS Quality
 
 The filter and detection pipeline is designed for "good outdoor GPS" — open sky, low multipath. On ski slopes, GPS quality is generally good. Known degraded conditions:
 
 | Condition | Effect | Recovery |
 |---|---|---|
-| Gondola tunnel | GPS dropout → `accuracy` spikes → `hasReliableAltitudeTrend = false` | Dwell timer preserves current activity until exit |
+| Gondola tunnel | GPS dropout → horizontal/vertical accuracy spikes → `hasReliableAltitudeTrend = false` | Dwell timer preserves current activity until exit |
 | Dense forest | Multipath noise → position jitter | Kalman filter smooths; confidence drops; steady window dominates |
 | Lift station (stationary) | Speed near zero → may classify as idle | Dwell timer prevents rapid state changes |
 | Session start | Insufficient history → `confidence` low | Transition window falls back to speed-only rules |

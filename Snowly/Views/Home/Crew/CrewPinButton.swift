@@ -17,7 +17,7 @@ struct CrewPinButton: View {
                 .font(Typography.bodyMedium)
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 44, height: 44)
-                .background(.regularMaterial, in: Circle())
+                .snowlyGlass(in: Circle())
         }
         .shadowStyle(.medium)
         .accessibilityLabel(String(localized: "crew_pin_drop_button"))

@@ -37,7 +37,7 @@ struct CrewPinBanner: View {
             }
             .padding(.horizontal, Spacing.md)
             .padding(.vertical, Spacing.gutter)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
+            .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
             .shadowStyle(.medium)
         }
         .buttonStyle(.plain)

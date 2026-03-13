@@ -55,7 +55,7 @@ struct WorkoutSummaryView: View {
                 Button(String(localized: "common_done")) {
                     workoutManager.dismiss()
                 }
-                .tint(WatchColorTokens.brandWarmAmber)
+                .tint(WatchColorTokens.completedAccent)
             }
             .padding(WatchSpacing.md)
         }
@@ -69,7 +69,7 @@ struct WorkoutSummaryView: View {
         HStack {
             Image(systemName: icon)
                 .font(.caption)
-                .foregroundStyle(WatchColorTokens.brandWarmAmber)
+                .foregroundStyle(WatchColorTokens.completedAccent)
                 .frame(width: 20)
 
             Text(label)

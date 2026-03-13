@@ -10,12 +10,28 @@ How Snowly persists ski session data, why `TrackPoint` is a binary blob, and how
 
 | Store | Name | Models | CloudKit |
 |---|---|---|---|
-| Synced | `"Synced"` | `SkiSession`, `SkiRun`, `Resort`, `GearSetup`, `GearItem`, `UserProfile` | Private database (disabled on simulator and during tests) |
+| Synced | `"Synced"` | `SkiSession`, `SkiRun`, `Resort`, `GearSetup`, `GearAsset`, `GearMaintenanceEvent`, `UserProfile` | Private database (disabled on simulator and during tests) |
 | Local | `"Local"` | `DeviceSettings`, `ServerProfile` | None (device-only) |
 
 SwiftData routes each model type to the correct store automatically. Views and services do not need to specify a store — `@Query` and `@Environment(\.modelContext)` work without modification.
 
 > **Note:** CloudKit requires all synced-store properties to have default values. This applies to any new field you add to `SkiSession` or `SkiRun`.
+
+## Gear Naming Mapping
+
+The product language is fixed:
+
+- `Gear` = one locker item the user creates
+- `Checklist` = a named selection of locker gear
+- `Reminder schedule` = local notification cadence attached to one gear item
+
+The persisted model names remain:
+
+- `GearAsset` = product `Gear`
+- `GearSetup` = product `Checklist`
+- `GearMaintenanceEvent` = compatibility-only legacy model kept in the synced schema
+
+Reminder schedules and visual-checklist checkmarks are not stored in SwiftData. They are local persistence layers (`GearReminderScheduleStore`, `GearChecklistStore`) on top of the synced gear models.
 
 ---
 
@@ -95,11 +111,11 @@ These are populated once in `SessionTrackingService.saveSession()` at session en
 
 Schema versions and migration stages are defined in `Snowly/Models/SchemaVersions.swift`.
 
-The current state is `SchemaV1` only, with an empty `stages` array:
+The current state is `SchemaV4` only, with an empty `stages` array:
 
 ```swift
 enum SnowlyMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] { [SchemaV1.self] }
+    static var schemas: [any VersionedSchema.Type] { [SchemaV4.self] }
     static var stages: [MigrationStage] { [] }
 }
 ```

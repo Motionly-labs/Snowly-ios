@@ -28,7 +28,7 @@ struct MusicPillButton: View {
             .font(.body.weight(.semibold))
             .foregroundStyle(.primary)
             .frame(width: 44, height: 44)
-            .background(.regularMaterial, in: Circle())
+            .snowlyGlass(in: Circle())
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showingNowPlaying) {

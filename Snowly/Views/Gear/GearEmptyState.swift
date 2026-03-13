@@ -2,7 +2,7 @@
 //  GearEmptyState.swift
 //  Snowly
 //
-//  Empty state when no gear setups exist.
+//  Empty state when no checklists exist.
 //
 
 import SwiftUI
@@ -12,12 +12,12 @@ struct GearEmptyState: View {
 
     var body: some View {
         ContentUnavailableView {
-            Label(String(localized: "gear_empty_title"), systemImage: "backpack")
+            Label("gear_empty_no_checklists_title", systemImage: "checklist")
         } description: {
-            Text(String(localized: "gear_empty_description"))
+            Text("gear_empty_checklist_description")
         } actions: {
             Button(action: onAdd) {
-                Label(String(localized: "gear_empty_action_create_setup"), systemImage: "plus")
+                Label("gear_empty_create_checklist_button", systemImage: "plus")
             }
             .buttonStyle(.borderedProminent)
         }

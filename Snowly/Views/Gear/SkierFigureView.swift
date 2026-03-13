@@ -2,104 +2,70 @@
 //  SkierFigureView.swift
 //  Snowly
 //
-//  Interactive skier figure rendered from asset-backed SVG resources.
+//  Interactive skier figure for the visual checklist.
 //
 
-import SwiftData
 import SwiftUI
 
 struct SkierFigureView: View {
-    let setup: GearSetup
+    let gear: [GearAsset]
+    let checkedGearIDs: Set<UUID>
     let selectedZone: BodyZone?
     let onZoneTap: (BodyZone) -> Void
 
-    /// Renderer loaded asynchronously to avoid blocking the main thread.
     @State private var maskRenderer: SkierMaskRenderer?
 
     var body: some View {
-        GeometryReader { geo in
-            let side = min(geo.size.width, geo.size.height)
+        GeometryReader { geometry in
+            let size = geometry.size
+            let glowRadius = max(6, min(size.width, size.height) * 0.02)
+
             ZStack {
-                displayLayer
-                if maskRenderer != nil {
-                    zoneOverlays(glowRadius: max(5.0, side * 0.02))
+                Image(SkierMaskRenderer.displayAssetName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .allowsHitTesting(false)
+
+                if let maskRenderer {
+                    ForEach(BodyZone.allCases) { zone in
+                        if let mask = maskRenderer.zoneMasks[zone] {
+                            Rectangle()
+                                .fill(zone.fillColor(
+                                    in: gear,
+                                    checkedGearIDs: checkedGearIDs,
+                                    isSelected: selectedZone == zone
+                                ))
+                                .mask(
+                                    Image(uiImage: mask)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                )
+                                .shadow(
+                                    color: (selectedZone == zone ? zone.accentColor : .clear).opacity(0.45),
+                                    radius: selectedZone == zone ? glowRadius : 0
+                                )
+                        }
+                    }
                 }
-                tapCaptureLayer(size: geo.size)
+
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { location in
+                        let normalizedPoint = CGPoint(
+                            x: location.x / size.width,
+                            y: location.y / size.height
+                        )
+                        if let zone = maskRenderer?.zone(atNormalized: normalizedPoint) {
+                            onZoneTap(zone)
+                        }
+                    }
             }
         }
-        .aspectRatio(1.0, contentMode: .fit)
+        .aspectRatio(1, contentMode: .fit)
         .task {
             if maskRenderer == nil {
                 maskRenderer = SkierMaskRenderer()
             }
         }
     }
-
-    // MARK: - Layer 1: Display Image
-
-    private var displayLayer: some View {
-        Image(SkierMaskRenderer.displayAssetName)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .allowsHitTesting(false)
-    }
-
-    // MARK: - Layer 2: Zone Overlays
-
-    private func zoneOverlays(glowRadius: CGFloat) -> some View {
-        ForEach(BodyZone.allCases) { zone in
-            zoneOverlay(for: zone, glowRadius: glowRadius)
-        }
-        .allowsHitTesting(false)
-    }
-
-    private func zoneOverlay(for zone: BodyZone, glowRadius: CGFloat) -> some View {
-        Group {
-            if let maskImage = maskRenderer?.zoneMasks[zone] {
-                let isSelected = selectedZone == zone
-                let colors = zone.shapeColors(from: setup, isSelected: isSelected)
-                let active = zone.resolvedColor(from: setup)
-
-                Rectangle()
-                    .fill(isSelected ? active.opacity(Opacity.soft) : colors.fill)
-                    .mask(
-                        Image(uiImage: maskImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                    )
-                    .shadow(
-                        color: isSelected ? active.opacity(Opacity.prominent) : .clear,
-                        radius: isSelected ? glowRadius : 0
-                    )
-            }
-        }
-    }
-
-    // MARK: - Layer 3: Tap Capture
-
-    private func tapCaptureLayer(size: CGSize) -> some View {
-        Color.clear
-            .contentShape(Rectangle())
-            .onTapGesture { location in
-                let normalized = CGPoint(
-                    x: location.x / size.width,
-                    y: location.y / size.height
-                )
-                if let zone = maskRenderer?.zone(atNormalized: normalized) {
-                    onZoneTap(zone)
-                }
-            }
-    }
-}
-
-#Preview {
-    let setup = GearSetup(name: "Preview")
-    SkierFigureView(
-        setup: setup,
-        selectedZone: .head,
-        onZoneTap: { _ in }
-    )
-    .padding()
-    .background(Color(.systemBackground))
-    .modelContainer(for: [GearSetup.self, GearItem.self], inMemory: true)
 }

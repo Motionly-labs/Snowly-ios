@@ -147,8 +147,9 @@ final class SegmentFinalizationService {
         var maxSpeed = 0.0
         for (a, b) in zip(points, points.dropFirst()) {
             let dt = b.timestamp.timeIntervalSince(a.timestamp)
-            guard dt > 0 else { continue }
-            maxSpeed = max(maxSpeed, a.distance(to: b) / dt)
+            guard dt >= 0.5 else { continue }  // GPS clock batching guard
+            let s = min(a.distance(to: b) / dt, 70.0)  // physical speed cap
+            maxSpeed = max(maxSpeed, s)
         }
         return maxSpeed
     }

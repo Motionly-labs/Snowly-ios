@@ -1,17 +1,15 @@
 # Snowly
 
-**Your mountain companion.** Track runs, check your gear, and share your ski day.
+iOS + watchOS ski tracking app. [snowly.app](https://snowly.app) · [Why Snowly](https://github.com/Snowly-app)
 
-Snowly is an open-source iOS + watchOS ski tracking app that puts privacy, design, and the mountain experience first. No accounts. No social feeds. No ads. Just you and the snow.
+## Design Principles
 
-## Vision
+These guide every contribution decision:
 
-Most ski tracking apps are bloated with social features, paywalls, and data collection. Snowly takes a different path:
-
-- **Privacy-first** — Your data stays on your device. No accounts, no telemetry, no third-party analytics. iCloud sync is optional and uses your private CloudKit container. Data is encrypted at rest with `NSFileProtectionComplete`.
-- **Offline by design** — Full tracking works without cell service. Ski maps are cached locally. Everything syncs when you're back online.
-- **Beautiful & minimal** — A glanceable interface you can use with gloves on. Long-press to start, slide to stop. Speed curves, route maps, and share cards — not feature bloat.
-- **Open source** — Built in the open. Contributions from skiers and snowboarders welcome.
+- **No external dependencies** — Pure Apple frameworks only (no CocoaPods, SPM packages, or third-party SDKs).
+- **Privacy by default** — No accounts, no telemetry, no third-party analytics. Location data stays on-device (`NSFileProtectionComplete`). Never add data collection without an explicit user action.
+- **Offline first** — Full tracking works without cell service. Ski maps are cached locally.
+- **No MVVM** — Services are the model layer. No `ObservableObject`, no `@Published`, no ViewModels.
 
 ## Features
 
@@ -19,7 +17,7 @@ Most ski tracking apps are bloated with social features, paywalls, and data coll
 - **Automatic run detection** — Distinguishes ski runs from lift rides using speed, altitude trends, and CoreMotion data
 - **Crew** — Create a group, invite friends via deep link, and see everyone's real-time location on the map. Drop pins with messages to coordinate meet-ups on the mountain
 - **Apple Watch companion** — Independent watch tracking with HealthKit workout integration, haptic feedback, and complications
-- **Gear checklist** — Organize gear by body zone with an interactive skier figure visualization. Never forget your goggles again
+- **Gear locker + visual checklist** — Create gear once in your locker, attach reminder schedules, and pull it into body-zone checklists with an interactive skier figure
 - **Session history** — Browse past ski days with detailed run-by-run breakdowns
 - **Share cards** — Generate 1080×1920 cards with your route map and stats
 - **Ski area maps** — Automatic resort detection with trail/lift data from OpenStreetMap
@@ -82,7 +80,7 @@ Snowly/
 ├── Views/
 │   ├── Home/                # Active tracking, speed curve, music controls
 │   │   └── Crew/            # Crew map overlays, pin compose, member annotations
-│   ├── Gear/                # Gear checklist with interactive skier figure
+│   ├── Gear/                # Locker gear, reminder schedules, and visual checklists
 │   ├── Activity/            # Session history and run details
 │   ├── Profile/             # User settings and privacy
 │   ├── Onboarding/          # First-launch flow
@@ -106,8 +104,10 @@ SnowlyWatch/
 Services are created once in `AppServices` and injected into the SwiftUI view hierarchy via `@Environment`. Views access services through `@Environment`, never `@State`. This keeps services alive across the entire app lifecycle.
 
 SwiftData uses a dual-store configuration:
-- **Synced store** — `SkiSession`, `SkiRun`, `Resort`, `GearSetup`, `GearItem`, `UserProfile` → private iCloud CloudKit (when enabled)
+- **Synced store** — `SkiSession`, `SkiRun`, `Resort`, `GearSetup`, `GearAsset`, `GearMaintenanceEvent`, `UserProfile` → private iCloud CloudKit (when enabled)
 - **Local store** — `DeviceSettings` → stays on-device, never synced
+
+Product terminology is fixed as `gear`, `locker`, `checklist`, and `reminder schedule`. Internal model names remain `GearAsset` and `GearSetup`.
 
 Track points are stored as binary `Data` (Codable `[TrackPoint]` array) rather than individual SwiftData objects to avoid performance issues with large collections.
 
@@ -117,7 +117,7 @@ Crew is a real-time location-sharing feature backed by a remote server. Crew mod
 
 ## Contributing
 
-Contributions are welcome! Whether it's bug fixes, new features, translations, or design improvements — open an issue or submit a pull request.
+Contributions are welcome — bug fixes, new features, translations, or design improvements. See [CONTRIBUTING.md](CONTRIBUTING.md) to get started. Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before participating.
 
 ## License
 

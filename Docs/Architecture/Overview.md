@@ -37,7 +37,8 @@ Snowly's layer structure, service inventory, and three design principles that di
 ┌──────────────────▼──────────────────────┐
 │  Data Layer (SwiftData @Model)          │
 │  SkiSession, SkiRun, Resort             │
-│  GearSetup, GearItem, UserProfile       │
+│  GearSetup, GearAsset,                  │
+│  GearMaintenanceEvent, UserProfile      │
 │  DeviceSettings (local only)            │
 └──────────────────┬──────────────────────┘
                    │ compiles for both targets
@@ -56,7 +57,7 @@ Snowly's layer structure, service inventory, and three design principles that di
 | Service | Role | Pure? | Protocol | Key Dependencies |
 |---|---|---|---|---|
 | `SessionTrackingService` | Orchestrator; owns `TrackingEngine` actor, dwell-time filter, live metrics | No | — | `LocationTrackingService`, `MotionDetectionService`, `BatteryMonitorService`, `HealthKitService` |
-| `LocationTrackingService` | GPS via `CLLocationUpdate.liveUpdates` async stream | No | `LocationProviding` | CoreLocation |
+| `LocationTrackingService` | GPS via `CLLocationManagerDelegate` callbacks | No | `LocationProviding` | CoreLocation |
 | `MotionDetectionService` | CoreMotion accelerometer/gyroscope; emits `MotionHint` | No | — | CoreMotion |
 | `BatteryMonitorService` | Device battery level observation | No | — | UIDevice |
 | `HealthKitService` | HealthKit workout session write | No | `HealthKitProviding` | HealthKit |
@@ -103,6 +104,8 @@ final class AppServices {
 ```
 
 The `ModelContainer` uses a dual-store configuration: a CloudKit-synced store for ski data and a local-only store for device settings. See [Data Models](DataModels.md) for details.
+
+In product copy, `GearSetup` is a checklist and `GearAsset` is gear in the locker. The code keeps the model names for persistence stability.
 
 ---
 

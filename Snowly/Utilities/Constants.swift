@@ -25,17 +25,17 @@ enum AppConstants {
     static let shareCardHeight: CGFloat = 1080
     static let shareCardExportScale: CGFloat = 3.0
     static let shareCardMapSnapshotScale: CGFloat = 3.0
-    static let shareCardHorizontalPadding: CGFloat = 44
-    static let shareCardVerticalPadding: CGFloat = 38
-    static let shareCardColumnSpacing: CGFloat = 36
-    static let shareCardInfoPanelWidth: CGFloat = 640
+    static let shareCardHorizontalPadding: CGFloat = 0
+    static let shareCardVerticalPadding: CGFloat = 0
+    static let shareCardColumnSpacing: CGFloat = 0
+    static let shareCardInfoPanelWidth: CGFloat = 768
 
     static var shareCardMapPanelWidth: CGFloat {
-        shareCardWidth - (shareCardHorizontalPadding * 2) - shareCardColumnSpacing - shareCardInfoPanelWidth
+        shareCardWidth - shareCardInfoPanelWidth
     }
 
     static var shareCardMapPanelHeight: CGFloat {
-        shareCardHeight - (shareCardVerticalPadding * 2)
+        shareCardHeight
     }
 
     // MARK: - App Info

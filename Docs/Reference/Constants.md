@@ -27,7 +27,7 @@ All algorithm constants from `Snowly/Shared/SharedConstants.swift`.
 | Constant | Value | Unit | Rationale |
 |---|---|---|---|
 | `skiFastMin` | 6.0 | m/s | Too fast for any ski lift; unconditionally classified as skiing |
-| `skiMinSpeed` | 2.8 | m/s | Minimum horizontal speed when combined with altitude descent |
+| `skiMinSpeed` | 2.5 | m/s | Minimum horizontal speed when combined with altitude descent |
 | `skiVerticalSpeedMax` | -0.15 | m/s | Must be descending at this rate or faster to confirm skiing |
 
 ---
@@ -36,7 +36,7 @@ All algorithm constants from `Snowly/Shared/SharedConstants.swift`.
 
 | Constant | Value | Unit | Rationale |
 |---|---|---|---|
-| `liftSpeedMin` | 1.2 | m/s | Minimum horizontal speed to be moving on a lift |
+| `liftSpeedMin` | 4.0 | m/s | Minimum horizontal speed to be moving on a lift; keeps brisk walking and station shuffling out of the lift band |
 | `liftSpeedMax` | 5.8 | m/s | Maximum lift speed (below `skiFastMin` so the bands do not overlap) |
 | `liftVerticalSpeedMin` | -0.10 | m/s | Allows horizontal and slightly-descending lift transport (e.g., flat gondola sections) |
 | `liftContinuityVerticalSpeedMin` | -0.35 | m/s | Keeps an established lift through brief downward transfer sections (gondola acceleration/deceleration zones) |

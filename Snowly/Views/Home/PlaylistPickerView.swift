@@ -122,7 +122,7 @@ struct PlaylistPickerView: View {
 
             Image(systemName: "play.circle")
                 .font(.title2)
-                .foregroundStyle(ColorTokens.brandWarmOrange)
+                .foregroundStyle(ColorTokens.secondaryAccent)
         }
         .contentShape(Rectangle())
     }

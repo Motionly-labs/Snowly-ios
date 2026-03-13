@@ -211,7 +211,8 @@ enum RunDetectionService {
                 longitude: point.longitude,
                 altitude: alt,
                 estimatedSpeed: point.estimatedSpeed,
-                accuracy: point.accuracy,
+                horizontalAccuracy: point.horizontalAccuracy,
+                verticalAccuracy: point.verticalAccuracy,
                 course: point.course
             )
         }
@@ -265,7 +266,24 @@ enum RunDetectionService {
             return .lift
         }
 
+        if inLiftSpeedBand {
+            return classifyAmbiguousLiftBand(previousActivity: previousActivity)
+        }
+
         return h >= SharedConstants.skiMinSpeed ? .skiing : .idle
+    }
+
+    nonisolated private static func classifyAmbiguousLiftBand(
+        previousActivity: DetectedActivity
+    ) -> DetectedActivity {
+        switch previousActivity {
+        case .lift:
+            return .lift
+        case .skiing:
+            return .skiing
+        case .walk, .idle:
+            return .walk
+        }
     }
 
     nonisolated private static func resolveActivity(

@@ -11,49 +11,30 @@ struct ResumeTrackingButton: View {
     let onTap: () -> Void
 
     private let buttonSize = Spacing.heroButton
-    private let ringInset = Spacing.gap
 
     var body: some View {
         Button(action: onTap) {
-            Circle()
-                .fill(.ultraThinMaterial)
-                .frame(width: buttonSize, height: buttonSize)
-                .overlay {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [
-                                    Color.white.opacity(0.42),
-                                    ColorTokens.brandGold.opacity(Opacity.moderate),
-                                    ColorTokens.brandWarmAmber.opacity(Opacity.muted)
-                                ],
-                                center: .center,
-                                startRadius: 10,
-                                endRadius: buttonSize * 0.56
-                            )
-                        )
-                }
-                .overlay {
-                    Circle()
-                        .stroke(.white.opacity(Opacity.moderate), lineWidth: 1.4)
-                }
-                .overlay {
-                    // Active session indicator ring inside glass edge
-                    Circle()
-                        .stroke(ColorTokens.progressArcGradient, lineWidth: 4)
-                        .padding(ringInset)
-                }
-                .overlay {
-                    Text(String(localized: "tracking_resume_button_label"))
-                        .font(Typography.buttonResume)
-                        .foregroundStyle(ColorTokens.textOnBrand)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, Spacing.xl)
-                        .shadowStyle(.innerGlow)
-                }
+            ZStack {
+                // Subtle accent tint — signals active session without heavy gradients
+                Circle()
+                    .fill(ColorTokens.primaryAccent.opacity(Opacity.faint))
+                // Thin accent ring: shows "live session" state clearly but quietly
+                Circle()
+                    .strokeBorder(ColorTokens.primaryAccent.opacity(Opacity.ring), lineWidth: 1.5)
+                Circle()
+                    .strokeBorder(ColorTokens.glassHighlightGradient, lineWidth: 1)
+                Text(String(localized: "tracking_resume_button_label"))
+                    .font(Typography.buttonResume)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Spacing.xl)
+            }
+            .frame(width: buttonSize, height: buttonSize)
+            .snowlyGlass(in: Circle())
         }
-        .shadowStyle(.brandGlow)
         .buttonStyle(.plain)
+        .shadowStyle(.brandGlow)
+        .shadowStyle(.glassBase)
         .accessibilityIdentifier("resume_tracking_dashboard_button")
         .accessibilityLabel(String(localized: "tracking_resume_button_label"))
     }

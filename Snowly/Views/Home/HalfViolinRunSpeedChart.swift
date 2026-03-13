@@ -46,7 +46,7 @@ struct HalfViolinRunSpeedChart: View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             chartCanvas
                 .frame(height: 236)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
 
             if let selected = selectedRun {
                 runDetailCard(selected)
@@ -170,7 +170,7 @@ struct HalfViolinRunSpeedChart: View {
             }
         }
         .padding(Spacing.md)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+        .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
     }
 
     private func summaryMetric(
@@ -410,13 +410,9 @@ enum MockRunSpeedGenerator {
 
     static func distributions(from runs: [SkiRun], unitSystem: UnitSystem) -> [HalfViolinRunSpeedChart.RunDistribution] {
         var runNumber = 0
-        return runs.compactMap { run in
+        return runs.compactMap { run -> HalfViolinRunSpeedChart.RunDistribution? in
             let points = run.trackPoints
-            let samplesMs = zip(points, points.dropFirst()).compactMap { a, b -> Double? in
-                let dt = b.timestamp.timeIntervalSince(a.timestamp)
-                guard dt > 0 else { return nil }
-                return max(0, a.distance(to: b) / dt)
-            }
+            let samplesMs = points.map(\.estimatedSpeed).filter { $0.isFinite && $0 >= 0 }
             // Require at least 10 GPS samples — aligned with the 15s minimum run duration
             // at ~1 Hz, with headroom for GPS dropouts.
             guard samplesMs.count >= 10 else { return nil }

@@ -19,7 +19,8 @@ struct MemberLocation: Codable, Sendable, Equatable, Identifiable {
     let altitude: Double
     let speed: Double
     let course: Double
-    let accuracy: Double
+    let horizontalAccuracy: Double
+    let verticalAccuracy: Double
     let timestamp: Date
     let activityType: MemberActivityType
     let isStale: Bool
@@ -44,7 +45,8 @@ struct LocationUpload: Codable, Sendable {
     let altitude: Double
     let speed: Double
     let course: Double
-    let accuracy: Double
+    let horizontalAccuracy: Double
+    let verticalAccuracy: Double
     let timestamp: Date
     let batteryLevel: Double?
     let activityType: String?

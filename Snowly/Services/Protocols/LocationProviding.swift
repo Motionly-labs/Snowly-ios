@@ -12,7 +12,7 @@ import CoreLocation
 protocol LocationProviding: AnyObject, Sendable {
     var authorizationStatus: CLAuthorizationStatus { get }
     var isTracking: Bool { get }
-    var currentAltitude: Double { get }
+    var isGPSReadyForTracking: Bool { get }
 
     func requestAuthorization()
     func recentTrackPointsSnapshot() -> [TrackPoint]

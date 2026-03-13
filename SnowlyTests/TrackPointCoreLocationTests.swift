@@ -22,7 +22,8 @@ struct TrackPointCoreLocationTests {
             longitude: -123.1207,
             altitude: 1200,
             speed: 10.0,
-            accuracy: 5.0,
+            horizontalAccuracy: 5.0,
+            verticalAccuracy: 9.0,
             course: 270
         )
 
@@ -31,7 +32,8 @@ struct TrackPointCoreLocationTests {
         #expect(location.coordinate.latitude == point.latitude)
         #expect(location.coordinate.longitude == point.longitude)
         #expect(location.altitude == point.altitude)
-        #expect(location.horizontalAccuracy == point.accuracy)
+        #expect(location.horizontalAccuracy == point.horizontalAccuracy)
+        #expect(location.verticalAccuracy == point.verticalAccuracy)
         #expect(location.course == point.course)
         #expect(location.speed == point.speed)
     }
@@ -45,7 +47,8 @@ struct TrackPointCoreLocationTests {
             longitude: 7.0,
             altitude: 2500,
             speed: 15.0,
-            accuracy: 8.0,
+            horizontalAccuracy: 8.0,
+            verticalAccuracy: 14.0,
             course: 90
         )
 
@@ -62,7 +65,8 @@ struct TrackPointCoreLocationTests {
             longitude: 7.0,
             altitude: 2500,
             speed: -5.0,
-            accuracy: 8.0,
+            horizontalAccuracy: 8.0,
+            verticalAccuracy: 14.0,
             course: 90
         )
 
@@ -79,7 +83,8 @@ struct TrackPointCoreLocationTests {
             longitude: 7.0,
             altitude: 2500,
             speed: 10.0,
-            accuracy: 8.0,
+            horizontalAccuracy: 8.0,
+            verticalAccuracy: 14.0,
             course: -1
         )
 

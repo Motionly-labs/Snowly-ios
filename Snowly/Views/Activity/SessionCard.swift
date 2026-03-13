@@ -24,13 +24,22 @@ struct SessionCard: View {
             // Date label
             Text(session.startDate.shortDisplay.uppercased())
                 .font(.caption2.weight(.bold))
-                .foregroundStyle(ColorTokens.brandIceBlue)
+                .foregroundStyle(ColorTokens.primaryAccent)
 
             // Resort name + Runs
             HStack(alignment: .center) {
-                Text(headerTitle)
-                    .font(.headline)
-                    .lineLimit(1)
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                    Text(headerTitle)
+                        .font(.headline)
+                        .lineLimit(1)
+
+                    if session.hasAttachedGearSetup {
+                        Text(session.gearSetupDisplayName)
+                            .font(.caption)
+                            .foregroundStyle(ColorTokens.primaryAccent)
+                            .lineLimit(1)
+                    }
+                }
 
                 Spacer()
 

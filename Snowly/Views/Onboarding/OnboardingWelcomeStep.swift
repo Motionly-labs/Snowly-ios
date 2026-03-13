@@ -14,18 +14,26 @@ struct OnboardingWelcomeStep: View {
         VStack(spacing: Spacing.xxl) {
             Spacer()
 
-            Image(systemName: "mountain.2.fill")
-                .font(Typography.onboardingHeroIcon)
-                .foregroundStyle(Color.accentColor)
+            Image("SnowlyLogo")
+                .resizable()
+                .renderingMode(.original)
+                .scaledToFit()
+                .frame(width: 92, height: 92)
 
-            Text(String(localized: "onboarding_welcome_title"))
-                .font(Typography.onboardingTitle)
+            VStack(spacing: Spacing.sm) {
+                Text("SNOWLY")
+                    .font(Typography.splashTitle.italic())
+                    .tracking(2)
 
-            Text(String(localized: "onboarding_welcome_subtitle"))
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, Spacing.xxxl)
+                Text(String(localized: "onboarding_welcome_title"))
+                    .font(Typography.onboardingTitle)
+
+                Text(String(localized: "onboarding_welcome_subtitle"))
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Spacing.xxxl)
+            }
 
             Spacer()
 

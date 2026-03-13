@@ -20,7 +20,7 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab(String(localized: "tab_gear"), systemImage: "gearshape.fill", value: TabID.gear) {
-                GearListView()
+                GearWorkspaceView()
             }
 
             Tab(String(localized: "tab_ride"), systemImage: "play.fill", value: TabID.ride) {
@@ -31,7 +31,7 @@ struct MainTabView: View {
                 ActivityHistoryView()
             }
         }
-        .tint(.accentColor)
+        .tint(ColorTokens.primaryAccent)
     }
 }
 
@@ -61,7 +61,7 @@ struct MainTabView: View {
         .environment(musicPlayer)
         .modelContainer(for: [
             SkiSession.self, SkiRun.self, Resort.self,
-            GearSetup.self, GearItem.self, UserProfile.self,
+            GearSetup.self, GearAsset.self, GearMaintenanceEvent.self, UserProfile.self,
             DeviceSettings.self,
         ], inMemory: true)
 }

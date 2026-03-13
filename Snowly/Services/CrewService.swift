@@ -491,17 +491,18 @@ final class CrewService: CrewProviding {
 
     private func buildLocationUpload() -> LocationUpload? {
         guard let coord = locationService.currentLocation else { return nil }
-        // CoreLocation returns -1 for course/accuracy when unavailable;
-        // server validates course 0..360 and accuracy >= 0.
+        // CoreLocation returns -1 when course or either accuracy is unavailable.
         let course = locationService.currentCourse
-        let accuracy = locationService.currentAccuracy
+        let horizontalAccuracy = locationService.currentHorizontalAccuracy
+        let verticalAccuracy = locationService.currentVerticalAccuracy
         return LocationUpload(
             latitude: coord.latitude,
             longitude: coord.longitude,
             altitude: locationService.currentAltitude,
             speed: locationService.currentSpeed,
             course: course >= 0 ? course : 0,
-            accuracy: accuracy >= 0 ? accuracy : 0,
+            horizontalAccuracy: horizontalAccuracy >= 0 ? horizontalAccuracy : 0,
+            verticalAccuracy: verticalAccuracy >= 0 ? verticalAccuracy : 0,
             timestamp: .now,
             batteryLevel: nil,
             activityType: nil

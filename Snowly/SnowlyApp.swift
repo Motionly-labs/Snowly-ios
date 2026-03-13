@@ -10,6 +10,7 @@ import SwiftUI
 import SwiftData
 import UIKit
 import WidgetKit
+import CoreLocation
 
 /// Holds all app-level services with stable identity.
 /// Using a class (not @State in App struct) ensures services
@@ -31,6 +32,8 @@ final class AppServices {
     let crewService: CrewService
     let liveActivityService: LiveActivityService
     let crewPinNotificationService: CrewPinNotificationService
+    let skiDataUploadService: SkiDataUploadService
+    let gearReminderService: GearReminderService
 
     init() {
         let location = LocationTrackingService()
@@ -75,6 +78,11 @@ final class AppServices {
         self.crewService = crew
 
         self.crewPinNotificationService = CrewPinNotificationService()
+
+        let skiDataAPI = SkiDataAPIClient()
+        self.skiDataUploadService = SkiDataUploadService(apiClient: skiDataAPI)
+
+        self.gearReminderService = GearReminderService()
     }
 }
 
@@ -168,7 +176,7 @@ struct SnowlyApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            AppLaunchView()
                 .environment(services.locationService)
                 .environment(services.motionService)
                 .environment(services.batteryService)
@@ -180,6 +188,8 @@ struct SnowlyApp: App {
                 .environment(services.phoneConnectivityService)
                 .environment(services.watchBridgeService)
                 .environment(services.crewService)
+                .environment(services.skiDataUploadService)
+                .environment(services.gearReminderService)
 
                 .environment(services.crewPinNotificationService)
                 .onChange(of: scenePhase) { _, newPhase in
@@ -226,8 +236,13 @@ struct SnowlyApp: App {
                     Task { @MainActor in
                         await services.trackingService.stopTracking()
                         await services.trackingService.finalizeHealthKitWorkout()
-                        let resort = ResortResolver.resolveCurrentResort(
+                        let resortCoordinate = services.locationService.currentLocation
+                            ?? services.locationService.recentTrackPointsSnapshot().last.map {
+                                CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+                            }
+                        let resort = await ResortResolver.resolveCurrentResort(
                             from: services.skiMapCacheService,
+                            using: resortCoordinate,
                             in: modelContainer.mainContext
                         )
                         await services.trackingService.saveSession(to: modelContainer.mainContext, resort: resort)
@@ -252,7 +267,8 @@ struct SnowlyApp: App {
                 .task {
                     SnowlyApp.restoreActiveServer(
                         in: modelContainer.mainContext,
-                        crewAPIClient: services.crewAPIClient
+                        crewAPIClient: services.crewAPIClient,
+                        skiDataUploadService: services.skiDataUploadService
                     )
                 }
                 .onOpenURL { url in
@@ -289,7 +305,8 @@ struct SnowlyApp: App {
     @MainActor
     private static func restoreActiveServer(
         in context: ModelContext,
-        crewAPIClient: CrewAPIClient
+        crewAPIClient: CrewAPIClient,
+        skiDataUploadService: SkiDataUploadService
     ) {
         let descriptor = FetchDescriptor<ServerProfile>(
             predicate: #Predicate<ServerProfile> { $0.isActive }
@@ -299,6 +316,7 @@ struct SnowlyApp: App {
             return
         }
         crewAPIClient.updateBaseURL(apiBaseURL)
+        skiDataUploadService.updateBaseURL(apiBaseURL)
     }
 
     private static var canUseCloudKitAtLaunch: Bool {
@@ -378,7 +396,7 @@ struct SnowlyApp: App {
     ) throws -> ModelContainer {
         let syncedSchema = Schema([
             SkiSession.self, SkiRun.self, Resort.self,
-            GearSetup.self, GearItem.self, UserProfile.self,
+            GearSetup.self, GearAsset.self, GearMaintenanceEvent.self, UserProfile.self,
         ])
         let syncedConfig = ModelConfiguration(
             "Synced",
@@ -397,7 +415,7 @@ struct SnowlyApp: App {
 
         return try ModelContainer(
             for: SkiSession.self, SkiRun.self, Resort.self,
-                 GearSetup.self, GearItem.self, UserProfile.self,
+                 GearSetup.self, GearAsset.self, GearMaintenanceEvent.self, UserProfile.self,
                  DeviceSettings.self, ServerProfile.self,
             migrationPlan: SnowlyMigrationPlan.self,
             configurations: syncedConfig, localConfig
@@ -427,6 +445,7 @@ struct SnowlyApp: App {
         let skiingVertical = skiingRuns.reduce(0.0) { $0 + $1.verticalDrop }
         let skiingMaxSpeed = skiingRuns.map(\.maxSpeed).max() ?? 0
         let skiingRunCount = skiingRuns.count
+        let lockerAssets = fetchLockerAssets(in: context)
         let session = SkiSession(
             id: sessionId,
             startDate: workout.summary.startDate,
@@ -438,6 +457,10 @@ struct SnowlyApp: App {
                 workout.summary.runCount,
                 skiingRunCount
             )
+        )
+        session.applyGearSnapshot(
+            from: fetchActiveGearSetup(in: context),
+            lockerAssets: lockerAssets
         )
         context.insert(session)
 
@@ -469,6 +492,31 @@ struct SnowlyApp: App {
     }
 
     @MainActor
+    private static func fetchActiveGearSetup(in context: ModelContext) -> GearSetup? {
+        let activeDescriptor = FetchDescriptor<GearSetup>(
+            predicate: #Predicate<GearSetup> { $0.isActive },
+            sortBy: [SortDescriptor(\.sortOrder)]
+        )
+        if let active = (try? context.fetch(activeDescriptor))?.first {
+            return active
+        }
+
+        var fallbackDescriptor = FetchDescriptor<GearSetup>(
+            sortBy: [SortDescriptor(\.sortOrder)]
+        )
+        fallbackDescriptor.fetchLimit = 1
+        return (try? context.fetch(fallbackDescriptor))?.first
+    }
+
+    @MainActor
+    private static func fetchLockerAssets(in context: ModelContext) -> [GearAsset] {
+        let descriptor = FetchDescriptor<GearAsset>(
+            sortBy: [SortDescriptor(\.sortOrder)]
+        )
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
+    @MainActor
     /// Segments track points into completed runs with synchronous track data encoding.
     /// Does not use SegmentFinalizationService (which encodes asynchronously) so that
     /// callers relying on trackData being populated immediately (e.g. fixture seeding,
@@ -485,7 +533,6 @@ struct SnowlyApp: App {
 
         var currentSegmentType: RunActivityType?
         var currentSegmentFilteredPoints: [FilteredTrackPoint] = []
-        var currentSegmentRawPoints: [TrackPoint] = []
         var lastActiveTime: Date?
         var result: [CompletedRunData] = []
 
@@ -495,7 +542,7 @@ struct SnowlyApp: App {
                 activityType: segType,
                 points: currentSegmentFilteredPoints
             ) {
-                let rawTrackData = try? JSONEncoder().encode(currentSegmentRawPoints)
+                let filteredTrackData = try? JSONEncoder().encode(currentSegmentFilteredPoints)
                 result.append(
                     CompletedRunData(
                         startDate: filteredRun.startDate,
@@ -505,13 +552,12 @@ struct SnowlyApp: App {
                         maxSpeed: filteredRun.maxSpeed,
                         averageSpeed: filteredRun.averageSpeed,
                         activityType: filteredRun.activityType,
-                        trackData: rawTrackData
+                        trackData: filteredTrackData
                     )
                 )
             }
             currentSegmentType = nil
             currentSegmentFilteredPoints = []
-            currentSegmentRawPoints = []
             lastActiveTime = nil
         }
 
@@ -548,10 +594,8 @@ struct SnowlyApp: App {
                     finalizeSegment()
                     currentSegmentType = targetType
                     currentSegmentFilteredPoints = [filteredPoint]
-                    currentSegmentRawPoints = [rawPoint]
                 } else {
                     currentSegmentFilteredPoints.append(filteredPoint)
-                    currentSegmentRawPoints.append(rawPoint)
                 }
                 lastActiveTime = filteredPoint.timestamp
             } else if !currentSegmentFilteredPoints.isEmpty,

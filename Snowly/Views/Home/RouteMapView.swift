@@ -35,7 +35,7 @@ struct RouteMapView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.85))
                     .padding(8)
-                    .background(.ultraThinMaterial, in: Circle())
+                    .snowlyGlass(in: Circle())
                     .padding(10)
             }
             .contentShape(RoundedRectangle(cornerRadius: CornerRadius.large))
@@ -98,7 +98,9 @@ struct RouteMapView: View {
             .sorted { $0.startDate < $1.startDate }
             .map { run in
                 RouteSegment(
-                    coordinates: run.trackPoints.map { $0.clLocation.coordinate },
+                    coordinates: run.trackPoints.map {
+                        CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+                    },
                     activityType: run.activityType
                 )
             }
@@ -228,7 +230,7 @@ private struct FullscreenRouteMapView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.9))
                     .padding(12)
-                    .background(.ultraThinMaterial, in: Circle())
+                    .snowlyGlass(in: Circle())
             }
             .padding(.top, 56)
             .padding(.leading, Spacing.lg)

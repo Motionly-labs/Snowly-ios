@@ -21,8 +21,18 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
     private(set) var currentAltitude: Double = 0
     private(set) var currentSpeed: Double = 0
     private(set) var currentCourse: Double = 0
-    private(set) var currentAccuracy: Double = 0
+    private(set) var currentHorizontalAccuracy: Double = 0
+    private(set) var currentVerticalAccuracy: Double = 0
     private(set) var lastError: Error?
+
+    var isGPSReadyForTracking: Bool {
+        let isAuthorized = authorizationStatus == .authorizedWhenInUse
+            || authorizationStatus == .authorizedAlways
+#if DEBUG
+        if gpxReplayName != nil { return isAuthorized }
+#endif
+        return isAuthorized && currentLocation != nil
+    }
 
     private let locationManager = CLLocationManager()
     private var trackingContinuation: AsyncStream<TrackPoint>.Continuation?
@@ -30,12 +40,30 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
     private var isCollectingLocationUpdates = false
     private var recentTrackPoints: [TrackPoint] = []
 
+#if DEBUG
+    // Set by -replay_gpx <name>. Drives startTracking() with a GPX stream instead of
+    // CLLocationManager, while still running CLLocationManager passively for MapKit.
+    private var gpxReplayName: String?
+    private var gpxSpeedMultiplier: Double = 1.0
+#endif
+
     nonisolated private static let logger = Logger(subsystem: "com.Snowly", category: "LocationTracking")
 
     override init() {
         super.init()
         locationManager.delegate = self
         authorizationStatus = locationManager.authorizationStatus
+#if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if let idx = args.firstIndex(of: "-replay_gpx"), idx + 1 < args.count {
+            gpxReplayName = args[idx + 1]
+            if let sIdx = args.firstIndex(of: "-replay_speed"), sIdx + 1 < args.count {
+                gpxSpeedMultiplier = Double(args[sIdx + 1]) ?? 1.0
+            }
+            // Bypass the permission prompt so the home screen is immediately usable.
+            authorizationStatus = .authorizedAlways
+        }
+#endif
         startPassiveCollectionIfAuthorized()
     }
 
@@ -55,6 +83,12 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
     }
 
     func startTracking() -> AsyncStream<TrackPoint> {
+#if DEBUG
+        if let name = gpxReplayName,
+           let stream = startGPXReplay(name: name) {
+            return stream
+        }
+#endif
         isTracking = true
         configureLocationManager(forTracking: true)
         startLocationUpdatesIfNeeded()
@@ -86,13 +120,24 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         Task { @MainActor in
+#if DEBUG
+            // In GPX replay mode the stream owns currentLocation/Altitude/Speed/Course.
+            // Still update currentLocation from CLLocationManager so MapKit's blue dot
+            // follows Xcode's simulation (if configured), but skip pipeline injection.
+            if self.gpxReplayName != nil {
+                self.currentLocation = location.coordinate
+                return
+            }
+#endif
             self.currentLocation = location.coordinate
             self.currentAltitude = location.altitude
             let derivedCourse = self.derivedCourse(for: location)
-            let normalizedAccuracy = self.normalizedAccuracy(for: location.horizontalAccuracy)
+            let normalizedHorizontalAccuracy = self.normalizedHorizontalAccuracy(for: location.horizontalAccuracy)
+            let normalizedVerticalAccuracy = self.normalizedVerticalAccuracy(for: location.verticalAccuracy)
             self.currentSpeed = max(0, location.speed)
             self.currentCourse = derivedCourse
-            self.currentAccuracy = normalizedAccuracy
+            self.currentHorizontalAccuracy = normalizedHorizontalAccuracy
+            self.currentVerticalAccuracy = normalizedVerticalAccuracy
             self.lastError = nil
 
             let isSimulator: Bool = {
@@ -104,12 +149,12 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
             }()
 
             if !isSimulator {
-                guard normalizedAccuracy >= 0,
-                      normalizedAccuracy <= 50 else {
+                guard normalizedHorizontalAccuracy >= 0,
+                      normalizedHorizontalAccuracy <= 50 else {
                     self.previousTrackingLocation = location
                     return
                 }
-            } else if normalizedAccuracy > 120 {
+            } else if normalizedHorizontalAccuracy > 120 {
                 self.previousTrackingLocation = location
                 return
             }
@@ -120,7 +165,8 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
                 longitude: location.coordinate.longitude,
                 altitude: location.altitude,
                 speed: max(0, location.speed),
-                accuracy: normalizedAccuracy,
+                horizontalAccuracy: normalizedHorizontalAccuracy,
+                verticalAccuracy: normalizedVerticalAccuracy,
                 course: derivedCourse
             )
 
@@ -141,6 +187,10 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
         Task { @MainActor in
+#if DEBUG
+            // Keep the synthetic .authorizedAlways we set in init() for replay mode.
+            guard self.gpxReplayName == nil else { return }
+#endif
             self.authorizationStatus = status
             self.lastError = nil
 
@@ -207,12 +257,21 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
         locationManager.showsBackgroundLocationIndicator = forTracking && canUseBackgroundMode
     }
 
-    private func normalizedAccuracy(for reportedAccuracy: Double) -> Double {
+    private func normalizedHorizontalAccuracy(for reportedAccuracy: Double) -> Double {
         if reportedAccuracy >= 0 { return reportedAccuracy }
 #if targetEnvironment(simulator)
         return 8
 #else
         return reportedAccuracy
+#endif
+    }
+
+    private func normalizedVerticalAccuracy(for reportedAccuracy: Double) -> Double {
+        if reportedAccuracy >= 0 { return reportedAccuracy }
+#if targetEnvironment(simulator)
+        return 12
+#else
+        return 100
 #endif
     }
 
@@ -229,3 +288,85 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
         return normalized >= 0 ? normalized : normalized + 360
     }
 }
+
+#if DEBUG
+extension LocationTrackingService {
+    func startGPXReplay(name: String) -> AsyncStream<TrackPoint>? {
+        guard let points = GPXParser.parse(named: name), !points.isEmpty else { return nil }
+        isTracking = true
+
+        let primeCount = min(45, points.count)
+        recentTrackPoints = Array(points.prefix(primeCount))
+
+        if let first = points.first {
+            currentLocation = CLLocationCoordinate2D(latitude: first.latitude, longitude: first.longitude)
+            currentAltitude = first.altitude
+        }
+
+        return AsyncStream { continuation in
+            self.trackingContinuation?.finish()
+            self.trackingContinuation = continuation
+
+            let task = Task { @MainActor [weak self] in
+                guard let self else { return }
+                await self.runGPXLoop(points: points, continuation: continuation)
+            }
+            continuation.onTermination = { @Sendable [weak self] _ in
+                task.cancel()
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.trackingContinuation = nil
+                    self.isTracking = false
+                }
+            }
+        }
+    }
+
+    private func runGPXLoop(
+        points: [TrackPoint],
+        continuation: AsyncStream<TrackPoint>.Continuation
+    ) async {
+        let anchorOffset = Date().timeIntervalSince(points[0].timestamp)
+        let anchored = points.map {
+            TrackPoint(
+                timestamp: $0.timestamp.addingTimeInterval(anchorOffset),
+                latitude: $0.latitude,
+                longitude: $0.longitude,
+                altitude: $0.altitude,
+                speed: $0.speed,
+                horizontalAccuracy: $0.horizontalAccuracy,
+                verticalAccuracy: $0.verticalAccuracy,
+                course: $0.course
+            )
+        }
+
+        for i in anchored.indices {
+            guard !Task.isCancelled else { break }
+
+            let point = anchored[i]
+            let delay: TimeInterval = i > 0
+                ? max(0.05, point.timestamp.timeIntervalSince(anchored[i - 1].timestamp) / gpxSpeedMultiplier)
+                : 0
+
+            if delay > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            }
+
+            guard !Task.isCancelled else { break }
+
+            currentLocation = CLLocationCoordinate2D(latitude: point.latitude, longitude: point.longitude)
+            currentAltitude = point.altitude
+            currentSpeed = point.speed
+            currentCourse = point.course
+
+            recentTrackPoints.append(point)
+            RecentTrackWindow.trimTrackPoints(&recentTrackPoints, relativeTo: point.timestamp)
+
+            if isTracking {
+                continuation.yield(point)
+            }
+        }
+        continuation.finish()
+    }
+}
+#endif

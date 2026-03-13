@@ -14,18 +14,20 @@ This documentation covers architecture, the GPS/detection pipeline, how to exten
 | [Data Models](Architecture/DataModels.md) | SwiftData dual store, `TrackPoint` binary blob design, denormalization |
 | [State Management](Architecture/StateManagement.md) | `@Observable` + `@Environment`, no MVVM, `@Query` in views |
 | [Watch App](Architecture/WatchApp.md) | Companion vs independent mode, `WatchMessage` protocol, `Shared/` constraint |
+| [Product Roadmap](Product/Roadmap.md) | Product priorities, phase ordering, and execution guidance for upcoming features |
+| [Gear Locker + Checklist Requirements](Product/GearUsageMaintenanceRequirements.md) | Product spec for the locker-first gear flow: gear, reminder schedules, checklists, and the visual checklist |
 | [GPS Pipeline](Pipelines/GPSPipeline.md) | End-to-end data flow from `CLLocationManager` to SwiftData |
 | [Kalman Filter](Pipelines/KalmanFilter.md) | Three-axis constant-velocity filter, ENU frame, tuning constants |
 | [Activity Detection](Pipelines/ActivityDetection.md) | Two-window feature extraction, decision tree, dwell-time hysteresis |
 | [Segment Lifecycle](Pipelines/SegmentLifecycle.md) | Segment state machine, validator quality gates, persistence |
 | [Add a New Metric](HowTo/AddNewMetric.md) | Step-by-step: `CompletedRunData` → `SkiRun` → UI (example: `avgTurnRate`) |
 | [Add a New Service](HowTo/AddNewService.md) | Protocol, `@Observable` class, `AppServices` wiring, mock pattern |
-| [Add a SwiftData Migration](HowTo/AddSwiftDataMigration.md) | `SchemaV2`, lightweight vs custom stages, CloudKit constraints |
+| [Add a SwiftData Migration](HowTo/AddSwiftDataMigration.md) | Next-schema versioning, lightweight vs custom stages, CloudKit constraints |
 | [Design System Tokens](DesignSystem/Tokens.md) | Full tables: colors, typography, spacing, corner radius, animations |
 | [Design System Usage](DesignSystem/Usage.md) | Correct patterns, dark background convention, metric display |
 | [Testing Overview](Testing/Overview.md) | Frameworks, coverage targets, what to test vs skip |
 | [Writing Tests](Testing/WritingTests.md) | Unit, stateful-service, and integration test patterns |
-| [Fixture Replay](Testing/FixtureReplay.md) | GPS fixture format, `-replay_fixture` launch argument, pipeline internals |
+| [Fixture Replay](Testing/FixtureReplay.md) | GPS fixture format, `-replay_recap` launch argument, pipeline internals |
 | [Constants Reference](Reference/Constants.md) | All `SharedConstants.swift` values with rationale |
 | [File Index](Reference/FileIndex.md) | Every significant source file and its one-line role |
 | [Glossary](Reference/Glossary.md) | Domain terms: track point, segment, dwell time, ENU frame, etc. |
@@ -35,6 +37,10 @@ This documentation covers architecture, the GPS/detection pipeline, how to exten
 ## Quick Links
 
 **Add a metric** → [HowTo/AddNewMetric.md](HowTo/AddNewMetric.md)
+
+**See upcoming product priorities** → [Product/Roadmap.md](Product/Roadmap.md)
+
+**See Gear product requirements** → [Product/GearUsageMaintenanceRequirements.md](Product/GearUsageMaintenanceRequirements.md)
 
 **Understand why a run was misclassified** → [Pipelines/ActivityDetection.md](Pipelines/ActivityDetection.md), then [Reference/Constants.md](Reference/Constants.md)
 
@@ -76,7 +82,7 @@ xcodebuild -project Snowly.xcodeproj \
            test
 
 # Load a GPS fixture at app launch (DEBUG builds)
-# In Xcode scheme: Run → Arguments → -replay_fixture zermatt_loop
+# In Xcode scheme: Run → Arguments → -replay_recap zermatt_loop
 ```
 
 ---

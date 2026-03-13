@@ -32,10 +32,7 @@ struct CrewHeaderOverlay: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .background(
-            .ultraThinMaterial,
-            in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous)
-        )
+        .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
         .animation(AnimationTokens.standardEaseInOut, value: isMemberListExpanded)
     }
 

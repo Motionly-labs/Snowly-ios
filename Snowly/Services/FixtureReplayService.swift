@@ -2,7 +2,7 @@
 //  FixtureReplayService.swift
 //  Snowly
 //
-//  Debug-only fixture replay pipeline used by launch argument `-replay_fixture`.
+//  Debug-only fixture replay pipeline used by launch argument `-replay_recap`.
 //  Replays fixture points through the production detection pipeline (filter + detect + dwell + segment validation).
 //
 
@@ -15,7 +15,9 @@ enum FixtureReplayService {
         let latitude: Double
         let longitude: Double
         let altitude: Double
-        let accuracy: Double
+        let speed: Double
+        let horizontalAccuracy: Double
+        let verticalAccuracy: Double
         let course: Double
     }
 
@@ -70,15 +72,15 @@ enum FixtureReplayService {
         launchArguments: [String]
     ) {
 #if DEBUG
-        guard let fixtureID = launchArgumentValue(for: "-replay_fixture", in: launchArguments) else { return }
+        guard let fixtureID = launchArgumentValue(for: "-replay_recap", in: launchArguments) else { return }
         let context = container.mainContext
 
         guard let fixture = loadReplayFixtureDefinition(id: fixtureID) else {
-            print("replay_fixture skipped: fixture id '\(fixtureID)' not found in ReplayFixtures.manifest.json")
+            print("replay_recap skipped: fixture id '\(fixtureID)' not found in ReplayFixtures.manifest.json")
             return
         }
         guard let source = loadReplayFixtureTrackPoints(resource: fixture.trackpointsResource), !source.isEmpty else {
-            print("replay_fixture skipped: missing or invalid fixture resource '\(fixture.trackpointsResource).json'")
+            print("replay_recap skipped: missing or invalid fixture resource '\(fixture.trackpointsResource).json'")
             return
         }
 
@@ -93,7 +95,7 @@ enum FixtureReplayService {
         let replayRuns = replayResult.runs
             .filter { $0.activityType == .skiing || $0.activityType == .lift || $0.activityType == .walk }
         guard !replayRuns.isEmpty, let endDate = replayRuns.last?.endDate else {
-            print("replay_fixture skipped: replay produced no completed runs")
+            print("replay_recap skipped: replay produced no completed runs")
             return
         }
 
@@ -138,9 +140,9 @@ enum FixtureReplayService {
         try? context.save()
 
         let fixtureLabel = fixture.displayName ?? fixture.id
-        print("replay_fixture loaded: \(fixtureLabel), runs=\(replayRuns.count), skiingRuns=\(runCount)")
-        print("replay_fixture rawActivity: \(replayResult.rawActivityCounts.debugString)")
-        print("replay_fixture stableActivity: \(replayResult.stableActivityCounts.debugString)")
+        print("replay_recap loaded: \(fixtureLabel), runs=\(replayRuns.count), skiingRuns=\(runCount)")
+        print("replay_recap rawActivity: \(replayResult.rawActivityCounts.debugString)")
+        print("replay_recap stableActivity: \(replayResult.stableActivityCounts.debugString)")
 #else
         _ = container
         _ = launchArguments
@@ -249,7 +251,9 @@ enum FixtureReplayService {
                 latitude: point.latitude,
                 longitude: point.longitude,
                 altitude: point.altitude,
-                accuracy: point.accuracy,
+                speed: max(point.speed, 0),
+                horizontalAccuracy: point.horizontalAccuracy,
+                verticalAccuracy: point.verticalAccuracy,
                 course: point.course
             )
         }
@@ -275,7 +279,6 @@ enum FixtureReplayService {
 
         var currentSegmentType: RunActivityType?
         var currentSegmentFilteredPoints: [FilteredTrackPoint] = []
-        var currentSegmentRawPoints: [TrackPoint] = []
         var lastActiveTime: Date?
         var rawActivityCounts = ActivityCounters()
         var stableActivityCounts = ActivityCounters()
@@ -291,12 +294,11 @@ enum FixtureReplayService {
             ) else {
                 currentSegmentType = nil
                 currentSegmentFilteredPoints = []
-                currentSegmentRawPoints = []
                 lastActiveTime = nil
                 return
             }
 
-            let rawTrackData = try? JSONEncoder().encode(currentSegmentRawPoints)
+            let filteredTrackData = try? JSONEncoder().encode(currentSegmentFilteredPoints)
             result.append(
                 CompletedRunData(
                     startDate: filteredRun.startDate,
@@ -306,13 +308,12 @@ enum FixtureReplayService {
                     maxSpeed: filteredRun.maxSpeed,
                     averageSpeed: filteredRun.averageSpeed,
                     activityType: filteredRun.activityType,
-                    trackData: rawTrackData
+                    trackData: filteredTrackData
                 )
             )
 
             currentSegmentType = nil
             currentSegmentFilteredPoints = []
-            currentSegmentRawPoints = []
             lastActiveTime = nil
         }
 
@@ -360,7 +361,6 @@ enum FixtureReplayService {
                     currentSegmentType = targetType
                 }
                 currentSegmentFilteredPoints.append(filteredPoint)
-                currentSegmentRawPoints.append(rawPoint)
                 lastActiveTime = filteredPoint.timestamp
             } else if !currentSegmentFilteredPoints.isEmpty,
                       let lastActive = lastActiveTime,

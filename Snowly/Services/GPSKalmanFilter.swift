@@ -142,12 +142,15 @@ struct GPSKalmanFilter: Sendable {
     nonisolated private static let verticalProcessNoise: Double = 1.0
     /// Base horizontal velocity noise (m/s) for good signal conditions.
     nonisolated private static let baseVelocityNoise: Double = 0.3
-    /// GPS altitude accuracy is typically this factor worse than horizontal.
-    nonisolated private static let altitudeAccuracyFactor: Double = 2.5
     /// Maximum time step before capping (seconds). Prevents covariance explosion on GPS gaps.
     nonisolated private static let maxDt: Double = 10.0
     /// Minimum measured speed (m/s) before velocity update is considered usable.
     nonisolated private static let minMeasuredSpeed: Double = 0.1
+    /// Max physically plausible ski speed (m/s). World speed record ≈ 252 km/h = 70 m/s.
+    nonisolated private static let maxPhysicalSpeed: Double = 70.0
+    /// Min dt (s) before trusting position-displacement as a speed estimate.
+    /// Below this, GPS clock batching makes distance/dt unreliable.
+    nonisolated private static let minDtForDisplacement: TimeInterval = 0.5
 
     /// Meters per degree of latitude (WGS-84 mean).
     nonisolated private static let metersPerDegree: Double = 111_320
@@ -187,7 +190,8 @@ struct GPSKalmanFilter: Sendable {
                 longitude: point.longitude,
                 altitude: point.altitude,
                 estimatedSpeed: speed,
-                accuracy: point.accuracy,
+                horizontalAccuracy: point.horizontalAccuracy,
+                verticalAccuracy: point.verticalAccuracy,
                 course: course
             )
         }
@@ -210,11 +214,12 @@ struct GPSKalmanFilter: Sendable {
 
         // — Update: position —
         let (east, north) = geoToLocal(lat: point.latitude, lon: point.longitude)
-        let posNoise = max(point.accuracy, 1.0)
+        let horizontalNoise = max(point.horizontalAccuracy, 1.0)
+        let verticalNoise = max(point.verticalAccuracy, 1.0)
 
-        eastFilter.updatePosition(measurement: east, noise: posNoise)
-        northFilter.updatePosition(measurement: north, noise: posNoise)
-        altFilter.updatePosition(measurement: point.altitude, noise: posNoise * Self.altitudeAccuracyFactor)
+        eastFilter.updatePosition(measurement: east, noise: horizontalNoise)
+        northFilter.updatePosition(measurement: north, noise: horizontalNoise)
+        altFilter.updatePosition(measurement: point.altitude, noise: verticalNoise)
 
         // — Update: horizontal velocity from raw displacement —
         let measuredSpeed = measuredSpeed(from: previousRawPoint, to: point, dt: rawDt)
@@ -223,7 +228,7 @@ struct GPSKalmanFilter: Sendable {
             let courseRad = measuredCourse * .pi / 180
             let vEast = measuredSpeed * sin(courseRad)
             let vNorth = measuredSpeed * cos(courseRad)
-            let velNoise = Self.baseVelocityNoise * max(1, posNoise / 10)
+            let velNoise = Self.baseVelocityNoise * max(1, horizontalNoise / 10)
 
             eastFilter.updateVelocity(measurement: vEast, noise: velNoise)
             northFilter.updateVelocity(measurement: vNorth, noise: velNoise)
@@ -255,26 +260,27 @@ struct GPSKalmanFilter: Sendable {
         originLon = point.longitude * .pi / 180
         cosOriginLat = cos(originLat)
 
-        let initialPosVariance = max(point.accuracy * point.accuracy, 1.0)
+        let initialHorizontalVariance = max(point.horizontalAccuracy * point.horizontalAccuracy, 1.0)
+        let initialVerticalVariance = max(point.verticalAccuracy * point.verticalAccuracy, 1.0)
         let initialVelVariance = 100.0  // 10 m/s uncertainty squared
 
         // Seed velocity from GPS Doppler so the first returned point is unmodified.
         let courseRad = point.course >= 0 ? point.course * .pi / 180 : 0
-        let seededSpeed = point.speed >= 0 ? point.speed : 0
+        let seededSpeed = point.speed >= 0 ? min(point.speed, Self.maxPhysicalSpeed) : 0
         let vEast  = seededSpeed * sin(courseRad)
         let vNorth = seededSpeed * cos(courseRad)
 
         eastFilter = KalmanFilter1D(
             position: 0, velocity: vEast,
-            p00: initialPosVariance, p01: 0, p11: initialVelVariance
+            p00: initialHorizontalVariance, p01: 0, p11: initialVelVariance
         )
         northFilter = KalmanFilter1D(
             position: 0, velocity: vNorth,
-            p00: initialPosVariance, p01: 0, p11: initialVelVariance
+            p00: initialHorizontalVariance, p01: 0, p11: initialVelVariance
         )
         altFilter = KalmanFilter1D(
             position: point.altitude, velocity: 0,
-            p00: initialPosVariance * Self.altitudeAccuracyFactor * Self.altitudeAccuracyFactor,
+            p00: initialVerticalVariance,
             p01: 0,
             p11: initialVelVariance
         )
@@ -314,8 +320,9 @@ struct GPSKalmanFilter: Sendable {
             latitude: lat,
             longitude: lon,
             altitude: altFilter.position,
-            estimatedSpeed: max(0, speed),
-            accuracy: original.accuracy,
+            estimatedSpeed: min(max(0, speed), Self.maxPhysicalSpeed),
+            horizontalAccuracy: original.horizontalAccuracy,
+            verticalAccuracy: original.verticalAccuracy,
             course: normalizedCourse
         )
     }
@@ -327,11 +334,12 @@ struct GPSKalmanFilter: Sendable {
     ) -> Double {
         // Prefer GPS Doppler speed when valid (speed < 0 means CLLocation has no fix).
         if current.speed >= 0 {
-            return current.speed
+            return min(current.speed, Self.maxPhysicalSpeed)
         }
         // Doppler unavailable — fall back to position-displacement velocity.
-        guard dt > 0, let previous else { return 0 }
-        return max(0, previous.distance(to: current) / dt)
+        // Guard against sub-0.5s dt: GPS clock batching artifacts make distance/dt unreliable.
+        guard dt >= Self.minDtForDisplacement, let previous else { return 0 }
+        return min(max(0, previous.distance(to: current) / dt), Self.maxPhysicalSpeed)
     }
 
     nonisolated private func measuredCourse(

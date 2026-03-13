@@ -8,6 +8,7 @@
 
 import SwiftUI
 import SwiftData
+import CoreLocation
 
 private enum TrackingDashboardTab: String, CaseIterable {
     case session
@@ -31,8 +32,7 @@ private struct TrackedRunSnapshot: Identifiable {
 }
 
 /// Live speed curve fed by append-only samples from `SessionTrackingService`.
-/// Each incoming Kalman-estimated speed sample is finalized once via one-sided
-/// EMA and stored as an immutable display point.
+/// Samples are already filtered upstream; the view keeps only immutable display points.
 private struct LiveSpeedCurveView: View {
     private struct FrozenPoint: Identifiable, Equatable {
         let id = UUID()
@@ -43,22 +43,15 @@ private struct LiveSpeedCurveView: View {
 
     @Environment(SessionTrackingService.self) private var trackingService
     let unitSystem: UnitSystem
-    let cachedMaxRunSpeed: Double
 
     private static let maxPointCount = SharedConstants.speedCurveMaxPoints
-    private static let onlineSmoothingAlpha = 0.35
 
     // CircularBuffer provides O(1) append and automatic oldest-drop with no array shifting.
     @State private var frozenPoints = CircularBuffer<FrozenPoint>(capacity: SharedConstants.speedCurveMaxPoints)
     @State private var lastProcessedSampleTime: Date?
-    @State private var emaValue: Double?
     @State private var selectedPointTime: Date?
     // Cached to avoid O(N) max-scan inside body on every render.
     @State private var cachedMaxSpeedIndex: Int = 0
-
-    private var bestSpeed: Double {
-        max(cachedMaxRunSpeed, trackingService.skiingMetrics.maxSpeed)
-    }
 
     private var chartMaxDisplaySpeed: Double {
         switch unitSystem {
@@ -126,7 +119,7 @@ private struct LiveSpeedCurveView: View {
                         let marker = coordinates[maxIndex]
                         let markerColor = color(for: elements[maxIndex].state)
                         VStack(spacing: Spacing.xs) {
-                            Text(String(format: "%.1f", speedValue(bestSpeed)))
+                            Text(String(format: "%.1f", elements[maxIndex].speed))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                             Circle()
@@ -155,19 +148,17 @@ private struct LiveSpeedCurveView: View {
     private func rebuildFromCurrentSamples() {
         frozenPoints.removeAll()
         lastProcessedSampleTime = nil
-        emaValue = nil
         cachedMaxSpeedIndex = 0
         appendNewSamples(from: trackingService.speedSamples)
     }
 
     /// Append-only live pipeline:
-    /// raw speed (already Kalman-estimated upstream) -> one-sided EMA -> freeze display point.
+    /// raw speed (already Kalman-estimated upstream) -> freeze display point.
     /// CircularBuffer auto-drops oldest on overflow — no Array.removeFirst() O(N) shift.
     private func appendNewSamples(from samples: [SpeedSample]) {
         guard !samples.isEmpty else {
             frozenPoints.removeAll()
             lastProcessedSampleTime = nil
-            emaValue = nil
             cachedMaxSpeedIndex = 0
             return
         }
@@ -181,22 +172,18 @@ private struct LiveSpeedCurveView: View {
         guard !fresh.isEmpty else { return }
 
         var updatedPoints = frozenPoints
-        var ema = emaValue
 
         for sample in fresh {
-            let raw = speedValue(max(sample.speed, 0))
-            let smoothed: Double
-            if let previousEMA = ema {
-                smoothed = previousEMA + Self.onlineSmoothingAlpha * (raw - previousEMA)
-            } else {
-                smoothed = raw
-            }
-            ema = smoothed
-            updatedPoints.append(FrozenPoint(time: sample.time, speed: smoothed, state: sample.state))
+            updatedPoints.append(
+                FrozenPoint(
+                    time: sample.time,
+                    speed: speedValue(max(sample.speed, 0)),
+                    state: sample.state
+                )
+            )
         }
 
         frozenPoints = updatedPoints
-        emaValue = ema
         lastProcessedSampleTime = fresh.last?.time
 
         let elements = updatedPoints.elements
@@ -210,9 +197,21 @@ private struct LiveSpeedCurveView: View {
 
     private func normalizedCoordinates(elements: [FrozenPoint], width: CGFloat, height: CGFloat) -> [CGPoint] {
         guard !elements.isEmpty else { return [] }
-        let step = width / CGFloat(max(elements.count - 1, 1))
+        guard let firstTime = elements.first?.time,
+              let lastTime = elements.last?.time else { return [] }
+
+        let timeSpan = lastTime.timeIntervalSince(firstTime)
+        let usesIndexSpacing = timeSpan <= 0.001
+        let fallbackStep = width / CGFloat(max(elements.count - 1, 1))
+
         return elements.enumerated().map { index, point in
-            let x = CGFloat(index) * step
+            let x: CGFloat
+            if usesIndexSpacing {
+                x = CGFloat(index) * fallbackStep
+            } else {
+                let normalizedTime = point.time.timeIntervalSince(firstTime) / timeSpan
+                x = width * CGFloat(normalizedTime)
+            }
             let y = yCoordinate(for: point.speed, graphHeight: height)
             return CGPoint(x: x, y: y)
         }
@@ -225,9 +224,9 @@ private struct LiveSpeedCurveView: View {
 
     private func color(for state: SpeedCurveState) -> Color {
         switch state {
-        case .skiing: return ColorTokens.brandIceBlue
-        case .lift:   return ColorTokens.brandWarmAmber
-        case .others: return Color.secondary.opacity(0.85)
+        case .skiing: return ColorTokens.skiingAccent
+        case .lift:   return ColorTokens.liftAccent
+        case .others: return ColorTokens.walkAccent
         }
     }
 
@@ -334,16 +333,6 @@ struct ActiveTrackingView: View {
         return heroInstances.first(where: { $0.instanceId == id }) ?? heroInstances.first
     }
 
-    private var gridInstancesBinding: Binding<[ActiveTrackingCardInstance]> {
-        Binding(
-            get: { gridInstances },
-            set: { newGrid in
-                let heroes = dashboardLayout.instances.filter { $0.slot == .hero }
-                dashboardLayout = TrackingDashboardLayout(instances: heroes + newGrid)
-            }
-        )
-    }
-
     private var gridSnapshots: [UUID: ActiveTrackingCardSnapshot] {
         // Grid cards are scalar or text only — no series snapshots are built here.
         // Pass empty arrays for sample fields to avoid subscribing to large @Observable
@@ -356,7 +345,7 @@ struct ActiveTrackingView: View {
             completedRuns: trackingService.completedRuns,
             speedSamples: [],
             altitudeSamples: [],
-            currentAltitudeMeters: locationService.currentAltitude,
+            currentAltitudeMeters: trackingService.currentAltitude,
             elapsedSeconds: elapsedTime,
             currentHeartRate: watchBridgeService.currentHeartRate,
             averageHeartRate: watchBridgeService.averageHeartRate,
@@ -549,9 +538,9 @@ struct ActiveTrackingView: View {
 
         switch trackingService.currentActivity {
         case .skiing:
-            return ColorTokens.brandIceBlue
+            return ColorTokens.sportAccent
         case .lift:
-            return ColorTokens.brandWarmAmber
+            return Color.secondary
         case .walk, .idle:
             return Color.secondary
         }
@@ -560,13 +549,13 @@ struct ActiveTrackingView: View {
     private var heroCardAccent: Color {
         switch selectedHeroInstance?.kind {
         case .peakSpeed:
-            return ColorTokens.brandWarmAmber
+            return ColorTokens.sportAccent
         case .vertical:
             return ColorTokens.success
         case .heartRate, .heartRateCurve:
             return ColorTokens.brandRed
         default:
-            return ColorTokens.brandIceBlue
+            return ColorTokens.sportAccent
         }
     }
 
@@ -691,7 +680,7 @@ struct ActiveTrackingView: View {
         HStack {
             HStack(spacing: Spacing.gap) {
                 Circle()
-                    .fill(isEditingLayout ? ColorTokens.brandWarmAmber : (trackingService.state == .paused ? ColorTokens.warning : ColorTokens.success))
+                    .fill(isEditingLayout ? ColorTokens.secondaryAccent : (trackingService.state == .paused ? ColorTokens.warning : ColorTokens.success))
                     .frame(width: Spacing.gap, height: Spacing.gap)
                     .scaleEffect(trackingService.state == .paused || isEditingLayout ? 1.0 : (pulseRecording ? 1 : 0.85))
                     .opacity(trackingService.state == .paused || isEditingLayout ? 0.7 : (pulseRecording ? 1 : Opacity.medium))
@@ -706,7 +695,7 @@ struct ActiveTrackingView: View {
 
                 Text(isEditingLayout ? String(localized: "tracking_edit_mode_label") : trackingStatusText)
                     .font(Typography.caption2Semibold)
-                    .foregroundStyle(isEditingLayout ? ColorTokens.brandWarmAmber : .secondary)
+                    .foregroundStyle(isEditingLayout ? ColorTokens.secondaryAccent : .secondary)
                     .textCase(.uppercase)
                     .animation(AnimationTokens.quickEaseOut, value: isEditingLayout)
             }
@@ -721,11 +710,11 @@ struct ActiveTrackingView: View {
                 } label: {
                     Text(String(localized: "common_done"))
                         .font(Typography.caption2Semibold)
-                        .foregroundStyle(ColorTokens.brandWarmAmber)
+                        .foregroundStyle(ColorTokens.secondaryAccent)
                         .padding(.horizontal, Spacing.md)
                         .padding(.vertical, Spacing.gap)
                         .background(
-                            ColorTokens.brandWarmAmber.opacity(Opacity.subtle),
+                            ColorTokens.secondaryAccent.opacity(Opacity.subtle),
                             in: Capsule()
                         )
                 }
@@ -837,9 +826,9 @@ struct ActiveTrackingView: View {
             heroTextPage(
                 label: String(localized: "stat_heart_rate"),
                 value: currentHeartRateText,
-                suffix: currentHeartRateValue > 0 ? "bpm" : "",
+                suffix: currentHeartRateValue > 0 ? String(localized: "stat_heart_rate_unit") : "",
                 subtitle: averageHeartRateValue > 0
-                    ? "\(String(localized: "tracking_hero_heart_rate_subtitle")) · \(averageHeartRateText) bpm"
+                    ? "\(String(localized: "tracking_hero_heart_rate_subtitle")) · \(averageHeartRateText) \(String(localized: "stat_heart_rate_unit"))"
                     : String(localized: "tracking_hero_heart_rate_subtitle")
             )
         case .profile:
@@ -934,19 +923,19 @@ struct ActiveTrackingView: View {
     private func profileChipContent(for kind: ActiveTrackingCardKind) -> (icon: String, label: String, value: String, tint: Color) {
         switch kind {
         case .currentSpeed:
-            return ("speedometer", String(localized: "stat_current_speed"), currentSpeedMetricText, ColorTokens.brandIceBlue)
+            return ("speedometer", String(localized: "stat_current_speed"), currentSpeedMetricText, ColorTokens.sportAccent)
         case .peakSpeed:
             return ("bolt.fill", String(localized: "stat_peak_speed"),
-                    String(format: "%.1f %@", displayedPeakSpeed, speedUnitLabel), ColorTokens.brandWarmAmber)
+                    String(format: "%.1f %@", displayedPeakSpeed, speedUnitLabel), ColorTokens.sportAccent)
         case .avgSpeed:
             return ("gauge.with.dots.needle.33percent", String(localized: "stat_avg_speed"),
-                    String(format: "%.1f %@", displayedAvgSpeed, speedUnitLabel), ColorTokens.brandIceBlue)
+                    String(format: "%.1f %@", displayedAvgSpeed, speedUnitLabel), ColorTokens.sportAccent)
         case .vertical:
             return ("arrow.down", String(localized: "common_vertical"),
                     String(format: "%.0f %@", totalVerticalValue, totalVerticalUnit), activityStatusTint)
         case .distance:
             return ("point.topleft.down.to.point.bottomright.curvepath", String(localized: "common_distance"),
-                    String(format: "%.2f %@", totalDistanceValue, totalDistanceUnit), ColorTokens.brandIceBlue)
+                    String(format: "%.2f %@", totalDistanceValue, totalDistanceUnit), ColorTokens.sportAccent)
         case .runCount:
             return ("number", String(localized: "common_runs"),
                     String(format: "%.0f", runCountValue), ColorTokens.success)
@@ -969,7 +958,7 @@ struct ActiveTrackingView: View {
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.primary)
             }
-            LiveSpeedCurveView(unitSystem: unitSystem, cachedMaxRunSpeed: cachedMaxRunSpeed)
+            LiveSpeedCurveView(unitSystem: unitSystem)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -1010,7 +999,7 @@ struct ActiveTrackingView: View {
                             .font(.title2.weight(.semibold).monospacedDigit())
                             .foregroundStyle(.primary)
                         if currentHeartRateValue > 0 {
-                            Text("bpm")
+                            Text("stat_heart_rate_unit")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -1022,7 +1011,7 @@ struct ActiveTrackingView: View {
                         Text(String(localized: "tracking_hero_heart_rate_subtitle"))
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
-                        Text("\(Int(averageHeartRateValue.rounded())) bpm")
+                        Text("\(Int(averageHeartRateValue.rounded())) \(String(localized: "stat_heart_rate_unit"))")
                             .font(Typography.caption2Semibold)
                             .foregroundStyle(.secondary)
                     }
@@ -1108,7 +1097,7 @@ struct ActiveTrackingView: View {
                     .padding(.vertical, Spacing.lg)
 
                 // Right panel: speed curve full height
-                LiveSpeedCurveView(unitSystem: unitSystem, cachedMaxRunSpeed: cachedMaxRunSpeed)
+                LiveSpeedCurveView(unitSystem: unitSystem)
                     .padding(Spacing.xl)
             }
 
@@ -1175,7 +1164,7 @@ struct ActiveTrackingView: View {
                         HStack(spacing: Spacing.md) {
                             Image(systemName: def.icon)
                                 .font(.body)
-                                .foregroundStyle(isOn ? ColorTokens.brandWarmAmber : .secondary)
+                                .foregroundStyle(isOn ? ColorTokens.primaryAccent : .secondary)
                                 .frame(width: Spacing.xl, alignment: .center)
                             Text(String(localized: String.LocalizationValue(def.titleKey)))
                                 .foregroundStyle(.primary)
@@ -1183,7 +1172,7 @@ struct ActiveTrackingView: View {
                             if isOn {
                                 Image(systemName: "checkmark")
                                     .font(Typography.captionSemibold)
-                                    .foregroundStyle(ColorTokens.brandWarmAmber)
+                                    .foregroundStyle(ColorTokens.primaryAccent)
                             }
                         }
                     }
@@ -1526,10 +1515,11 @@ struct ActiveTrackingView: View {
 
     private var sessionContent: some View {
         TrackingStatGrid(
-            gridInstances: gridInstancesBinding,
+            instances: gridInstances,
             snapshots: gridSnapshots,
             isEditing: isEditingLayout,
             cardsAppeared: cardsAppeared,
+            onReorder: reorderWidgets,
             onRemove: removeWidget,
             onAdd: addWidget
         )
@@ -1547,6 +1537,11 @@ struct ActiveTrackingView: View {
         dashboardLayout = TrackingDashboardLayout(
             instances: dashboardLayout.instances.filter { $0.instanceId != instance.instanceId }
         )
+    }
+
+    private func reorderWidgets(_ reorderedGrid: [ActiveTrackingCardInstance]) {
+        let heroes = dashboardLayout.instances.filter { $0.slot == .hero }
+        dashboardLayout = TrackingDashboardLayout(instances: heroes + reorderedGrid)
     }
 
     private func addWidget(_ kind: ActiveTrackingCardKind) {
@@ -1703,8 +1698,13 @@ struct ActiveTrackingView: View {
         Task {
             await trackingService.stopTracking()
             await trackingService.finalizeHealthKitWorkout()
-            let resort = ResortResolver.resolveCurrentResort(
+            let resortCoordinate = locationService.currentLocation
+                ?? locationService.recentTrackPointsSnapshot().last.map {
+                    CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+                }
+            let resort = await ResortResolver.resolveCurrentResort(
                 from: skiMapService,
+                using: resortCoordinate,
                 in: modelContext
             )
             await trackingService.saveSession(to: modelContext, resort: resort)

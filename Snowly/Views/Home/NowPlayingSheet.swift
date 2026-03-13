@@ -170,12 +170,12 @@ struct NowPlayingSheet: View {
 
                     // Filled portion
                     Capsule()
-                        .fill(ColorTokens.brandWarmOrange)
+                        .fill(ColorTokens.secondaryAccent)
                         .frame(width: width * progress, height: 4)
 
                     // Thumb
                     Circle()
-                        .fill(ColorTokens.brandWarmOrange)
+                        .fill(ColorTokens.secondaryAccent)
                         .frame(width: 12, height: 12)
                         .offset(x: width * progress - 6)
                 }
@@ -266,7 +266,7 @@ struct NowPlayingSheet: View {
             } label: {
                 Image(systemName: "music.note.list")
                     .font(.title3)
-                    .foregroundStyle(ColorTokens.brandWarmOrange)
+                    .foregroundStyle(ColorTokens.secondaryAccent)
                     .frame(width: 44, height: 44)
             }
 

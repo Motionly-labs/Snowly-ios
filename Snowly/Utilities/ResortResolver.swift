@@ -21,6 +21,17 @@ enum ResortResolver {
 
     static func resolveCurrentResort(
         from skiMapService: SkiMapCacheService,
+        using coordinate: CLLocationCoordinate2D?,
+        in context: ModelContext
+    ) async -> Resort? {
+        if let coordinate {
+            await skiMapService.classifyCurrentPlace(at: coordinate)
+        }
+        return resolveCurrentResort(from: skiMapService, in: context)
+    }
+
+    static func resolveCurrentResort(
+        from skiMapService: SkiMapCacheService,
         in context: ModelContext
     ) -> Resort? {
         guard let info = skiMapService.currentResortInfo else { return nil }

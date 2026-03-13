@@ -25,7 +25,8 @@ struct MotionEstimatorTests {
             longitude: lon,
             altitude: altitude,
             speed: speed,
-            accuracy: 5.0,
+            horizontalAccuracy: 5.0,
+            verticalAccuracy: 9.0,
             course: 180.0
         )
     }
@@ -156,6 +157,43 @@ struct MotionEstimatorTests {
         #expect(estimate.avgHorizontalSpeed == 6.5)
     }
 
+    // MARK: - Doppler noise cap
+
+    @Test func estimate_pathSpeedExceedsDoppler_cappedAtDopplerPlusBudget() {
+        let now = Date()
+        let dopplerSpeed = 5.0
+        // Recent point at lon 7.0; current at lon 7.0003 → ~23m horizontal displacement.
+        // rawDuration = 1s → pathSpeed ≈ 23 m/s >> dopplerSpeed + 2.0 = 7.0 m/s.
+        let recent = [
+            FilteredTrackPoint(
+                rawTimestamp: now.addingTimeInterval(-1),
+                timestamp: now.addingTimeInterval(-1),
+                latitude: 46.0,
+                longitude: 7.0,
+                altitude: 2000,
+                estimatedSpeed: dopplerSpeed,
+                horizontalAccuracy: 5.0,
+                verticalAccuracy: 9.0,
+                course: 180.0
+            )
+        ]
+        let current = FilteredTrackPoint(
+            rawTimestamp: now,
+            timestamp: now,
+            latitude: 46.0,
+            longitude: 7.0003,
+            altitude: 2000,
+            estimatedSpeed: dopplerSpeed,
+            horizontalAccuracy: 5.0,
+            verticalAccuracy: 9.0,
+            course: 180.0
+        )
+        let estimate = MotionEstimator.estimate(current: current, recentPoints: recent)
+        // Path speed (~23 m/s) is capped to Doppler (5 m/s) + budget (2 m/s) = 7 m/s
+        #expect(estimate.avgHorizontalSpeed <= dopplerSpeed + 2.0 + 0.01)
+        #expect(estimate.avgHorizontalSpeed > dopplerSpeed)
+    }
+
     // MARK: - medianFilter
 
     @Test func medianFilter_removesSpike() {
@@ -181,5 +219,35 @@ struct MotionEstimatorTests {
         let values = [3.0, 1.0, 4.0, 1.0, 5.0, 9.0, 2.0]
         let filtered = MotionEstimator.medianFilter(values: values, windowSize: 3)
         #expect(filtered.count == values.count)
+    }
+
+    @Test func estimate_poorVerticalAccuracy_lowersConfidenceAndDisablesTrend() {
+        let now = Date()
+        let recent = (0..<6).map { i in
+            TrackPoint(
+                timestamp: now.addingTimeInterval(Double(i - 6)),
+                latitude: 46.0,
+                longitude: 7.0,
+                altitude: 2000 + Double(i) * 8,
+                speed: 4.0,
+                horizontalAccuracy: 5.0,
+                verticalAccuracy: 80.0,
+                course: 180.0
+            )
+        }
+        let current = TrackPoint(
+            timestamp: now,
+            latitude: 46.0,
+            longitude: 7.0,
+            altitude: 2055,
+            speed: 4.0,
+            horizontalAccuracy: 5.0,
+            verticalAccuracy: 80.0,
+            course: 180.0
+        )
+
+        let estimate = MotionEstimator.estimate(current: current, recentPoints: recent)
+        #expect(estimate.confidence < 0.8)
+        #expect(!estimate.hasReliableAltitudeTrend)
     }
 }

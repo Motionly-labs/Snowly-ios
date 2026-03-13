@@ -217,7 +217,7 @@ struct SnowlyLiveActivityWidget: Widget {
     }
 
     private func snowlyLogo(size: CGFloat) -> some View {
-        Image("SnowlyLiveLogo")
+        Image("logo-small")
             .resizable()
             .renderingMode(.original)
             .scaledToFit()

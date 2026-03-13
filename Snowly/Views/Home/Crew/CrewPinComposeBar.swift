@@ -112,10 +112,7 @@ struct CrewPinComposeBar: View {
         }
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, Spacing.md)
-        .background(
-            .ultraThinMaterial,
-            in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous)
-        )
+        .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous))
         .shadowStyle(.topBar)
     }
 

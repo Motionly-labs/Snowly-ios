@@ -19,13 +19,15 @@ struct RouteMapViewTests {
         coordinates: [(lat: Double, lon: Double)]
     ) -> Data? {
         let points = coordinates.map { coord in
-            TrackPoint(
+            FilteredTrackPoint(
+                rawTimestamp: Date(),
                 timestamp: Date(),
                 latitude: coord.lat,
                 longitude: coord.lon,
                 altitude: 2000,
-                speed: 10,
-                accuracy: 5,
+                estimatedSpeed: 10,
+                horizontalAccuracy: 5,
+                verticalAccuracy: 9,
                 course: 0
             )
         }

@@ -51,6 +51,7 @@ struct HomeView: View {
     @State private var crewJoinTokenInput = ""
     @State private var crewActionError: String?
     @State private var lastHomeDataRefreshAt: Date?
+    @State private var showingGPSNotReadyAlert = false
 
     private var unitSystem: UnitSystem {
         profiles.first?.preferredUnits ?? .metric
@@ -185,6 +186,7 @@ struct HomeView: View {
                 trackingService.updateAppActiveState(scenePhase == .active)
                 applyTrackingIntervalSettings()
                 handleQuickStartIfPending()
+                locationService.requestAuthorization()
             }
             .task(id: trackingIntervalKey) {
                 applyTrackingIntervalSettings()
@@ -255,6 +257,19 @@ struct HomeView: View {
                     .disabled(crewJoinTokenInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 Button(String(localized: "common_cancel"), role: .cancel) { crewJoinTokenInput = "" }
             }
+            .alert(String(localized: "gps_error_title"), isPresented: $showingGPSNotReadyAlert) {
+                if locationService.authorizationStatus == .denied
+                    || locationService.authorizationStatus == .restricted {
+                    Button(String(localized: "common_open_settings")) {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                }
+                Button(String(localized: "common_ok"), role: .cancel) {}
+            } message: {
+                Text(gpsNotReadyAlertMessage)
+            }
     }
 
     // MARK: - Page Picker
@@ -266,7 +281,7 @@ struct HomeView: View {
         }
         .padding(0)
         .frame(maxWidth: .infinity)
-        .background(.regularMaterial, in: Capsule())
+        .snowlyGlass(in: Capsule())
     }
 
     private func applyTrackingIntervalSettings() {
@@ -287,20 +302,20 @@ struct HomeView: View {
         } label: {
             Label(title, systemImage: systemImage)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(isSelected ? ColorTokens.brandWarmAmber : .secondary)
+                .foregroundStyle(isSelected ? ColorTokens.primaryAccent : .secondary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 7)
                 .background {
                     if isSelected {
                         Capsule()
-                            .fill(.ultraThinMaterial)
+                            .fill(ColorTokens.surfaceOverlay)
                             .overlay {
                                 Capsule()
-                                    .fill(ColorTokens.brandWarmAmber.opacity(Opacity.gentle))
+                                    .fill(ColorTokens.primaryAccent.opacity(Opacity.gentle))
                             }
                             .overlay {
                                 Capsule()
-                                    .stroke(ColorTokens.brandWarmAmber.opacity(Opacity.medium), lineWidth: 1)
+                                    .stroke(ColorTokens.primaryAccent.opacity(Opacity.medium), lineWidth: 1)
                             }
                             .shadowStyle(.small)
                     }
@@ -347,7 +362,7 @@ struct HomeView: View {
                 .font(Typography.bodyMedium)
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 44, height: 44)
-                .background(.regularMaterial, in: Circle())
+                .snowlyGlass(in: Circle())
         }
         .shadowStyle(.medium)
     }
@@ -401,7 +416,7 @@ struct HomeView: View {
             }
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, Spacing.gutter)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
+            .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.pill, style: .continuous))
             .padding(.top, Spacing.xl)
             .padding(.horizontal, Spacing.xl)
 
@@ -439,6 +454,10 @@ struct HomeView: View {
                 }
             } else {
                 LongPressStartButton {
+                    guard locationService.isGPSReadyForTracking else {
+                        showingGPSNotReadyAlert = true
+                        return
+                    }
                     trackingService.startTracking(
                         healthKitEnabled: deviceSettings.first?.healthKitEnabled ?? false,
                         unitSystem: unitSystem
@@ -474,7 +493,7 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, Spacing.md)
                 .padding(.vertical, Spacing.sm)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
@@ -484,7 +503,7 @@ struct HomeView: View {
                     .foregroundStyle(ColorTokens.error)
                     .padding(.horizontal, Spacing.lg)
                     .padding(.vertical, Spacing.gap)
-                    .background(.ultraThinMaterial, in: Capsule())
+                    .snowlyGlass(in: Capsule())
             }
         }
         .padding(.bottom, Spacing.xl)
@@ -566,7 +585,7 @@ struct HomeView: View {
                             .foregroundStyle(.white.opacity(Opacity.nearFull))
                             .padding(.horizontal, Spacing.xs)
                             .padding(.vertical, Spacing.xxs)
-                            .background(.ultraThinMaterial, in: Capsule())
+                            .snowlyGlass(in: Capsule())
                     }
                 }
             }
@@ -598,6 +617,10 @@ struct HomeView: View {
         guard trackingService.quickStartPending,
               trackingService.state == .idle else { return }
         trackingService.quickStartPending = false
+        guard locationService.isGPSReadyForTracking else {
+            showingGPSNotReadyAlert = true
+            return
+        }
         trackingService.startTracking(
             healthKitEnabled: deviceSettings.first?.healthKitEnabled ?? false,
             unitSystem: unitSystem
@@ -774,7 +797,7 @@ struct HomeView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, Spacing.content)
                 .padding(.vertical, Spacing.lg)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.xLarge, style: .continuous))
+                .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.xLarge, style: .continuous))
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(weatherAccessibilityLabel)
             }
@@ -882,6 +905,15 @@ struct HomeView: View {
         }
     }
 
+    private var gpsNotReadyAlertMessage: String {
+        switch locationService.authorizationStatus {
+        case .denied, .restricted:
+            return String(localized: "gps_error_not_authorized_message")
+        default:
+            return String(localized: "gps_error_no_fix_message")
+        }
+    }
+
     private func temperatureString(_ celsius: Double) -> String {
         let value: Int
         switch unitSystem {
@@ -924,7 +956,7 @@ struct HomeView: View {
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, Spacing.md)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium))
         .padding(.horizontal, Spacing.xl)
         .shadowStyle(.subtle)
     }

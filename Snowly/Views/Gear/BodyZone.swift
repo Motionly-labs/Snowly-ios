@@ -2,146 +2,160 @@
 //  BodyZone.swift
 //  Snowly
 //
-//  Maps GearCategory values to 7 interactive body zones
-//  for the skier figure visualization.
+//  Maps locker gear categories to the skier figure zones.
 //
 
 import SwiftUI
 
 enum BodyZone: Int, CaseIterable, Identifiable {
-    case head = 0       // protection
-    case body = 1       // clothing
-    case hands = 2      // accessories
-    case gear = 3       // equipment
-    case pack = 4       // electronics + other
-    case feet = 5       // footwear
-    case backpack = 6   // backpack
+    case head = 0
+    case body = 1
+    case hands = 2
+    case gear = 3
+    case pack = 4
+    case feet = 5
+    case backpack = 6
 
     var id: Int { rawValue }
 
     var displayName: String {
         switch self {
-        case .head: return String(localized: "gear_zone_head")
-        case .body: return String(localized: "gear_zone_body")
-        case .hands: return String(localized: "gear_zone_hands")
-        case .gear: return String(localized: "gear_zone_arms")
-        case .pack: return String(localized: "gear_zone_legs")
-        case .feet: return String(localized: "gear_zone_feet")
-        case .backpack: return String(localized: "gear_zone_other")
+        case .head:
+            return "Head"
+        case .body:
+            return "Body"
+        case .hands:
+            return "Hands"
+        case .gear:
+            return "Extras"
+        case .pack:
+            return "Ride"
+        case .feet:
+            return "Feet"
+        case .backpack:
+            return "Backpack"
         }
     }
 
     var iconName: String {
         switch self {
-        case .head: return "shield.fill"
-        case .body: return "tshirt.fill"
-        case .hands: return "hand.raised.fill"
-        case .gear: return "snowboard"
-        case .pack: return "bolt.fill"
-        case .feet: return "shoe.fill"
-        case .backpack: return "backpack.fill"
+        case .head:
+            return "helmet"
+        case .body:
+            return "tshirt.fill"
+        case .hands:
+            return "hand.raised.fill"
+        case .gear:
+            return "sparkles"
+        case .pack:
+            return "figure.skiing.downhill"
+        case .feet:
+            return "shoe.fill"
+        case .backpack:
+            return "bag.fill"
         }
     }
 
-    /// Zone identification accent colors. These are NOT semantic status colors —
-    /// they visually distinguish body zones on the skier figure.
     var accentColor: Color {
         switch self {
-        case .head: return .red
-        case .body: return .blue
-        case .hands: return .blue
-        case .gear: return .orange
-        case .pack: return .blue
-        case .feet: return .orange
-        case .backpack: return .green
+        case .head:
+            return ColorTokens.brandRed
+        case .body:
+            return ColorTokens.brandIceBlue
+        case .hands:
+            return ColorTokens.brandWarmAmber
+        case .gear:
+            return ColorTokens.brandWarmOrange
+        case .pack:
+            return ColorTokens.brandGold
+        case .feet:
+            return ColorTokens.success
+        case .backpack:
+            return ColorTokens.brandIceBlue.opacity(0.8)
         }
     }
 
-    var categories: [GearCategory] {
+    var categories: [GearAssetCategory] {
         switch self {
-        case .head: return [.protection]
-        case .body: return [.clothing]
-        case .hands: return [.accessories]
-        case .gear: return [.equipment]
-        case .pack: return [.electronics, .other]
-        case .feet: return [.footwear]
-        case .backpack: return [.backpack]
+        case .head:
+            return [.protection]
+        case .body:
+            return [.outerwear]
+        case .hands:
+            return [.accessory]
+        case .gear:
+            return [.electronics, .safety, .other]
+        case .pack:
+            return [.skis, .snowboard]
+        case .feet:
+            return [.boots]
+        case .backpack:
+            return [.bag]
         }
     }
 
-    // MARK: - Query helpers
-
-    func items(from setup: GearSetup) -> [GearItem] {
-        let cats = Set(categories)
-        return setup.items
-            .filter { cats.contains($0.category) }
-            .sorted { $0.sortOrder < $1.sortOrder }
+    func gear(from lockerGear: [GearAsset]) -> [GearAsset] {
+        let supportedCategories = Set(categories)
+        return lockerGear
+            .filter { supportedCategories.contains($0.category) }
+            .sorted {
+                if $0.sortOrder == $1.sortOrder {
+                    return $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+                }
+                return $0.sortOrder < $1.sortOrder
+            }
     }
 
-    func progress(from setup: GearSetup) -> Double {
-        let zoneItems = items(from: setup)
-        guard !zoneItems.isEmpty else { return 0 }
-        let checked = zoneItems.filter(\.isChecked).count
-        return Double(checked) / Double(zoneItems.count)
+    func checkedCount(in lockerGear: [GearAsset], checkedGearIDs: Set<UUID>) -> Int {
+        gear(from: lockerGear).filter { checkedGearIDs.contains($0.id) }.count
     }
 
-    func isComplete(from setup: GearSetup) -> Bool {
-        let zoneItems = items(from: setup)
-        return !zoneItems.isEmpty && zoneItems.allSatisfy(\.isChecked)
+    func progress(in lockerGear: [GearAsset], checkedGearIDs: Set<UUID>) -> Double {
+        let zoneGear = gear(from: lockerGear)
+        guard !zoneGear.isEmpty else { return 0 }
+        return Double(checkedCount(in: lockerGear, checkedGearIDs: checkedGearIDs)) / Double(zoneGear.count)
     }
 
-    func resolvedColor(from setup: GearSetup) -> Color {
-        isComplete(from: setup) ? ColorTokens.success : accentColor
+    func isComplete(in lockerGear: [GearAsset], checkedGearIDs: Set<UUID>) -> Bool {
+        let zoneGear = gear(from: lockerGear)
+        return !zoneGear.isEmpty && zoneGear.allSatisfy { checkedGearIDs.contains($0.id) }
     }
 
-    // MARK: - Zone color calculation
-
-    /// Returns (fill, stroke) colors for rendering the zone shape.
-    func shapeColors(
-        from setup: GearSetup,
+    func fillColor(
+        in lockerGear: [GearAsset],
+        checkedGearIDs: Set<UUID>,
         isSelected: Bool
-    ) -> (fill: Color, stroke: Color) {
-        let prog = progress(from: setup)
-        let complete = isComplete(from: setup)
-
-        if complete {
-            let fillOpacity = isSelected ? Opacity.medium : Opacity.soft
-            let strokeOpacity = isSelected ? Opacity.strong : Opacity.prominent
-            return (
-                fill: ColorTokens.success.opacity(fillOpacity),
-                stroke: ColorTokens.success.opacity(strokeOpacity)
-            )
+    ) -> Color {
+        guard !gear(from: lockerGear).isEmpty else {
+            return .clear
         }
 
-        if prog > 0 {
-            let fillOpacity = isSelected ? Opacity.soft : (Opacity.subtle + prog * Opacity.muted)
-            let strokeOpacity = isSelected ? Opacity.half : Opacity.moderate
-            return (
-                fill: accentColor.opacity(fillOpacity),
-                stroke: accentColor.opacity(strokeOpacity)
-            )
+        let progress = progress(in: lockerGear, checkedGearIDs: checkedGearIDs)
+        if progress >= 1 {
+            return ColorTokens.success.opacity(isSelected ? 0.4 : 0.28)
         }
-
-        // Not started — show zone accent color as a dim wireframe
-        let fillOpacity = isSelected ? Opacity.light : Opacity.faint
-        let strokeOpacity = isSelected ? Opacity.prominent : Opacity.soft
-        return (
-            fill: accentColor.opacity(fillOpacity),
-            stroke: accentColor.opacity(strokeOpacity)
-        )
+        if progress > 0 {
+            return accentColor.opacity(isSelected ? 0.34 : 0.18 + (progress * 0.16))
+        }
+        return accentColor.opacity(isSelected ? 0.14 : 0.07)
     }
 
-    // MARK: - Lookup
-
-    static func zone(for category: GearCategory) -> BodyZone {
+    static func zone(for category: GearAssetCategory) -> BodyZone {
         switch category {
-        case .protection: return .head
-        case .clothing: return .body
-        case .accessories: return .hands
-        case .equipment: return .gear
-        case .electronics, .other: return .pack
-        case .footwear: return .feet
-        case .backpack: return .backpack
+        case .protection:
+            return .head
+        case .outerwear:
+            return .body
+        case .accessory:
+            return .hands
+        case .skis, .snowboard:
+            return .pack
+        case .electronics, .safety, .other:
+            return .gear
+        case .boots:
+            return .feet
+        case .bag:
+            return .backpack
         }
     }
 }

@@ -20,7 +20,7 @@ final class MockHealthKitService: HealthKitProviding {
     var beginWorkoutCallCount = 0
     var beginWorkoutDates: [Date] = []
     var addRoutePointsCallCount = 0
-    var addRoutePointsReceived: [[TrackPoint]] = []
+    var addRoutePointsReceived: [[FilteredTrackPoint]] = []
     var addDistanceSampleCallCount = 0
     var addDistanceSamplesReceived: [(meters: Double, start: Date, end: Date)] = []
     var finishWorkoutCallCount = 0
@@ -47,7 +47,7 @@ final class MockHealthKitService: HealthKitProviding {
         isRecording = true
     }
 
-    func addRoutePoints(_ points: [TrackPoint]) async {
+    func addRoutePoints(_ points: [FilteredTrackPoint]) async {
         if addRoutePointsDelay > 0 {
             try? await Task.sleep(for: .seconds(addRoutePointsDelay))
         }
@@ -110,13 +110,15 @@ struct HealthKitServiceTests {
         try await mock.beginWorkout(startDate: Date())
 
         let points = [
-            TrackPoint(
+            FilteredTrackPoint(
+                rawTimestamp: Date(),
                 timestamp: Date(),
                 latitude: 49.2827,
                 longitude: -123.1207,
                 altitude: 1200,
-                speed: 5.0,
-                accuracy: 10,
+                estimatedSpeed: 5.0,
+                horizontalAccuracy: 10,
+                verticalAccuracy: 16,
                 course: 180
             ),
         ]
