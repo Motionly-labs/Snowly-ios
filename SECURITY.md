@@ -18,7 +18,7 @@ You'll receive a response within 72 hours. If confirmed, we'll work with you on 
 
 ## Scope
 
-This policy covers the Snowly iOS app codebase. For vulnerabilities in the backend API ([Snowly-Server](https://github.com/Snowly-app/Snowly-Server)), please report there instead.
+This policy covers the Snowly iOS app codebase. For vulnerabilities in the backend API ([Snowly-Server](https://github.com/Motionly-labs/Snowly-Server)), please report there instead.
 
 ## Privacy Architecture
 

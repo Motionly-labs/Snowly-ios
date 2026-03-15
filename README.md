@@ -2,7 +2,7 @@
 
 Snowly is a privacy-first ski tracking app for iPhone and Apple Watch, built entirely with Apple frameworks. It records GPS tracks, classifies skiing vs lift vs walking, caches resort data for offline use, and turns a ski day into history, share cards, crew coordination, and gear preparation.
 
-[snowly.app](https://snowly.app) · [Docs](Docs/README.md) · [Backend API](https://github.com/Snowly-app/Snowly-Server)
+[snowly.app](https://snowly.app) · [Docs](Docs/README.md) · [Backend API](https://github.com/Motionly-labs/Snowly-Server)
 
 ## Core Principles
 
@@ -42,7 +42,7 @@ Snowly is a privacy-first ski tracking app for iPhone and Apple Watch, built ent
 ## Run Locally
 
 ```bash
-git clone https://github.com/Snowly-app/Snowly-ios.git
+git clone https://github.com/Motionly-labs/Snowly-ios.git
 cd Snowly-ios
 open Snowly.xcodeproj
 ```

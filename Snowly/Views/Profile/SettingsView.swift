@@ -361,7 +361,7 @@ struct SettingsView: View {
             NavigationLink(destination: PrivacyView()) {
                 Text(String(localized: "settings_about_privacy_policy"))
             }
-            Link(destination: URL(string: "https://github.com/Snowly-app/Snowly-ios")!) {
+            Link(destination: URL(string: "https://github.com/Motionly-labs/Snowly-ios")!) {
                 Label(String(localized: "settings.about.feedback_button"), systemImage: "arrow.up.right.square")
                     .foregroundStyle(.primary)
             }
