@@ -19,7 +19,6 @@ enum ActiveTrackingSlot: String, Codable, Sendable, Equatable {
 enum ActiveTrackingPresentationKind: String, Codable, Sendable, Equatable {
     case scalar
     case series
-    case profile
     case text
     case heartRateSeries
 }
@@ -38,7 +37,6 @@ enum ActiveTrackingCardKind: String, Codable, CaseIterable, Sendable, Equatable 
     case currentAltitude
     case altitudeCurve
     case speedCurve
-    case profile
     case heartRate
     case heartRateCurve
 }
@@ -48,8 +46,6 @@ enum ActiveTrackingCardKind: String, Codable, CaseIterable, Sendable, Equatable 
 struct ActiveTrackingCardConfig: Codable, Sendable, Equatable {
     var windowSeconds: TimeInterval?
     var smoothingAlpha: Double?
-    /// Card kinds shown as chips in the overview (.profile) hero card.
-    var profileStatKinds: [String]?
 
     nonisolated static let empty = ActiveTrackingCardConfig()
 }
@@ -79,42 +75,188 @@ struct ActiveTrackingCardInstance: Codable, Identifiable, Sendable, Equatable {
     }
 }
 
-// MARK: - Snapshots
+// MARK: - Render Inputs
 
-enum ActiveTrackingCardSnapshot: Sendable, Equatable {
-    case scalar(ScalarCardSnapshot)
-    case series(SeriesCardSnapshot)
-    case profile(ProfileCardSnapshot)
-    case text(TextCardSnapshot)
-    case heartRateSeries(HeartRateSeriesCardSnapshot)
+/// Shared card-input metadata. Semantic meaning is resolved upstream before it reaches
+/// these inputs; views may restyle or smooth curves, but must not redefine the values.
+protocol ActiveTrackingCardInputProtocol: Sendable {
+    var instanceId: UUID { get }
+    var kind: ActiveTrackingCardKind { get }
+    var slot: ActiveTrackingSlot { get }
+    var family: ActiveTrackingCardInputFamily { get }
+    var title: String { get }
+    var subtitle: String? { get }
 }
 
-struct ScalarCardSnapshot: Sendable, Equatable {
-    let kind: ActiveTrackingCardKind
+protocol ActiveTrackingScalarCardInputProtocol: ActiveTrackingCardInputProtocol {
+    var primaryValue: ActiveTrackingCardPrimaryValue { get }
+}
+
+protocol ActiveTrackingSeriesCardInputProtocol: ActiveTrackingCardInputProtocol {
+    var primaryValue: ActiveTrackingCardPrimaryValue? { get }
+    var seriesPayload: ActiveTrackingSeriesPayload { get }
+    var renderingPolicy: ActiveTrackingSeriesRenderingPolicy { get }
+}
+
+protocol ActiveTrackingCompositeCardInputProtocol: ActiveTrackingCardInputProtocol {
+    var chips: [ActiveTrackingCompositeChip] { get }
+    var embeddedSeries: [ActiveTrackingEmbeddedSeries] { get }
+}
+
+enum ActiveTrackingCardInputFamily: String, Sendable, Equatable {
+    case scalar
+    case series
+    case composite
+}
+
+struct ActiveTrackingNumericValue: Sendable, Equatable {
     let value: Double
     let decimals: Int
     let unit: String
     let animationDelay: Double
 }
 
-struct SeriesCardSnapshot: Sendable, Equatable {
-    let kind: ActiveTrackingCardKind
-    let samples: [AltitudeSample]
-}
-
-struct ProfileCardSnapshot: Sendable, Equatable {
-    let altitudeSamples: [AltitudeSample]
-    let speedSamples: [SpeedSample]
-}
-
-struct TextCardSnapshot: Sendable, Equatable {
-    let kind: ActiveTrackingCardKind
+struct ActiveTrackingTextValue: Sendable, Equatable {
     let value: String
     let unit: String
-    let subtitle: String
 }
 
-struct HeartRateSeriesCardSnapshot: Sendable, Equatable {
+enum ActiveTrackingCardPrimaryValue: Sendable, Equatable {
+    case numeric(ActiveTrackingNumericValue)
+    case text(ActiveTrackingTextValue)
+
+    var numericValue: ActiveTrackingNumericValue? {
+        guard case .numeric(let value) = self else { return nil }
+        return value
+    }
+
+    var textValue: ActiveTrackingTextValue? {
+        guard case .text(let value) = self else { return nil }
+        return value
+    }
+}
+
+struct ActiveTrackingScalarCardInput: ActiveTrackingScalarCardInputProtocol, Sendable, Equatable {
+    let instanceId: UUID
     let kind: ActiveTrackingCardKind
-    let samples: [HeartRateSample]
+    let slot: ActiveTrackingSlot
+    let title: String
+    let primaryValue: ActiveTrackingCardPrimaryValue
+    let subtitle: String?
+    let family: ActiveTrackingCardInputFamily = .scalar
+}
+
+enum ActiveTrackingSeriesPayload: Sendable, Equatable {
+    case altitude([AltitudeSample])
+    case speed([SpeedSample])
+    case heartRate([HeartRateSample])
+
+    var altitudeSamples: [AltitudeSample]? {
+        guard case .altitude(let samples) = self else { return nil }
+        return samples
+    }
+
+    var speedSamples: [SpeedSample]? {
+        guard case .speed(let samples) = self else { return nil }
+        return samples
+    }
+
+    var heartRateSamples: [HeartRateSample]? {
+        guard case .heartRate(let samples) = self else { return nil }
+        return samples
+    }
+}
+
+/// Render-only knobs for chart beautification. Semantic labels remain authoritative and
+/// must never be recomputed from the rendered path.
+struct ActiveTrackingSeriesRenderingPolicy: Sendable, Equatable {
+    let windowSeconds: TimeInterval?
+    let smoothingAlpha: Double?
+    let allowsRenderOnlySmoothing: Bool
+
+    nonisolated static let renderOnly = ActiveTrackingSeriesRenderingPolicy(
+        windowSeconds: nil,
+        smoothingAlpha: nil,
+        allowsRenderOnlySmoothing: true
+    )
+}
+
+struct ActiveTrackingSeriesCardInput: ActiveTrackingSeriesCardInputProtocol, Sendable, Equatable {
+    let instanceId: UUID
+    let kind: ActiveTrackingCardKind
+    let slot: ActiveTrackingSlot
+    let title: String
+    let primaryValue: ActiveTrackingCardPrimaryValue?
+    let subtitle: String?
+    let seriesPayload: ActiveTrackingSeriesPayload
+    let renderingPolicy: ActiveTrackingSeriesRenderingPolicy
+    let family: ActiveTrackingCardInputFamily = .series
+}
+
+enum ActiveTrackingEmbeddedSeriesRole: String, Sendable, Equatable {
+    case altitude
+    case speed
+    case heartRate
+}
+
+struct ActiveTrackingEmbeddedSeries: Sendable, Equatable {
+    let role: ActiveTrackingEmbeddedSeriesRole
+    let payload: ActiveTrackingSeriesPayload
+    let renderingPolicy: ActiveTrackingSeriesRenderingPolicy
+}
+
+struct ActiveTrackingCompositeChip: Sendable, Equatable {
+    let kind: ActiveTrackingCardKind
+    let title: String
+    let primaryValue: ActiveTrackingCardPrimaryValue
+}
+
+struct ActiveTrackingCompositeCardInput: ActiveTrackingCompositeCardInputProtocol, Sendable, Equatable {
+    let instanceId: UUID
+    let kind: ActiveTrackingCardKind
+    let slot: ActiveTrackingSlot
+    let title: String
+    let subtitle: String?
+    let chips: [ActiveTrackingCompositeChip]
+    let embeddedSeries: [ActiveTrackingEmbeddedSeries]
+    let family: ActiveTrackingCardInputFamily = .composite
+}
+
+enum AnyActiveTrackingCardInput: Sendable, Equatable {
+    case scalar(ActiveTrackingScalarCardInput)
+    case series(ActiveTrackingSeriesCardInput)
+    case composite(ActiveTrackingCompositeCardInput)
+
+    var instanceId: UUID {
+        switch self {
+        case .scalar(let input):
+            input.instanceId
+        case .series(let input):
+            input.instanceId
+        case .composite(let input):
+            input.instanceId
+        }
+    }
+
+    var kind: ActiveTrackingCardKind {
+        switch self {
+        case .scalar(let input):
+            input.kind
+        case .series(let input):
+            input.kind
+        case .composite(let input):
+            input.kind
+        }
+    }
+
+    var family: ActiveTrackingCardInputFamily {
+        switch self {
+        case .scalar(let input):
+            input.family
+        case .series(let input):
+            input.family
+        case .composite(let input):
+            input.family
+        }
+    }
 }

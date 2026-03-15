@@ -36,13 +36,18 @@ struct ActiveSessionProvider: TimelineProvider {
         in context: Context,
         completion: @escaping (Timeline<ActiveSessionEntry>) -> Void
     ) {
+        let (isTracking, runCount, duration) = WatchWidgetSharedStore.read()
         let entry = ActiveSessionEntry(
             date: .now,
-            runCount: 0,
-            duration: 0,
-            isTracking: false
+            runCount: runCount,
+            duration: duration,
+            isTracking: isTracking
         )
-        completion(Timeline(entries: [entry], policy: .never))
+        // Refresh every 5 minutes when tracking; otherwise only on explicit reload.
+        let policy: TimelineReloadPolicy = isTracking
+            ? .after(.now.addingTimeInterval(300))
+            : .never
+        completion(Timeline(entries: [entry], policy: policy))
     }
 }
 
@@ -50,14 +55,14 @@ struct ActiveSessionProvider: TimelineProvider {
 
 struct ActiveSessionWidget: Widget {
 
-    let kind = "ActiveSessionWidget"
+    let kind = SharedConstants.complicationWidgetKind
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: ActiveSessionProvider()) { entry in
             ActiveSessionWidgetView(entry: entry)
         }
-        .configurationDisplayName("watch_widget_display_name")
-        .description("watch_widget_description")
+        .configurationDisplayName(LocalizedStringKey("watch_widget_display_name"))
+        .description(LocalizedStringKey("watch_widget_description"))
         .supportedFamilies([
             .accessoryCircular,
             .accessoryRectangular,
@@ -110,19 +115,19 @@ struct ActiveSessionWidgetView: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Image(systemName: "figure.skiing.downhill")
-                Text("watch_widget_app_name")
+                Text(LocalizedStringKey("watch_widget_app_name"))
                     .font(.caption.bold())
             }
             .widgetAccentable()
 
             if entry.isTracking {
-                Text("watch_widget_run_count_format \(entry.runCount)")
+                Text(String(format: String(localized: "watch_widget_run_count_format"), entry.runCount))
                     .font(.caption2)
                 Text(Formatters.duration(entry.duration))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             } else {
-                Text("watch_widget_ready")
+                Text(LocalizedStringKey("watch_widget_ready"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -134,9 +139,13 @@ struct ActiveSessionWidgetView: View {
 
     private var inlineView: some View {
         if entry.isTracking {
-            Text("watch_widget_inline_tracking_format \(entry.runCount) \(Formatters.duration(entry.duration))")
+            Text(String(
+                format: String(localized: "watch_widget_inline_tracking_format"),
+                entry.runCount,
+                Formatters.duration(entry.duration)
+            ))
         } else {
-            Text("watch_widget_inline_ready")
+            Text(LocalizedStringKey("watch_widget_inline_ready"))
         }
     }
 

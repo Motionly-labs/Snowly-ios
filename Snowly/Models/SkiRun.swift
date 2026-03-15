@@ -13,14 +13,14 @@ import os
 
 @Model
 final class SkiRun {
-    @Attribute(.unique) var id: UUID = UUID()
+    var id: UUID = UUID()
     var startDate: Date = Date()
     var endDate: Date?
     var distance: Double = 0           // meters
     var verticalDrop: Double = 0       // meters (positive = downhill)
     var maxSpeed: Double = 0           // m/s
     var averageSpeed: Double = 0       // m/s
-    var activityType: RunActivityType
+    var activityType: RunActivityType = RunActivityType.skiing
 
     /// Raw GPS track points serialized as binary data.
     @Attribute(.externalStorage) var trackData: Data?
@@ -47,14 +47,20 @@ final class SkiRun {
     /// Decode raw GPS points from binary storage.
     /// Legacy filtered blobs return an empty array because the original raw source is unavailable.
     var rawTrackPoints: [TrackPoint] {
-        guard let data = trackData else { return [] }
+        guard let data = trackData else {
+            Self.logger.warning("rawTrackPoints accessed on run \(self.id.uuidString, privacy: .public) with nil trackData")
+            return []
+        }
         return decodeRawTrackPoints(from: data) ?? []
     }
 
     /// Derive filtered track points on demand from raw storage.
     /// Legacy sessions that only contain filtered blobs still decode directly.
     var trackPoints: [FilteredTrackPoint] {
-        guard let data = trackData else { return [] }
+        guard let data = trackData else {
+            Self.logger.warning("trackPoints accessed on run \(self.id.uuidString, privacy: .public) with nil trackData")
+            return []
+        }
 
         if let rawPoints = decodeRawTrackPoints(from: data) {
             return deriveFilteredTrackPoints(from: rawPoints)

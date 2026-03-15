@@ -23,19 +23,19 @@ struct SessionDetailView: View {
     }
 
     private var skiRuns: [SkiRun] {
-        session.runs
+        (session.runs ?? [])
             .filter { $0.activityType == .skiing }
             .sorted { $0.startDate < $1.startDate }
     }
 
     private var liftRuns: [SkiRun] {
-        session.runs
+        (session.runs ?? [])
             .filter { $0.activityType == .lift }
             .sorted { $0.startDate < $1.startDate }
     }
 
     private var walkingRuns: [SkiRun] {
-        session.runs
+        (session.runs ?? [])
             .filter { $0.activityType == .walk }
             .sorted { $0.startDate < $1.startDate }
     }

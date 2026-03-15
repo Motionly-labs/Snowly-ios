@@ -8,7 +8,7 @@
 
 import AppIntents
 
-struct TogglePauseIntent: AppIntent {
+struct TogglePauseIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Toggle Pause"
     static let description: IntentDescription = IntentDescription("intent_toggle_pause_description", categoryName: "Tracking")
     static let openAppWhenRun = true

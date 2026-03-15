@@ -111,4 +111,4 @@ final class MigrateV1toV2: NSObject, NSEntityMigrationPolicy {
 3. Create a new session and verify the new field is populated correctly.
 4. On a physical device, install over an existing build to verify the migration path.
 
-> **Note:** The simulator's persistent store files live in `~/Library/Developer/CoreSimulator/Devices/.../data/Containers/Data/Application/.../Library/Application Support/`. If the store is incompatible, `SnowlyApp` will attempt automatic recovery on simulator by resetting the store files (see `attemptPersistentStoreRecoveryIfNeeded`). This is acceptable on simulator only — never on device.
+> **Note:** If `SnowlyMigrationPlan.stages` is empty, `SnowlyApp` treats an installed-app change as incompatible and resets existing store files before launch. Once migration stages exist, Snowly preserves the store and trusts SwiftData to migrate it on both simulator and device.

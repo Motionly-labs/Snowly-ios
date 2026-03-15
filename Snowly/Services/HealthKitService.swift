@@ -12,12 +12,20 @@ import CoreLocation
 import os
 import Observation
 
+enum HealthKitAuthorizationState: Sendable, Equatable {
+    case notDetermined
+    case denied
+    case authorized
+    case unavailable
+}
+
 @Observable
 @MainActor
 final class HealthKitService: HealthKitProviding {
 
     // MARK: - Published state
 
+    private(set) var authorizationState: HealthKitAuthorizationState = .notDetermined
     private(set) var isAuthorized = false
     private(set) var isRecording = false
 
@@ -42,13 +50,16 @@ final class HealthKitService: HealthKitProviding {
         } else {
             self.healthStore = nil
         }
-        updateAuthorizationStatus()
+        refreshAuthorizationStatus()
     }
 
     // MARK: - Authorization
 
     func requestAuthorization() async {
-        guard let store = healthStore else { return }
+        guard let store = healthStore else {
+            refreshAuthorizationStatus()
+            return
+        }
 
         let shareTypes: Set<HKSampleType> = [
             HKQuantityType.workoutType(),
@@ -66,17 +77,30 @@ final class HealthKitService: HealthKitProviding {
             lastError = error
         }
 
-        updateAuthorizationStatus()
+        refreshAuthorizationStatus()
     }
 
-    private func updateAuthorizationStatus() {
+    func refreshAuthorizationStatus() {
         guard let store = healthStore else {
+            authorizationState = .unavailable
             isAuthorized = false
             return
         }
-        isAuthorized = store.authorizationStatus(
-            for: HKQuantityType.workoutType()
-        ) == .sharingAuthorized
+
+        switch store.authorizationStatus(for: HKQuantityType.workoutType()) {
+        case .sharingAuthorized:
+            authorizationState = .authorized
+            isAuthorized = true
+        case .sharingDenied:
+            authorizationState = .denied
+            isAuthorized = false
+        case .notDetermined:
+            authorizationState = .notDetermined
+            isAuthorized = false
+        @unknown default:
+            authorizationState = .denied
+            isAuthorized = false
+        }
     }
 
     // MARK: - Workout Lifecycle
@@ -86,7 +110,7 @@ final class HealthKitService: HealthKitProviding {
             throw HealthKitError.notAvailable
         }
 
-        updateAuthorizationStatus()
+        refreshAuthorizationStatus()
         guard isAuthorized else {
             throw HealthKitError.notAuthorized
         }

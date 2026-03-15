@@ -45,6 +45,8 @@ Flat index of the most significant source files in the Snowly codebase.
 | `Snowly/Models/GearAsset.swift` | Locker gear items |
 | `Snowly/Models/GearSetup.swift` | Saved checklist definitions assembled from locker gear |
 | `Snowly/Models/GearMaintenanceEvent.swift` | Legacy synced maintenance event model kept for schema compatibility |
+| `Snowly/Models/ActiveTrackingCard.swift` | Persisted dashboard card instances plus the shared card-input contracts consumed by the UI |
+| `Snowly/Models/ActiveTrackingCardRegistry.swift` | Static metadata, supported slots, and default layout for each tracking card kind |
 | `Snowly/Models/TrackingDashboardLayout.swift` | Persisted configuration for the tracking stat grid |
 | `Snowly/Models/SchemaVersions.swift` | `SchemaV1` definition and `SnowlyMigrationPlan` |
 
@@ -67,6 +69,7 @@ Flat index of the most significant source files in the Snowly codebase.
 | `Snowly/Services/SegmentFinalizationService.swift` | Segment state machine and run completion pipeline |
 | `Snowly/Services/SegmentValidator.swift` | Validation and demotion rules for completed segments |
 | `Snowly/Services/StatsService.swift` | Aggregate stats and personal-best updates |
+| `Snowly/Services/ActiveTrackingCardSnapshotAssembler.swift` | Centralized assembler that maps motion semantics and presentation series into card inputs |
 | `Snowly/Services/SkiMapCacheService.swift` | Resort map cache and lookup orchestration |
 | `Snowly/Services/OverpassService.swift` | Low-level Overpass API client for ski geometry |
 | `Snowly/Services/WeatherService.swift` | WeatherKit access with cached fallback |
@@ -127,8 +130,8 @@ Flat index of the most significant source files in the Snowly codebase.
 | `Snowly/Views/RootView.swift` | Top-level routing between onboarding and the main app |
 | `Snowly/Views/MainTabView.swift` | Main tab scaffold |
 | `Snowly/Views/Home/HomeView.swift` | Home-tab root for idle vs active tracking |
-| `Snowly/Views/Home/ActiveTrackingView.swift` | Active session screen with live stats and controls |
-| `Snowly/Views/Home/TrackingStatGrid.swift` | Reorderable live-stat widget grid |
+| `Snowly/Views/Home/ActiveTrackingView.swift` | Active session screen that consumes assembled tracking card inputs for hero, landscape, and summary stats |
+| `Snowly/Views/Home/TrackingStatGrid.swift` | Reorderable live-stat widget grid that renders shared scalar/series card inputs without redefining semantics |
 | `Snowly/Views/Home/RouteMapView.swift` | Session map and route rendering |
 | `Snowly/Views/Home/SessionSummaryView.swift` | Post-session recap and share flow |
 | `Snowly/Views/Home/ShareCardView.swift` | Share card composition view used by the renderer |

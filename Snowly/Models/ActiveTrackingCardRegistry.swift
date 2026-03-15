@@ -79,12 +79,6 @@ enum ActiveTrackingCardRegistry {
                          defaultSlot: .hero, defaultPresentationKind: .series,
                          defaultConfig: .empty,
                          supportedSlots: [.hero], supportsSettings: false)
-        case .profile:
-            return .init(kind: kind, titleKey: "tracking_hero_profile_title", icon: "square.grid.2x2",
-                         defaultSlot: .hero, defaultPresentationKind: .profile,
-                         defaultConfig: ActiveTrackingCardConfig(windowSeconds: nil, smoothingAlpha: nil,
-                             profileStatKinds: ["currentSpeed", "vertical", "runCount"]),
-                         supportedSlots: [.hero], supportsSettings: true)
         case .heartRate:
             return .init(kind: kind, titleKey: "stat_heart_rate",       icon: "heart.fill",
                          defaultSlot: .grid, defaultPresentationKind: .text,
@@ -108,13 +102,10 @@ enum ActiveTrackingCardRegistry {
         ActiveTrackingCardKind.allCases.filter { definition(for: $0).supportedSlots.contains(.grid) }
     }
 
-    /// Default layout: three curve hero cards + number stat grid + hidden landscape config.
+    /// Default layout: three curve hero cards + number stat grid.
     nonisolated static var defaultInstances: [ActiveTrackingCardInstance] {
         let heroKinds: [ActiveTrackingCardKind] = [.speedCurve, .altitudeCurve, .heartRateCurve]
         let gridKinds: [ActiveTrackingCardKind] = [.vertical, .currentSpeed, .peakSpeed, .distance, .runCount]
-        // .profile is not shown in portrait but lives in the layout to persist
-        // landscape stat configuration across launches.
-        let landscapeKinds: [ActiveTrackingCardKind] = [.profile]
-        return (heroKinds + gridKinds + landscapeKinds).map { ActiveTrackingCardInstance.make(kind: $0) }
+        return (heroKinds + gridKinds).map { ActiveTrackingCardInstance.make(kind: $0) }
     }
 }

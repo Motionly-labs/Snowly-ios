@@ -15,7 +15,7 @@ struct TrackingStatGrid: View {
     // MARK: Inputs
 
     let instances: [ActiveTrackingCardInstance]
-    let snapshots: [UUID: ActiveTrackingCardSnapshot]
+    let inputs: [UUID: AnyActiveTrackingCardInput]
     let isEditing: Bool
     let cardsAppeared: Bool
     let onReorder: ([ActiveTrackingCardInstance]) -> Void
@@ -35,7 +35,7 @@ struct TrackingStatGrid: View {
 
     init(
         instances: [ActiveTrackingCardInstance],
-        snapshots: [UUID: ActiveTrackingCardSnapshot],
+        inputs: [UUID: AnyActiveTrackingCardInput],
         isEditing: Bool,
         cardsAppeared: Bool,
         onReorder: @escaping ([ActiveTrackingCardInstance]) -> Void,
@@ -43,7 +43,7 @@ struct TrackingStatGrid: View {
         onAdd: @escaping (ActiveTrackingCardKind) -> Void
     ) {
         self.instances = instances
-        self.snapshots = snapshots
+        self.inputs = inputs
         self.isEditing = isEditing
         self.cardsAppeared = cardsAppeared
         self.onReorder = onReorder
@@ -263,7 +263,7 @@ struct TrackingStatGrid: View {
 
         HStack(spacing: Spacing.sm) {
             Image(systemName: def.icon)
-                .font(.system(size: 11, weight: .semibold))
+                .font(Typography.caption2Semibold)
                 .foregroundStyle(accent)
                 .frame(width: 22, height: 22)
                 .background(
@@ -282,53 +282,94 @@ struct TrackingStatGrid: View {
 
     @ViewBuilder
     private func statCardBody(instance: ActiveTrackingCardInstance) -> some View {
-        switch snapshots[instance.instanceId] {
-        case .scalar(let s):
-            numberStatCard(snapshot: s)
-        case .series(let s):
-            seriesCard(snapshot: s, instance: instance)
-        case .profile, .text, .heartRateSeries, nil:
+        switch inputs[instance.instanceId] {
+        case .scalar(let input):
+            scalarStatCard(input: input)
+        case .series(let input):
+            seriesCard(input: input)
+        case .composite, nil:
             EmptyView()
         }
     }
 
-    private func numberStatCard(snapshot: ScalarCardSnapshot) -> some View {
-        gridCardShell(accent: cardAccent(for: snapshot.kind)) {
+    private func scalarStatCard(input: ActiveTrackingScalarCardInput) -> some View {
+        gridCardShell(accent: cardAccent(for: input.kind)) {
             VStack(alignment: .leading, spacing: Spacing.gutter) {
-                cardHeader(for: snapshot.kind)
+                cardHeader(for: input.kind)
 
-                AnimatedNumberText(
-                    value: snapshot.value,
-                    decimals: snapshot.decimals,
-                    suffix: snapshot.unit,
-                    delay: snapshot.animationDelay
-                )
-                .font(.title2.bold())
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
+                scalarValueView(input.primaryValue)
             }
         }
         .opacity(cardsAppeared ? 1 : 0)
         .scaleEffect(cardsAppeared ? 1 : 0.92)
         .animation(
-            AnimationTokens.smoothEntranceFast.delay(snapshot.animationDelay),
+            AnimationTokens.smoothEntranceFast.delay(animationDelay(for: input.primaryValue)),
             value: cardsAppeared
         )
     }
 
-    private func seriesCard(snapshot: SeriesCardSnapshot, instance: ActiveTrackingCardInstance) -> some View {
-        gridCardShell(accent: cardAccent(for: snapshot.kind)) {
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                cardHeader(for: snapshot.kind)
+    @ViewBuilder
+    private func scalarValueView(_ value: ActiveTrackingCardPrimaryValue) -> some View {
+        switch value {
+        case .numeric(let numeric):
+            AnimatedNumberText(
+                value: numeric.value,
+                decimals: numeric.decimals,
+                suffix: numeric.unit,
+                delay: numeric.animationDelay
+            )
+            .font(.title2.bold())
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.78)
+        case .text(let text):
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.xxs) {
+                Text(text.value)
+                    .font(.title2.bold().monospacedDigit())
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+                if !text.unit.isEmpty {
+                    Text(text.unit)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+        }
+    }
 
-                AltitudeSparkline(samples: snapshot.samples)
+    private func animationDelay(for value: ActiveTrackingCardPrimaryValue) -> Double {
+        switch value {
+        case .numeric(let numeric):
+            numeric.animationDelay
+        case .text:
+            0
+        }
+    }
+
+    private func seriesCard(input: ActiveTrackingSeriesCardInput) -> some View {
+        gridCardShell(accent: cardAccent(for: input.kind)) {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                cardHeader(for: input.kind)
+
+                seriesContent(payload: input.seriesPayload)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .opacity(cardsAppeared ? 1 : 0)
         .scaleEffect(cardsAppeared ? 1 : 0.92)
         .animation(AnimationTokens.smoothEntranceFast, value: cardsAppeared)
+    }
+
+    @ViewBuilder
+    private func seriesContent(payload: ActiveTrackingSeriesPayload) -> some View {
+        switch payload {
+        case .altitude(let samples):
+            AltitudeSparkline(samples: samples)
+        case .heartRate, .speed:
+            EmptyView()
+        }
     }
 
     // MARK: - Delete Button
@@ -425,7 +466,7 @@ struct TrackingStatGrid: View {
             return ColorTokens.success
         case .runCount:
             return ColorTokens.brandGold
-        case .currentAltitude, .altitudeCurve, .profile:
+        case .currentAltitude, .altitudeCurve:
             return ColorTokens.trailBlack
         case .heartRate, .heartRateCurve:
             return ColorTokens.brandRed
@@ -439,126 +480,32 @@ struct TrackingStatGrid: View {
 /// Live, segmented altitude sparkline used by the altitudeCurve widget card.
 struct AltitudeSparkline: View {
     let samples: [AltitudeSample]
-    let unitLabel: String
-
-    @State private var selectedSampleTime: Date?
-
-    init(samples: [AltitudeSample], unitLabel: String = "") {
-        self.samples = samples
-        self.unitLabel = unitLabel
-    }
+    var unitLabel: String = ""
 
     private var displaySamples: [AltitudeSample] {
         samples.droppingLeadingZeroLikeSamples()
     }
 
-    private func color(for state: SpeedCurveState) -> Color {
-        switch state {
-        case .skiing: return ColorTokens.skiingAccent
-        case .lift:   return ColorTokens.liftAccent
-        case .others: return ColorTokens.walkAccent
-        }
-    }
-
     var body: some View {
+        let s = displaySamples
         GeometryReader { geo in
-            let size = geo.size
-
-            if displaySamples.count < 2 {
-                Path { path in
-                    path.move(to: CGPoint(x: 0, y: size.height))
-                    path.addLine(to: CGPoint(x: size.width, y: size.height))
+            TrackingSeriesCurveView(
+                points: CurveRendering.indexedPoints(
+                    values: s.map(\.altitude),
+                    in: geo.size,
+                    minimumRange: 20
+                ),
+                coloring: .byState(s.map(\.state)) { $0.trackingColor },
+                fillColors: [
+                    .white.opacity(CurveRendering.standardFillTopOpacity),
+                    .white.opacity(0),
+                ],
+                selectionLabel: { [s, unitLabel] idx in
+                    guard idx < s.count else { return "--" }
+                    let formatted = String(format: "%.0f", s[idx].altitude)
+                    return unitLabel.isEmpty ? formatted : "\(formatted) \(unitLabel)"
                 }
-                .stroke(
-                    Color.secondary.opacity(Opacity.muted),
-                    style: StrokeStyle(lineWidth: 1, dash: [4, 4])
-                )
-            } else {
-                let pts = computePoints(size: size)
-                let selectionIndex = selectedIndex
-                ZStack {
-                    CurveRendering.smoothFillPath(points: pts, baseline: size.height)
-                        .fill(LinearGradient(
-                            colors: [Color.white.opacity(0.12), Color.white.opacity(0.0)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ))
-
-                    Canvas { context, _ in
-                        drawSegments(into: context, pts: pts)
-                    }
-
-                    if let selectionIndex, selectionIndex < pts.count {
-                        CurveSelectionOverlay(
-                            point: pts[selectionIndex],
-                            baseline: size.height,
-                            label: selectionLabel(for: displaySamples[selectionIndex]),
-                            tint: color(for: displaySamples[selectionIndex].state),
-                            chartSize: size
-                        )
-                    }
-                }
-                .contentShape(Rectangle())
-                .simultaneousGesture(
-                    SpatialTapGesture().onEnded { value in
-                        selectPoint(at: value.location.x, points: pts)
-                    }
-                )
-            }
+            )
         }
-        .onChange(of: displaySamples.map(\.time)) { _, latestTimes in
-            guard let selectedSampleTime else { return }
-            if !latestTimes.contains(selectedSampleTime) {
-                self.selectedSampleTime = nil
-            }
-        }
-    }
-
-    private func computePoints(size: CGSize) -> [CGPoint] {
-        let altitudes = displaySamples.map(\.altitude)
-        let minAlt = altitudes.min() ?? 0
-        let maxAlt = altitudes.max() ?? 1
-        let range = max(maxAlt - minAlt, 20)
-
-        return displaySamples.enumerated().map { idx, sample in
-            let x = size.width * CGFloat(idx) / CGFloat(displaySamples.count - 1)
-            let normalised = (sample.altitude - minAlt) / range
-            let y = size.height * (1.0 - CGFloat(normalised)) * 0.85 + 4
-            return CGPoint(x: x, y: y)
-        }
-    }
-
-    private var selectedIndex: Int? {
-        guard let selectedSampleTime else { return nil }
-        return displaySamples.firstIndex(where: { $0.time == selectedSampleTime })
-    }
-
-    private func drawSegments(into context: GraphicsContext, pts: [CGPoint]) {
-        guard pts.count >= 2 else { return }
-
-        let strokeStyle = StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
-
-        var segStart = 1
-        while segStart < pts.count {
-            let segState = displaySamples[segStart].state
-            var j = segStart
-            while j < pts.count && displaySamples[j].state == segState {
-                j += 1
-            }
-            let segPath = CurveRendering.smoothPath(points: Array(pts[(segStart - 1)..<j]))
-            context.stroke(segPath, with: .color(color(for: segState)), style: strokeStyle)
-            segStart = j
-        }
-    }
-
-    private func selectionLabel(for sample: AltitudeSample) -> String {
-        let value = String(format: "%.0f", sample.altitude)
-        return unitLabel.isEmpty ? value : "\(value) \(unitLabel)"
-    }
-
-    private func selectPoint(at x: CGFloat, points: [CGPoint]) {
-        guard let index = CurveRendering.nearestPointIndex(to: x, in: points) else { return }
-        let tappedTime = displaySamples[index].time
-        selectedSampleTime = selectedSampleTime == tappedTime ? nil : tappedTime
     }
 }

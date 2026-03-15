@@ -190,7 +190,9 @@ struct HomeView: View {
                 trackingService.updateAppActiveState(scenePhase == .active)
                 applyTrackingIntervalSettings()
                 handleQuickStartIfPending()
-                locationService.requestAuthorization()
+                if locationService.authorizationStatus == .notDetermined {
+                    locationService.requestAuthorization()
+                }
             }
             .task(id: trackingIntervalKey) {
                 applyTrackingIntervalSettings()

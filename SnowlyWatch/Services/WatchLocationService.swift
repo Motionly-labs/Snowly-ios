@@ -31,6 +31,7 @@ final class WatchLocationService: NSObject {
         let manager = makeManagerIfNeeded()
         manager.desiredAccuracy = kCLLocationAccuracyBest
         manager.activityType = .otherNavigation
+        manager.pausesLocationUpdatesAutomatically = false
         // watchOS independent workouts should not force stay-up location mode.
         manager.allowsBackgroundLocationUpdates = false
         manager.startUpdatingLocation()

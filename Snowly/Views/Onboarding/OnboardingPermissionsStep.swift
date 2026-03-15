@@ -9,30 +9,82 @@ import CoreLocation
 import SwiftUI
 import UIKit
 
-struct OnboardingPermissionsStep: View {
-    @Environment(LocationTrackingService.self) private var locationService
-    @Environment(HealthKitService.self) private var healthKitService
-    let onNext: () -> Void
+enum OnboardingPermissionAction: Equatable {
+    case request
+    case openSettings
+    case done
+    case unavailable
+}
 
-    private enum PermissionAction {
-        case request
-        case openSettings
-        case done
-    }
-
-    private var locationAction: PermissionAction {
-        switch locationService.authorizationStatus {
-        case .authorizedAlways, .authorizedWhenInUse:
+enum OnboardingPermissionResolver {
+    static func trackingLocationAction(
+        for status: CLAuthorizationStatus
+    ) -> OnboardingPermissionAction {
+        switch status {
+        case .authorizedAlways:
             return .done
+        case .authorizedWhenInUse, .notDetermined:
+            return .request
         case .denied, .restricted:
             return .openSettings
-        default:
+        @unknown default:
             return .request
         }
     }
 
-    private var healthAction: PermissionAction {
-        healthKitService.isAuthorized ? .done : .request
+    static func weatherAction(
+        for status: CLAuthorizationStatus
+    ) -> OnboardingPermissionAction {
+        switch status {
+        case .authorizedAlways, .authorizedWhenInUse:
+            return .done
+        case .denied, .restricted:
+            return .openSettings
+        case .notDetermined:
+            return .request
+        @unknown default:
+            return .request
+        }
+    }
+
+    static func healthAction(
+        for status: HealthKitAuthorizationState
+    ) -> OnboardingPermissionAction {
+        switch status {
+        case .authorized:
+            return .done
+        case .denied:
+            return .openSettings
+        case .notDetermined:
+            return .request
+        case .unavailable:
+            return .unavailable
+        }
+    }
+}
+
+struct OnboardingPermissionsStep: View {
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(LocationTrackingService.self) private var locationService
+    @Environment(HealthKitService.self) private var healthKitService
+    let onNext: () -> Void
+
+    private var locationAction: OnboardingPermissionAction {
+        OnboardingPermissionResolver.trackingLocationAction(
+            for: locationService.authorizationStatus
+        )
+    }
+
+    private var weatherAction: OnboardingPermissionAction {
+        OnboardingPermissionResolver.weatherAction(
+            for: locationService.authorizationStatus
+        )
+    }
+
+    private var healthAction: OnboardingPermissionAction {
+        OnboardingPermissionResolver.healthAction(
+            for: healthKitService.authorizationState
+        )
     }
 
     var body: some View {
@@ -68,8 +120,8 @@ struct OnboardingPermissionsStep: View {
                     title: String(localized: "onboarding_permissions_weather_title"),
                     subtitle: String(localized: "onboarding_permissions_weather_subtitle"),
                     color: .cyan,
-                    action: .done,
-                    onRequest: {}
+                    action: weatherAction,
+                    onRequest: { locationService.requestAuthorization() }
                 )
 
                 permissionRow(
@@ -107,6 +159,13 @@ struct OnboardingPermissionsStep: View {
             .padding(.horizontal, Spacing.xxl)
             .padding(.bottom, Spacing.xxxl)
         }
+        .onAppear {
+            refreshPermissionStates()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            refreshPermissionStates()
+        }
     }
 
     // MARK: - Permission Action Row
@@ -116,7 +175,7 @@ struct OnboardingPermissionsStep: View {
         title: String,
         subtitle: String,
         color: Color,
-        action: PermissionAction,
+        action: OnboardingPermissionAction,
         onRequest: @escaping () -> Void
     ) -> some View {
         HStack(spacing: Spacing.lg) {
@@ -140,6 +199,13 @@ struct OnboardingPermissionsStep: View {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(ColorTokens.success)
                     .font(.title3)
+            } else if action == .unavailable {
+                Text(actionTitle(for: action))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.vertical, Spacing.sm)
+                    .background(.white.opacity(0.12), in: Capsule())
             } else {
                 if action == .openSettings {
                     Button(actionTitle(for: action)) {
@@ -160,7 +226,7 @@ struct OnboardingPermissionsStep: View {
         .background(.quinary, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
     }
 
-    private func actionTitle(for action: PermissionAction) -> String {
+    private func actionTitle(for action: OnboardingPermissionAction) -> String {
         switch action {
         case .request:
             return String(localized: "common_continue")
@@ -168,18 +234,25 @@ struct OnboardingPermissionsStep: View {
             return String(localized: "common_open_settings")
         case .done:
             return String(localized: "common_done")
+        case .unavailable:
+            return String(localized: "common_unavailable")
         }
     }
 
-    private func handleAction(_ action: PermissionAction, onRequest: () -> Void) {
+    private func handleAction(_ action: OnboardingPermissionAction, onRequest: () -> Void) {
         switch action {
         case .request:
             onRequest()
         case .openSettings:
             guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
             UIApplication.shared.open(url)
-        case .done:
+        case .done, .unavailable:
             break
         }
+    }
+
+    private func refreshPermissionStates() {
+        locationService.refreshAuthorizationStatus()
+        healthKitService.refreshAuthorizationStatus()
     }
 }

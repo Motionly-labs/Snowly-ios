@@ -91,7 +91,7 @@ struct RouteMapView: View {
 
     /// Extract route segments as coordinate arrays, preserving activity type.
     static func routeSegments(from session: SkiSession) -> [RouteSegment] {
-        session.runs
+        (session.runs ?? [])
             .filter {
                 ($0.activityType == .skiing || $0.activityType == .lift || $0.activityType == .walk) && $0.trackData != nil
             }

@@ -15,7 +15,7 @@ struct SnowlyActivityAttributes: ActivityAttributes {
     let unitSystem: UnitSystem
 
     /// Updated throughout the session.
-    struct ContentState: Codable, Hashable {
+    struct ContentState: Codable, Hashable, Sendable {
         let currentSpeed: Double   // m/s
         let totalVertical: Double  // meters
         let runCount: Int

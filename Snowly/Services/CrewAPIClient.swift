@@ -146,7 +146,7 @@ final class CrewAPIClient: CrewAPIProviding {
         )
 
         let response: CreateCrewResponse = try await post(
-            path: "/crews",
+            path: "/snowly/crews",
             body: body,
             authenticated: false
         )
@@ -155,20 +155,20 @@ final class CrewAPIClient: CrewAPIProviding {
     }
 
     func fetchCrew(id: String) async throws -> Crew {
-        try await get(path: "/crews/\(id)")
+        try await get(path: "/snowly/crews/\(id)")
     }
 
     func dissolveCrew(id: String) async throws {
         let _: EmptyResponse = try await request(
             method: "DELETE",
-            path: "/crews/\(id)"
+            path: "/snowly/crews/\(id)"
         )
     }
 
     // MARK: - Membership
 
     func previewInvite(token: String) async throws -> CrewPreview {
-        try await get(path: "/crews/join/\(token)")
+        try await get(path: "/snowly/crews/join/\(token)")
     }
 
     func joinCrew(
@@ -190,7 +190,7 @@ final class CrewAPIClient: CrewAPIProviding {
         )
 
         let response: JoinCrewResponse = try await post(
-            path: "/crews/join/\(token)",
+            path: "/snowly/crews/join/\(token)",
             body: body,
             authenticated: false
         )
@@ -201,7 +201,7 @@ final class CrewAPIClient: CrewAPIProviding {
     func leaveCrew(crewId: String) async throws {
         let noBody: EmptyBody? = nil
         let _: EmptyResponse = try await post(
-            path: "/crews/\(crewId)/leave",
+            path: "/snowly/crews/\(crewId)/leave",
             body: noBody
         )
     }
@@ -209,7 +209,7 @@ final class CrewAPIClient: CrewAPIProviding {
     func kickMember(crewId: String, userId: String) async throws {
         let _: EmptyResponse = try await request(
             method: "DELETE",
-            path: "/crews/\(crewId)/members/\(userId)"
+            path: "/snowly/crews/\(crewId)/members/\(userId)"
         )
     }
 
@@ -218,7 +218,7 @@ final class CrewAPIClient: CrewAPIProviding {
     func regenerateInvite(crewId: String) async throws -> CrewInvite {
         let noBody: EmptyBody? = nil
         return try await post(
-            path: "/crews/\(crewId)/invite/regenerate",
+            path: "/snowly/crews/\(crewId)/invite/regenerate",
             body: noBody
         )
     }
@@ -228,7 +228,7 @@ final class CrewAPIClient: CrewAPIProviding {
     func uploadLocation(crewId: String, location: LocationUpload) async throws {
         let _: EmptyResponse = try await request(
             method: "PUT",
-            path: "/crews/\(crewId)/location",
+            path: "/snowly/crews/\(crewId)/location",
             body: location
         )
     }
@@ -248,7 +248,7 @@ final class CrewAPIClient: CrewAPIProviding {
 
         let urlRequest = try buildRequest(
             method: "GET",
-            path: "/crews/\(crewId)/locations",
+            path: "/snowly/crews/\(crewId)/locations",
             queryItems: queryItems.isEmpty ? nil : queryItems
         )
         var req = urlRequest
@@ -302,13 +302,13 @@ final class CrewAPIClient: CrewAPIProviding {
     // MARK: - Pins
 
     func createPin(crewId: String, pin: CrewPinUpload) async throws -> CrewPin {
-        try await post(path: "/crews/\(crewId)/pins", body: pin)
+        try await post(path: "/snowly/crews/\(crewId)/pins", body: pin)
     }
 
     func deletePin(crewId: String, pinId: String) async throws {
         let _: EmptyResponse = try await request(
             method: "DELETE",
-            path: "/crews/\(crewId)/pins/\(pinId)"
+            path: "/snowly/crews/\(crewId)/pins/\(pinId)"
         )
     }
 

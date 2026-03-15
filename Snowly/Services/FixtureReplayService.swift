@@ -149,6 +149,7 @@ enum FixtureReplayService {
 #endif
     }
 
+#if DEBUG
     static func buildCompletedRunData(
         activityType: RunActivityType,
         points: [FilteredTrackPoint]
@@ -464,4 +465,5 @@ enum FixtureReplayService {
             context.delete(session)
         }
     }
+#endif
 }

@@ -8,7 +8,7 @@
 import SwiftUI
 
 enum CurveRendering {
-    static func smoothPath(points: [CGPoint]) -> Path {
+    nonisolated static func smoothPath(points: [CGPoint]) -> Path {
         var path = Path()
         guard let first = points.first else { return path }
 
@@ -48,7 +48,7 @@ enum CurveRendering {
         return path
     }
 
-    static func smoothFillPath(points: [CGPoint], baseline: CGFloat) -> Path {
+    nonisolated static func smoothFillPath(points: [CGPoint], baseline: CGFloat) -> Path {
         guard let first = points.first, let last = points.last else { return Path() }
 
         var path = smoothPath(points: points)
@@ -58,14 +58,14 @@ enum CurveRendering {
         return path
     }
 
-    static func nearestPointIndex(to x: CGFloat, in points: [CGPoint]) -> Int? {
+    nonisolated static func nearestPointIndex(to x: CGFloat, in points: [CGPoint]) -> Int? {
         guard !points.isEmpty else { return nil }
         return points.enumerated().min { lhs, rhs in
             abs(lhs.element.x - x) < abs(rhs.element.x - x)
         }?.offset
     }
 
-    private static func clampedControlPoint(
+    private nonisolated static func clampedControlPoint(
         _ point: CGPoint,
         between start: CGPoint,
         and end: CGPoint
@@ -74,6 +74,104 @@ enum CurveRendering {
             x: min(max(point.x, min(start.x, end.x)), max(start.x, end.x)),
             y: min(max(point.y, min(start.y, end.y)), max(start.y, end.y))
         )
+    }
+
+    // MARK: - Shared design constants
+
+    /// Stroke weight used by all active-tracking series card curves.
+    nonisolated static let standardStrokeWidth: CGFloat = 2.0
+
+    /// Top-of-fill opacity for the area gradient on all series card curves.
+    nonisolated static let standardFillTopOpacity: Double = 0.12
+
+    // MARK: - Coordinate normalisation
+
+    /// Computes evenly-spaced `CGPoint` coordinates for an index-based value series.
+    ///
+    /// The value at `origin` maps to `size.height - bottomInset`, and the value
+    /// at `origin + scale` maps to `topInset`, so data fills the usable interior of
+    /// the frame with consistent visual proportions across all series cards.
+    ///
+    /// - Parameters:
+    ///   - values: The series to render.
+    ///   - size: The available draw area.
+    ///   - origin: Value mapped to the bottom of the usable area. `nil` → `values.min()`.
+    ///   - scale: Full range mapped to the usable height. `nil` → `max(values.max() - origin, minimumRange)`.
+    ///   - minimumRange: Floor for `scale` to prevent flat-line artefacts on constant data.
+    ///   - topInset: Pixels reserved above the peak.
+    ///   - bottomInset: Pixels reserved below the minimum.
+    nonisolated static func indexedPoints(
+        values: [Double],
+        in size: CGSize,
+        origin: Double? = nil,
+        scale: Double? = nil,
+        minimumRange: Double = 1,
+        topInset: CGFloat = 4,
+        bottomInset: CGFloat = 4
+    ) -> [CGPoint] {
+        guard values.count >= 2 else { return [] }
+        let resolvedOrigin = origin ?? (values.min() ?? 0)
+        let resolvedScale: Double
+        if let s = scale {
+            resolvedScale = max(s, minimumRange)
+        } else {
+            resolvedScale = max((values.max() ?? 1) - resolvedOrigin, minimumRange)
+        }
+        let usableHeight = max(size.height - topInset - bottomInset, 1)
+        let step = size.width / CGFloat(max(values.count - 1, 1))
+        return values.enumerated().map { index, value in
+            let x = CGFloat(index) * step
+            let normalized = CGFloat(min(max(value - resolvedOrigin, 0) / resolvedScale, 1))
+            let y = size.height - bottomInset - normalized * usableHeight
+            return CGPoint(x: x, y: y)
+        }
+    }
+
+    /// 90th-percentile cap for speed-history y-scale.
+    ///
+    /// Isolated speed spikes don't compress the visible range of the rest of the curve.
+    nonisolated static func robustScaleMax(for values: [Double]) -> Double {
+        let positives = values.filter { $0 > 0 }.sorted()
+        guard let peak = positives.last else { return 1 }
+        guard positives.count >= 6 else { return max(peak, 1) }
+        let p90 = positives[Int(Double(positives.count - 1) * 0.9)]
+        return max(min(peak, p90 * 1.12), 1)
+    }
+
+    // MARK: - Segment drawing
+
+    /// Draws bezier segments batched by activity state — O(S) `Path` allocations
+    /// where S equals the number of state transitions, not the number of data points.
+    nonisolated static func drawStateSegments(
+        into context: inout GraphicsContext,
+        points: [CGPoint],
+        states: [SpeedCurveState],
+        stateColor: (SpeedCurveState) -> Color,
+        style: StrokeStyle
+    ) {
+        guard points.count >= 2, states.count == points.count else { return }
+        var segStart = 1
+        while segStart < points.count {
+            let seg = states[segStart]
+            var j = segStart
+            while j < points.count && states[j] == seg { j += 1 }
+            let path = smoothPath(points: Array(points[(segStart - 1)..<j]))
+            context.stroke(path, with: .color(stateColor(seg)), style: style)
+            segStart = j
+        }
+    }
+}
+
+// MARK: - SpeedCurveState rendering colour
+
+extension SpeedCurveState {
+    /// Canonical tint for each activity phase, used across all series card curves.
+    var trackingColor: Color {
+        switch self {
+        case .skiing: ColorTokens.skiingAccent
+        case .lift:   ColorTokens.liftAccent
+        case .others: ColorTokens.walkAccent
+        }
     }
 }
 

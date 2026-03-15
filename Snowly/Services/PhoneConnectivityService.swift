@@ -70,6 +70,10 @@ final class PhoneConnectivityService: NSObject {
     private var pendingPayloads: [[String: Any]] = []
     private var pendingApplicationContext: [String: Any]?
     private var hasLoggedUnavailableWatchState = false
+    private var latestTrackingState: TrackingState = .idle
+    private var latestLiveData: WatchMessage.LiveTrackingData?
+    private var latestUnitPreference: UnitSystem?
+    private var latestLastCompletedRun: WatchMessage.LastRunData?
 
     // MARK: - Init
 
@@ -80,7 +84,8 @@ final class PhoneConnectivityService: NSObject {
         session = wcSession
         wcSession.delegate = self
         wcSession.activate()
-        handleSessionAvailabilityChange(wcSession)
+        // State is read in activationDidCompleteWith once activation finishes.
+        // Accessing isPaired/isReachable before that triggers "WCSession has not been activated".
     }
 
     // MARK: - Public API
@@ -111,31 +116,46 @@ final class PhoneConnectivityService: NSObject {
 
     /// Pushes lightweight tracking state to the Watch complication / background context.
     func updateApplicationContext(state: TrackingState, liveData: WatchMessage.LiveTrackingData?) {
+        latestTrackingState = state
+        latestLiveData = liveData
+
         guard let session else { return }
         guard canCommunicateWithWatch(session) else {
             clearPendingStateForUnavailableWatch()
             logUnavailableWatchStateIfNeeded(session)
             return
         }
+        pushApplicationContext(using: session)
+    }
 
-        var context: [String: Any] = [
-            "trackingState": trackingStateString(state)
-        ]
+    /// Updates the latest unit preference sent to the Watch.
+    func updateWatchMetadata(unitPreference: UnitSystem) {
+        latestUnitPreference = unitPreference
 
-        if let data = liveData, let encoded = try? JSONEncoder().encode(data) {
-            context["liveData"] = encoded
-        }
+        send(.unitPreference(unitPreference))
 
-        if session.activationState != .activated {
-            pendingApplicationContext = context
+        guard let session else { return }
+        guard canCommunicateWithWatch(session) else {
+            clearPendingStateForUnavailableWatch()
+            logUnavailableWatchStateIfNeeded(session)
             return
         }
+        pushApplicationContext(using: session)
+    }
 
-        do {
-            try session.updateApplicationContext(context)
-        } catch {
-            Self.logger.error("updateApplicationContext failed: \(error.localizedDescription)")
+    /// Updates the last completed skiing run summary sent to the Watch.
+    func updateLastCompletedRun(_ lastCompletedRun: WatchMessage.LastRunData?) {
+        latestLastCompletedRun = lastCompletedRun
+
+        send(.lastCompletedRun(lastCompletedRun))
+
+        guard let session else { return }
+        guard canCommunicateWithWatch(session) else {
+            clearPendingStateForUnavailableWatch()
+            logUnavailableWatchStateIfNeeded(session)
+            return
         }
+        pushApplicationContext(using: session)
     }
 
     // MARK: - Private helpers
@@ -164,6 +184,29 @@ final class PhoneConnectivityService: NSObject {
     private func clearPendingStateForUnavailableWatch() {
         pendingPayloads.removeAll()
         pendingApplicationContext = nil
+    }
+
+    private func buildApplicationContext() -> [String: Any] {
+        var context: [String: Any] = [
+            SharedConstants.watchContextTrackingStateKey: trackingStateString(latestTrackingState)
+        ]
+
+        if let latestLiveData, let encoded = try? JSONEncoder().encode(latestLiveData) {
+            context[SharedConstants.watchContextLiveDataKey] = encoded
+        }
+
+        if let latestUnitPreference, let encoded = try? JSONEncoder().encode(latestUnitPreference) {
+            context[SharedConstants.watchContextUnitPreferenceKey] = encoded
+        }
+
+        if let latestLastCompletedRun,
+           let encoded = try? JSONEncoder().encode(latestLastCompletedRun) {
+            context[SharedConstants.watchContextLastCompletedRunKey] = encoded
+        } else {
+            context[SharedConstants.watchContextLastCompletedRunKey] = Data()
+        }
+
+        return context
     }
 
     private func logUnavailableWatchStateIfNeeded(_ session: WCSession) {
@@ -230,6 +273,23 @@ final class PhoneConnectivityService: NSObject {
             pendingApplicationContext = nil
         } catch {
             Self.logger.error("flush updateApplicationContext failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func pushApplicationContext(using session: WCSession) {
+        let context = buildApplicationContext()
+
+        if session.activationState != .activated {
+            pendingApplicationContext = context
+            return
+        }
+
+        do {
+            try session.updateApplicationContext(context)
+            pendingApplicationContext = nil
+        } catch {
+            pendingApplicationContext = context
+            Self.logger.error("updateApplicationContext failed: \(error.localizedDescription)")
         }
     }
 

@@ -19,6 +19,7 @@ struct SessionSummaryView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(SkiDataUploadService.self) private var uploadService
+    @Environment(SessionTrackingService.self) private var trackingService
 
     let selectedSession: SkiSession?
     let showsDoneButton: Bool
@@ -34,6 +35,8 @@ struct SessionSummaryView: View {
     @State private var showingNoteEditor = false
     @State private var noteTitleDraft = ""
     @State private var noteBodyDraft = ""
+    @State private var showingResortEditor = false
+    @State private var resortNameDraft = ""
     @State private var isExportingData = false
     @State private var exportFileURL: URL?
     @State private var showingExportSheet = false
@@ -45,7 +48,9 @@ struct SessionSummaryView: View {
     private var profile: UserProfile? { profiles.first }
 
     private var hasAnyTrackDecodeError: Bool {
-        displayedSession?.runs.contains(where: { $0.hasTrackDecodeError }) ?? false
+        (displayedSession?.runs ?? []).contains(where: {
+            $0.hasTrackDecodeError || ($0.activityType == .skiing && $0.trackData == nil)
+        })
     }
 
     private var unitSystem: UnitSystem {
@@ -213,6 +218,63 @@ struct SessionSummaryView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
             }
+            .sheet(isPresented: $showingResortEditor) {
+                NavigationStack {
+                    VStack(alignment: .leading, spacing: 0) {
+                        VStack(alignment: .leading, spacing: Spacing.xxs) {
+                            HStack(spacing: Spacing.xs) {
+                                Image(systemName: "map")
+                                    .font(Typography.iconBold)
+                                    .foregroundStyle(ColorTokens.primaryAccent)
+                                Text(String(localized: "resort_editor_title"))
+                                    .font(Typography.headingMedium)
+                            }
+                            if let session = displayedSession {
+                                Text(session.startDate.longDisplay)
+                                    .font(Typography.subheadlineMedium)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.horizontal, Spacing.lg)
+                        .padding(.top, Spacing.lg)
+                        .padding(.bottom, Spacing.xl)
+
+                        Divider()
+
+                        TextField(String(localized: "resort_editor_name_placeholder"), text: $resortNameDraft)
+                            .font(Typography.primaryTitle)
+                            .padding(.horizontal, Spacing.lg)
+                            .padding(.vertical, Spacing.md)
+                            .submitLabel(.done)
+                            .onSubmit {
+                                saveSessionResort()
+                                showingResortEditor = false
+                            }
+
+                        Spacer()
+                    }
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button(String(localized: "common_cancel")) {
+                                showingResortEditor = false
+                            }
+                            .foregroundStyle(.secondary)
+                        }
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(String(localized: "common_save")) {
+                                saveSessionResort()
+                                showingResortEditor = false
+                            }
+                            .fontWeight(.semibold)
+                            .foregroundStyle(ColorTokens.primaryAccent)
+                            .disabled(resortNameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
+                }
+                .presentationDetents([.fraction(0.35), .medium])
+                .presentationDragIndicator(.visible)
+            }
             .alert(String(localized: "session_recap_delete_confirm_title"), isPresented: $showingDeleteSessionAlert) {
                 Button(String(localized: "common_cancel"), role: .cancel) {}
                 Button(String(localized: "common_delete"), role: .destructive) {
@@ -243,6 +305,29 @@ struct SessionSummaryView: View {
         noteTitleDraft = session.effectiveNoteTitle
         noteBodyDraft = session.effectiveNoteBody
         showingNoteEditor = true
+    }
+
+    private func openResortEditor(for session: SkiSession) {
+        resortNameDraft = session.resort?.name ?? ""
+        showingResortEditor = true
+    }
+
+    private func saveSessionResort() {
+        guard let session = displayedSession else { return }
+        let name = resortNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+
+        let allResorts = (try? modelContext.fetch(FetchDescriptor<Resort>())) ?? []
+        if let existing = allResorts.first(where: {
+            $0.name.compare(name, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+        }) {
+            session.resort = existing
+        } else {
+            let resort = Resort(name: name, latitude: 0, longitude: 0)
+            modelContext.insert(resort)
+            session.resort = resort
+        }
+        try? modelContext.save()
     }
 
     // MARK: - Layout Detection
@@ -368,6 +453,19 @@ struct SessionSummaryView: View {
         HStack(spacing: Spacing.gap) {
             if let resort = session.resort {
                 Text(resort.name)
+                Text("\u{00B7}")
+            } else {
+                Button {
+                    openResortEditor(for: session)
+                } label: {
+                    HStack(spacing: Spacing.xs) {
+                        Text(String(localized: "session_card_unknown_resort"))
+                        Image(systemName: "square.and.pencil")
+                            .imageScale(.small)
+                    }
+                    .foregroundStyle(ColorTokens.primaryAccent)
+                }
+                .buttonStyle(.plain)
                 Text("\u{00B7}")
             }
             Text(session.startDate.longDisplay)
@@ -568,7 +666,7 @@ struct SessionSummaryView: View {
     // MARK: - Speed Curve
 
     private func speedCurveSection(session: SkiSession) -> some View {
-        let skiRuns = session.runs
+        let skiRuns = (session.runs ?? [])
             .filter { $0.activityType == .skiing }
             .sorted { $0.startDate < $1.startDate }
         let distributions = MockRunSpeedGenerator.distributions(from: skiRuns, unitSystem: unitSystem)
@@ -610,7 +708,7 @@ struct SessionSummaryView: View {
     }
 
     private func liftBreakdownSection(_ session: SkiSession) -> some View {
-        let lifts = session.runs
+        let lifts = (session.runs ?? [])
             .filter { $0.activityType == .lift }
             .sorted { $0.startDate < $1.startDate }
 
@@ -712,7 +810,7 @@ struct SessionSummaryView: View {
         isExportingData = true
         defer { isExportingData = false }
 
-        let points: [FilteredTrackPoint] = session.runs
+        let points: [FilteredTrackPoint] = (session.runs ?? [])
             .sorted { $0.startDate < $1.startDate }
             .flatMap(\.trackPoints)
             .sorted { $0.timestamp < $1.timestamp }
@@ -810,8 +908,16 @@ struct SessionSummaryView: View {
     private func processPersonalBestsIfNeeded() {
         guard processesPersonalBests else { return }
         guard !hasProcessedPersonalBests,
-              let session = displayedSession,
-              let profile = profiles.first else { return }
+              let session = displayedSession else { return }
+
+        if let savedOutcome = trackingService.lastSavedSessionOutcome,
+           savedOutcome.sessionId == session.id {
+            personalBestRecords = savedOutcome.personalBestRecords
+            hasProcessedPersonalBests = true
+            return
+        }
+
+        guard let profile = profiles.first else { return }
 
         let records = StatsService.checkPersonalBests(
             session: session,

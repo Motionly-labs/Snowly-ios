@@ -444,7 +444,7 @@ struct StatsServiceTests {
         asset.setupIDs = [setup.id]
         let serviceDate = Date(timeIntervalSince1970: 1_700_200_000)
         let service = GearMaintenanceEvent(type: .wax, date: serviceDate, asset: asset)
-        asset.maintenanceEvents.append(service)
+        asset.maintenanceEvents = (asset.maintenanceEvents ?? []) + [service]
 
         let sessions = (1...5).map { offset -> SkiSession in
             let day = serviceDate.addingTimeInterval(TimeInterval(offset * 86_400))

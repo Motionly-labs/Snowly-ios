@@ -14,11 +14,23 @@ enum WatchColorTokens {
     static let brandRed = Color(hex: "D82000")
     static let brandGold = Color(hex: "FFD36A")
 
-    static let sportAccent = brandWarmAmber
-    static let completedAccent = brandIceBlue
+    // MARK: - Accent Hierarchy (mirrors iOS ColorTokens)
+    /// Primary accent — ice blue. Active tracking, key metrics, primary CTAs.
+    static let primaryAccent = brandIceBlue
+    /// Secondary accent — warm orange. Secondary actions, offline/independent indicators.
+    static let secondaryAccent = brandWarmOrange
 
+    // MARK: - Semantic Aliases
+    /// Color for active sport / live tracking elements (matches iOS sportAccent).
+    static let sportAccent = primaryAccent
+    /// Color for completed session summary elements (matches iOS completedAccent).
+    static let completedAccent = primaryAccent
+    /// Tint used when the paired iPhone is reachable.
+    static let connectedAccent = Color(hex: "34C759")
+
+    // MARK: - Gradients (matches iOS brandGradient)
     static let brandGradient = LinearGradient(
-        colors: [brandWarmAmber, brandWarmOrange],
+        colors: [Color(hex: "64B5F6"), brandIceBlue],
         startPoint: .leading,
         endPoint: .trailing
     )

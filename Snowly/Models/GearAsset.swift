@@ -44,7 +44,7 @@ enum GearMaintenanceRuleType: String, Codable, CaseIterable, Sendable {
 
 @Model
 final class GearAsset {
-    @Attribute(.unique) var id: UUID = UUID()
+    var id: UUID = UUID()
     var name: String = ""
     var category: GearAssetCategory = GearAssetCategory.other
     var brand: String = ""
@@ -61,8 +61,8 @@ final class GearAsset {
     var setupIDs: [UUID] = []
 
     // Legacy relationship retained for store compatibility. New UI should not depend on it.
-    @Relationship(deleteRule: .cascade)
-    var maintenanceEvents: [GearMaintenanceEvent] = []
+    @Relationship(deleteRule: .cascade, inverse: \GearMaintenanceEvent.asset)
+    var maintenanceEvents: [GearMaintenanceEvent]?
 
     var displayName: String {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)

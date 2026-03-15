@@ -2,13 +2,14 @@
 //  OnboardingWelcomeStep.swift
 //  Snowly
 //
-//  Step 1: Welcome screen with app introduction.
+//  Step 1: Welcome — choose to restore from iCloud or start fresh.
 //
 
 import SwiftUI
 
 struct OnboardingWelcomeStep: View {
-    let onNext: () -> Void
+    let onRestore: () -> Void
+    let onStartFresh: () -> Void
 
     var body: some View {
         VStack(spacing: Spacing.xxl) {
@@ -37,12 +38,21 @@ struct OnboardingWelcomeStep: View {
 
             Spacer()
 
-            Button(action: onNext) {
-                Text(String(localized: "onboarding_welcome_cta_plan_first_run"))
-                    .frame(maxWidth: .infinity)
+            VStack(spacing: Spacing.md) {
+                Button(action: onRestore) {
+                    Text(String(localized: "onboarding_welcome_cta_restore"))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+
+                Button(action: onStartFresh) {
+                    Text(String(localized: "onboarding_welcome_cta_start_fresh"))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
             .padding(.horizontal, Spacing.xxl)
             .padding(.bottom, Spacing.xxxl)
         }

@@ -9,6 +9,13 @@ import Foundation
 import WatchConnectivity
 import os
 
+struct WatchApplicationContext: Sendable, Equatable {
+    let trackingState: String
+    let liveData: WatchMessage.LiveTrackingData?
+    let unitPreference: UnitSystem?
+    let lastCompletedRun: WatchMessage.LastRunData?
+}
+
 @Observable
 @MainActor
 final class WatchConnectivityService: NSObject {
@@ -18,9 +25,13 @@ final class WatchConnectivityService: NSObject {
     var isPhoneReachable = false
     var phoneTrackingState: String = "idle"
     var onMessageReceived: ((WatchMessage) -> Void)?
+    var onReachabilityChanged: ((Bool) -> Void)?
+    var onApplicationContextReceived: ((WatchApplicationContext) -> Void)?
 
     private var session: WCSession?
     private var pendingPayloads: [[String: Any]] = []
+    private(set) var latestApplicationContext: WatchApplicationContext?
+    private let encoder = JSONEncoder()
 
     override init() {
         super.init()
@@ -36,7 +47,7 @@ final class WatchConnectivityService: NSObject {
     func send(_ message: WatchMessage) {
         guard let session else { return }
 
-        guard let data = try? JSONEncoder().encode(message) else { return }
+        guard let data = try? encoder.encode(message) else { return }
         let payload: [String: Any] = [SharedConstants.watchSessionKey: data]
 
         guard session.activationState == .activated else {
@@ -103,6 +114,59 @@ final class WatchConnectivityService: NSObject {
             break
         }
     }
+
+    private func updateReachability(_ reachable: Bool) {
+        let didChange = isPhoneReachable != reachable
+        isPhoneReachable = reachable
+        if didChange {
+            onReachabilityChanged?(reachable)
+        }
+    }
+
+    private func handleApplicationContext(_ context: [String: Any]) {
+        guard !context.isEmpty else { return }
+
+        let trackingState = (context[SharedConstants.watchContextTrackingStateKey] as? String) ?? phoneTrackingState
+        let liveData = decodeContextValue(
+            WatchMessage.LiveTrackingData.self,
+            from: context[SharedConstants.watchContextLiveDataKey]
+        )
+        let unitPreference = decodeContextValue(
+            UnitSystem.self,
+            from: context[SharedConstants.watchContextUnitPreferenceKey]
+        )
+        let lastCompletedRun = decodeOptionalContextValue(
+            WatchMessage.LastRunData.self,
+            from: context[SharedConstants.watchContextLastCompletedRunKey]
+        )
+
+        phoneTrackingState = trackingState
+
+        let decoded = WatchApplicationContext(
+            trackingState: trackingState,
+            liveData: liveData,
+            unitPreference: unitPreference,
+            lastCompletedRun: lastCompletedRun
+        )
+        latestApplicationContext = decoded
+        onApplicationContextReceived?(decoded)
+    }
+
+    private func decodeContextValue<T: Decodable>(
+        _ type: T.Type,
+        from rawValue: Any?
+    ) -> T? {
+        guard let data = rawValue as? Data else { return nil }
+        return try? JSONDecoder().decode(type, from: data)
+    }
+
+    private func decodeOptionalContextValue<T: Decodable>(
+        _ type: T.Type,
+        from rawValue: Any?
+    ) -> T? {
+        guard let data = rawValue as? Data, !data.isEmpty else { return nil }
+        return try? JSONDecoder().decode(type, from: data)
+    }
 }
 
 // MARK: - WCSessionDelegate
@@ -115,8 +179,9 @@ extension WatchConnectivityService: WCSessionDelegate {
         error: Error?
     ) {
         Task { @MainActor in
-            isPhoneReachable = session.isReachable
+            updateReachability(session.isReachable)
             flushPendingPayloadsIfNeeded()
+            handleApplicationContext(session.receivedApplicationContext)
             if session.isReachable {
                 send(.requestStatus)
             }
@@ -126,10 +191,20 @@ extension WatchConnectivityService: WCSessionDelegate {
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
         Task { @MainActor in
             let wasReachable = isPhoneReachable
-            isPhoneReachable = session.isReachable
+            updateReachability(session.isReachable)
             if session.isReachable && !wasReachable {
+                handleApplicationContext(session.receivedApplicationContext)
                 send(.requestStatus)
             }
+        }
+    }
+
+    nonisolated func session(
+        _ session: WCSession,
+        didReceiveApplicationContext applicationContext: [String: Any]
+    ) {
+        Task { @MainActor in
+            handleApplicationContext(applicationContext)
         }
     }
 

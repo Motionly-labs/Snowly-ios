@@ -12,6 +12,7 @@ struct HoldProgressCircleButton: View {
     let title: String?
     let subtitle: String?
     let tint: Color
+    let isDisabled: Bool
     let holdDuration: TimeInterval
     let diameter: CGFloat
     let iconSize: CGFloat
@@ -26,11 +27,11 @@ struct HoldProgressCircleButton: View {
         VStack(spacing: WatchSpacing.sm) {
             ZStack {
                 Circle()
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.white.opacity(WatchOpacity.cardBackground))
                     .frame(width: diameter, height: diameter)
 
                 Circle()
-                    .stroke(Color.white.opacity(0.18), lineWidth: ringWidth)
+                    .stroke(Color.white.opacity(WatchOpacity.ringTrack), lineWidth: ringWidth)
                     .frame(width: diameter, height: diameter)
 
                 Circle()
@@ -43,7 +44,7 @@ struct HoldProgressCircleButton: View {
                     .frame(width: diameter, height: diameter)
 
                 Circle()
-                    .fill(tint.opacity(0.18))
+                    .fill(tint.opacity(WatchOpacity.ringInnerFill))
                     .frame(width: innerDiameter, height: innerDiameter)
 
                 Image(systemName: systemImage)
@@ -68,7 +69,7 @@ struct HoldProgressCircleButton: View {
                     holdProgress = 0
                     didCompleteHold = false
                 } else {
-                    withAnimation(.easeOut(duration: 0.18)) {
+                    withAnimation(WatchAnimationTokens.holdRelease) {
                         holdProgress = 0
                     }
                 }
@@ -88,6 +89,8 @@ struct HoldProgressCircleButton: View {
                     .lineLimit(1)
             }
         }
+        .opacity(isDisabled ? 0.55 : 1)
+        .allowsHitTesting(!isDisabled)
         .frame(maxWidth: .infinity)
     }
 }
