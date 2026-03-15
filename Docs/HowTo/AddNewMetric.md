@@ -148,27 +148,59 @@ static func aggregateStats(from sessions: [SkiSession]) -> AggregateStats {
 
 ## Step 7 — UI
 
-**Tracking dashboard widget:** Add a case to `TrackingStatWidget` in `TrackingDashboardLayout.swift`:
+The tracking dashboard now has a strict split between semantics and presentation:
+
+1. Define the new card kind in `Snowly/Models/ActiveTrackingCard.swift`
+2. Register its metadata in `Snowly/Models/ActiveTrackingCardRegistry.swift`
+3. Add the authoritative value in `ActiveTrackingCardInputAssembler` (`Snowly/Services/ActiveTrackingCardSnapshotAssembler.swift`)
+4. Let views consume the assembled input; do not recompute the metric in `ActiveTrackingView` or `TrackingStatGrid`
+
+For a scalar card, add a new `ActiveTrackingCardKind` case and register its icon/title:
 
 ```swift
-enum TrackingStatWidget: String, Codable, CaseIterable {
+enum ActiveTrackingCardKind: String, Codable, CaseIterable, Sendable, Equatable {
     // ...existing cases...
     case turnRate
-
-    var icon: String {
-        switch self {
-        // ...
-        case .turnRate: return "arrow.triangle.turn.up.right.circle"
-        }
-    }
 }
 ```
 
-Then handle the new case in `TrackingStatGrid` (`TrackingStatGrid.swift`).
+```swift
+case .turnRate:
+    return .init(
+        kind: kind,
+        titleKey: "stat_turn_rate",
+        icon: "arrow.triangle.turn.up.right.circle",
+        defaultSlot: .grid,
+        defaultPresentationKind: .scalar,
+        defaultConfig: .empty,
+        supportedSlots: [.grid],
+        supportsSettings: false
+    )
+```
+
+Then wire the metric into `ActiveTrackingCardInputAssembler.scalarDescriptor(for:source:)`:
+
+```swift
+case .turnRate:
+    return ScalarDescriptor(
+        title: String(localized: "stat_turn_rate"),
+        primaryValue: .numeric(
+            ActiveTrackingNumericValue(
+                value: semantic.avgTurnRate,
+                decimals: 1,
+                unit: String(localized: "stat_turn_rate_unit"),
+                animationDelay: 0.12
+            )
+        ),
+        subtitle: nil
+    )
+```
+
+The view layer should only render that assembled value. Curve cards may smooth their drawn path for readability, but the number shown to the user must still come from the shared assembler output.
 
 **Session detail:** Add the metric to `SessionDetailView` in the appropriate stats section.
 
-**Share card:** If the metric is notable (e.g., personal best), add it to `ShareCardView`.
+**Share card:** If the metric is notable (for example a personal best), add it to `ShareCardView`.
 
 ---
 

@@ -52,8 +52,8 @@ struct SettingsView: View {
         .background(
             LinearGradient(
                 colors: [
-                    Color(uiColor: .systemGroupedBackground),
-                    Color(uiColor: .secondarySystemGroupedBackground)
+                    ColorTokens.groupedBackground,
+                    ColorTokens.secondaryGroupedBackground
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -141,7 +141,7 @@ struct SettingsView: View {
                         .overlay(alignment: .bottomTrailing) {
                             Image(systemName: "pencil.circle.fill")
                                 .font(Typography.settingsIcon)
-                                .foregroundStyle(.white, Color.accentColor)
+                                .foregroundStyle(.white, ColorTokens.primaryAccent)
                         }
                     }
                     .buttonStyle(.plain)
@@ -647,7 +647,7 @@ private struct SessionSnapshot: Codable {
         gearSetupId = session.gearSetupId
         gearSetupSnapshotName = session.gearSetupSnapshotName
         gearAssetSnapshotSummary = session.gearAssetSnapshotSummary
-        runs = session.runs
+        runs = (session.runs ?? [])
             .sorted { $0.startDate < $1.startDate }
             .map(RunSnapshot.init)
     }
@@ -746,7 +746,7 @@ private struct GearAssetSnapshot: Codable {
         dueDate = asset.dueDate
         sortOrder = asset.sortOrder
         setupIDs = asset.setupIDs
-        maintenanceEvents = asset.maintenanceEvents
+        maintenanceEvents = (asset.maintenanceEvents ?? [])
             .sorted { $0.date > $1.date }
             .map(GearMaintenanceEventSnapshot.init)
     }

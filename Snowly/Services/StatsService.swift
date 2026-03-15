@@ -182,6 +182,11 @@ enum StatsService {
         }
     }
 
+    struct WatchPersonalBestNotification: Sendable {
+        let metric: String
+        let value: Double
+    }
+
     /// Compute personal best updates for a session (pure — no mutation).
     static func computePersonalBestUpdates(
         session: SkiSession,
@@ -206,6 +211,30 @@ enum StatsService {
         if let distance = update.distance {
             profile.personalBestDistance = distance
         }
+    }
+
+    static func watchPersonalBestNotification(
+        for update: PersonalBestUpdate
+    ) -> WatchPersonalBestNotification? {
+        if let maxSpeed = update.maxSpeed {
+            return WatchPersonalBestNotification(
+                metric: String(localized: "stat_max_speed"),
+                value: maxSpeed
+            )
+        }
+        if let vertical = update.vertical {
+            return WatchPersonalBestNotification(
+                metric: String(localized: "stat_vertical_drop"),
+                value: vertical
+            )
+        }
+        if let distance = update.distance {
+            return WatchPersonalBestNotification(
+                metric: String(localized: "common_distance"),
+                value: distance
+            )
+        }
+        return nil
     }
 
     /// Reset all personal bests to zero.
@@ -315,7 +344,7 @@ enum StatsService {
                     lastServiceDate: nil, dueDate: nil
                 )
             }
-            let lastService = asset.maintenanceEvents
+            let lastService = (asset.maintenanceEvents ?? [])
                 .map(\.date)
                 .max()
             let cutoff = lastService ?? .distantPast

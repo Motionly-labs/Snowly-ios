@@ -35,14 +35,18 @@ private struct TrackedRunSnapshot: Identifiable {
 /// Samples are already filtered upstream; the view keeps only immutable display points.
 private struct LiveSpeedCurveView: View {
     private struct FrozenPoint: Identifiable, Equatable {
-        let id = UUID()
+        // Use sample timestamp as identity so Equatable auto-synthesis compares
+        // GPS data, not a transient allocation UUID.  Required for correct diffing
+        // if a ForEach over frozen points is added in future.
+        var id: Date { time }
         let time: Date
         let speed: Double
         let state: SpeedCurveState
     }
 
-    @Environment(SessionTrackingService.self) private var trackingService
+    let samples: [SpeedSample]
     let unitSystem: UnitSystem
+    let renderingPolicy: ActiveTrackingSeriesRenderingPolicy
 
     private static let maxPointCount = SharedConstants.speedCurveMaxPoints
 
@@ -90,8 +94,8 @@ private struct LiveSpeedCurveView: View {
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(0.12),
-                                    Color.white.opacity(0.0),
+                                    ColorTokens.surfaceOverlay,
+                                    Color.clear,
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -99,8 +103,9 @@ private struct LiveSpeedCurveView: View {
                         )
 
                     Canvas { context, _ in
+                        var ctx = context
                         drawSegments(
-                            into: context,
+                            into: &ctx,
                             elements: elements,
                             coordinates: coordinates,
                             showsLatestMarker: selectionIndex == nil
@@ -112,12 +117,12 @@ private struct LiveSpeedCurveView: View {
                             point: coordinates[selectionIndex],
                             baseline: graphHeight,
                             label: selectionLabel(for: elements[selectionIndex]),
-                            tint: color(for: elements[selectionIndex].state),
+                            tint: elements[selectionIndex].state.trackingColor,
                             chartSize: CGSize(width: width, height: graphHeight)
                         )
                     } else if maxIndex < coordinates.count {
                         let marker = coordinates[maxIndex]
-                        let markerColor = color(for: elements[maxIndex].state)
+                        let markerColor = elements[maxIndex].state.trackingColor
                         VStack(spacing: Spacing.xs) {
                             Text(String(format: "%.1f", elements[maxIndex].speed))
                                 .font(.caption2)
@@ -140,7 +145,7 @@ private struct LiveSpeedCurveView: View {
         .onAppear {
             rebuildFromCurrentSamples()
         }
-        .onChange(of: trackingService.speedSamples) { _, latest in
+        .onChange(of: samples) { _, latest in
             appendNewSamples(from: latest)
         }
     }
@@ -149,7 +154,7 @@ private struct LiveSpeedCurveView: View {
         frozenPoints.removeAll()
         lastProcessedSampleTime = nil
         cachedMaxSpeedIndex = 0
-        appendNewSamples(from: trackingService.speedSamples)
+        appendNewSamples(from: samples)
     }
 
     /// Append-only live pipeline:
@@ -223,14 +228,6 @@ private struct LiveSpeedCurveView: View {
         return graphHeight - CGFloat(clamped / chartMaxDisplaySpeed) * graphHeight * 0.85 - 4
     }
 
-    private func color(for state: SpeedCurveState) -> Color {
-        switch state {
-        case .skiing: return ColorTokens.skiingAccent
-        case .lift:   return ColorTokens.liftAccent
-        case .others: return ColorTokens.walkAccent
-        }
-    }
-
     private func selectedIndex(in elements: [FrozenPoint]) -> Int? {
         guard let selectedPointTime else { return nil }
         return elements.firstIndex(where: { $0.time == selectedPointTime })
@@ -247,7 +244,7 @@ private struct LiveSpeedCurveView: View {
     }
 
     private func drawSegments(
-        into context: GraphicsContext,
+        into context: inout GraphicsContext,
         elements: [FrozenPoint],
         coordinates: [CGPoint],
         showsLatestMarker: Bool
@@ -260,26 +257,19 @@ private struct LiveSpeedCurveView: View {
                     width: 5,
                     height: 5
                 ))
-                context.fill(markerPath, with: .color(color(for: elements[0].state)))
+                context.fill(markerPath, with: .color(elements[0].state.trackingColor))
             }
             return
         }
 
-        // Batch contiguous same-state segments into one Path each.
-        // Reduces O(N) Path allocations to O(S) where S = number of activity-state transitions.
-        // After 10 min (300 pts) this cuts ~299 Paths → ~10-20, keeping renders well under 16 ms.
         let strokeStyle = StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round)
-        var segStart = 1
-        while segStart < coordinates.count {
-            let segState = elements[segStart].state
-            var j = segStart
-            while j < coordinates.count && elements[j].state == segState {
-                j += 1
-            }
-            let segPath = CurveRendering.smoothPath(points: Array(coordinates[(segStart - 1)..<j]))
-            context.stroke(segPath, with: .color(color(for: segState)), style: strokeStyle)
-            segStart = j
-        }
+        CurveRendering.drawStateSegments(
+            into: &context,
+            points: coordinates,
+            states: elements.map(\.state),
+            stateColor: \.trackingColor,
+            style: strokeStyle
+        )
 
         if showsLatestMarker, let end = coordinates.last, let last = elements.last {
             let markerPath = Path(ellipseIn: CGRect(
@@ -288,7 +278,7 @@ private struct LiveSpeedCurveView: View {
                 width: 6,
                 height: 6
             ))
-            context.fill(markerPath, with: .color(color(for: last.state)))
+            context.fill(markerPath, with: .color(last.state.trackingColor))
         }
     }
 
@@ -307,7 +297,6 @@ struct ActiveTrackingView: View {
     @Query(sort: \DeviceSettings.createdAt) private var deviceSettings: [DeviceSettings]
 
     @State private var showingSummary = false
-    @State private var showingLandscapeSettings = false
     @State private var activeTab: TrackingDashboardTab = .session
     @State private var selectedHeroInstanceId: UUID? = TrackingDashboardLayout.default.instances.first(where: { $0.slot == .hero })?.instanceId
     @State private var pulseRecording = false
@@ -321,8 +310,7 @@ struct ActiveTrackingView: View {
     private var deviceSettings_: DeviceSettings? { deviceSettings.first }
 
     private var heroInstances: [ActiveTrackingCardInstance] {
-        // .profile is managed by the landscape overlay, not the portrait hero carousel.
-        dashboardLayout.instances.filter { $0.slot == .hero && $0.kind != .profile }
+        dashboardLayout.instances.filter { $0.slot == .hero }
     }
 
     private var gridInstances: [ActiveTrackingCardInstance] {
@@ -334,36 +322,56 @@ struct ActiveTrackingView: View {
         return heroInstances.first(where: { $0.instanceId == id }) ?? heroInstances.first
     }
 
-    private var gridSnapshots: [UUID: ActiveTrackingCardSnapshot] {
-        // Grid cards are scalar or text only — no series snapshots are built here.
-        // Pass empty arrays for sample fields to avoid subscribing to large @Observable
-        // arrays (altitudeSamples, speedSamples, heartRateSamples) that update at GPS/HR
-        // frequency and would trigger extra body re-renders with no visual effect.
-        let ctx = ActiveTrackingCardSnapshotAssembler.Context(
-            unitSystem: unitSystem,
-            skiingMetrics: trackingService.skiingMetrics,
-            currentSpeed: trackingService.currentSpeed,
-            completedRuns: trackingService.completedRuns,
-            speedSamples: [],
-            altitudeSamples: [],
-            currentAltitudeMeters: trackingService.currentAltitude,
-            elapsedSeconds: elapsedTime,
-            currentHeartRate: watchBridgeService.currentHeartRate,
-            averageHeartRate: watchBridgeService.averageHeartRate,
-            heartRateSamples: []
-        )
-        return Dictionary(uniqueKeysWithValues: gridInstances.map { instance in
-            (instance.instanceId, ActiveTrackingCardSnapshotAssembler.snapshot(for: instance, context: ctx))
-        })
-    }
-
-
     private var unitSystem: UnitSystem {
         profiles.first?.preferredUnits ?? .metric
     }
 
+    private var dashboardCardSource: ActiveTrackingCardInputAssembler.Source {
+        ActiveTrackingCardInputAssembler.Source(
+            semantic: ActiveTrackingCardInputAssembler.MotionSemanticSnapshot(
+                skiingMetrics: trackingService.skiingMetrics,
+                currentSpeed: trackingService.currentSpeed,
+                currentAltitudeMeters: trackingService.currentAltitude,
+                completedRuns: trackingService.completedRuns,
+                elapsedSeconds: elapsedTime,
+                currentHeartRate: watchBridgeService.currentHeartRate,
+                averageHeartRate: watchBridgeService.averageHeartRate
+            ),
+            presentation: ActiveTrackingCardInputAssembler.MotionPresentationSnapshot(
+                speedSamples: trackingService.speedSamples,
+                altitudeSamples: trackingService.altitudeSamples,
+                heartRateSamples: watchBridgeService.heartRateSamples
+            ),
+            context: ActiveTrackingCardInputAssembler.TrackingCardPresentationContext(
+                unitSystem: unitSystem
+            )
+        )
+    }
+
+    private var dashboardCardInputs: [UUID: AnyActiveTrackingCardInput] {
+        Dictionary(uniqueKeysWithValues: dashboardLayout.instances.map { instance in
+            (instance.instanceId, ActiveTrackingCardInputAssembler.input(for: instance, source: dashboardCardSource))
+        })
+    }
+
     private var speedUnitLabel: String {
         Formatters.speedUnit(unitSystem)
+    }
+
+    private func scalarCardInput(for kind: ActiveTrackingCardKind) -> ActiveTrackingScalarCardInput? {
+        ActiveTrackingCardInputAssembler.scalarInput(for: kind, source: dashboardCardSource)
+    }
+
+    private func numericPrimaryValue(for kind: ActiveTrackingCardKind) -> ActiveTrackingNumericValue? {
+        guard let input = scalarCardInput(for: kind) else { return nil }
+        guard case .numeric(let value) = input.primaryValue else { return nil }
+        return value
+    }
+
+    private func textPrimaryValue(for kind: ActiveTrackingCardKind) -> ActiveTrackingTextValue? {
+        guard let input = scalarCardInput(for: kind) else { return nil }
+        guard case .text(let value) = input.primaryValue else { return nil }
+        return value
     }
 
     private static func buildSkiRuns(from completedRuns: [CompletedRunData]) -> [TrackedRunSnapshot] {
@@ -387,20 +395,15 @@ struct ActiveTrackingView: View {
     }
 
     private var displayedPeakSpeed: Double {
-        speedValue(lastRun?.maxSpeed ?? trackingService.skiingMetrics.maxSpeed)
+        numericPrimaryValue(for: .peakSpeed)?.value ?? 0
     }
 
     private var displayedAvgSpeed: Double {
-        if let run = lastRun {
-            return speedValue(run.avgSpeed)
-        }
-        let totalDist = trackingService.skiingMetrics.totalDistance
-        guard elapsedTime > 0 else { return 0 }
-        return speedValue(totalDist / elapsedTime)
+        numericPrimaryValue(for: .avgSpeed)?.value ?? 0
     }
 
     private var displayedCurrentSpeed: Double {
-        speedValue(trackingService.currentSpeed)
+        numericPrimaryValue(for: .currentSpeed)?.value ?? 0
     }
 
     private var currentSpeedSubtitle: String {
@@ -419,76 +422,29 @@ struct ActiveTrackingView: View {
         return currentSpeedSubtitle
     }
 
-    private var runCountValue: Double {
-        Double(max(trackingService.skiingMetrics.runCount, cachedSkiRuns.count))
-    }
-
-    private var peakSpeedSubtitle: String {
-        if let run = lastRun {
-            let format = String(localized: "tracking_peak_subtitle_last_run_format")
-            return String(
-                format: format,
-                locale: Locale.current,
-                formatVertical(run.vertical),
-                run.duration / 60
-            )
-        }
-        let format = String(localized: "tracking_peak_subtitle_session_format")
-        return String(
-            format: format,
-            locale: Locale.current,
-            formatVertical(trackingService.skiingMetrics.totalVertical),
-            elapsedMinutes
-        )
-    }
-
-    private var avgSpeedSubtitle: String {
-        if lastRun != nil {
-            return String(localized: "tracking_avg_label_last_run")
-        }
-        return String(localized: "tracking_avg_label_session")
-    }
-
-    private var verticalSubtitle: String {
-        let format = String(localized: "tracking_vertical_subtitle_format")
-        return String(format: format, locale: Locale.current, Int64(runCountValue), elapsedMinutes)
-    }
-
-    private var bestSpeed: Double {
-        max(cachedMaxRunSpeed, trackingService.skiingMetrics.maxSpeed)
-    }
-
     private var totalVerticalValue: Double {
-        switch unitSystem {
-        case .metric: return trackingService.skiingMetrics.totalVertical
-        case .imperial: return UnitConversion.metersToFeet(trackingService.skiingMetrics.totalVertical)
-        }
+        numericPrimaryValue(for: .vertical)?.value ?? 0
     }
 
     private var totalVerticalUnit: String {
-        Formatters.verticalUnit(unitSystem)
+        numericPrimaryValue(for: .vertical)?.unit ?? Formatters.verticalUnit(unitSystem)
     }
 
     private var totalDistanceValue: Double {
-        switch unitSystem {
-        case .metric: return trackingService.skiingMetrics.totalDistance / 1000
-        case .imperial: return trackingService.skiingMetrics.totalDistance / 1609.344
-        }
+        numericPrimaryValue(for: .distance)?.value ?? 0
     }
 
-    private var totalDistanceUnit: String { Formatters.distanceUnit(unitSystem) }
+    private var totalDistanceUnit: String {
+        numericPrimaryValue(for: .distance)?.unit ?? Formatters.distanceUnit(unitSystem)
+    }
 
     private var hiddenHeroKinds: [ActiveTrackingCardKind] {
         let presentKinds = Set(heroInstances.map(\.kind))
         return ActiveTrackingCardRegistry.allHeroKinds
-            .filter { !presentKinds.contains($0) && $0 != .profile }
+            .filter { !presentKinds.contains($0) }
     }
 
-    private var landscapeStatKinds: [ActiveTrackingCardKind] {
-        let profileInstance = dashboardLayout.instances.first(where: { $0.kind == .profile })
-        let raw = profileInstance?.config.profileStatKinds ?? Self.profileDefaultStatKinds
-        return raw.compactMap { ActiveTrackingCardKind(rawValue: $0) }
-    }
+    private var landscapeStatKinds: [ActiveTrackingCardKind] { [.currentSpeed, .vertical, .runCount] }
 
     private var elapsedTimeText: String {
         let total = Int(elapsedTime)
@@ -500,38 +456,15 @@ struct ActiveTrackingView: View {
             : String(format: "%02d:%02d", m, s)
     }
 
-    private var profileAltitudeChangeValue: Double {
-        let window = trackingService.altitudeSamples
-            .droppingLeadingZeroLikeSamples()
-            .suffix(SyncedActivityProfileView.preferredWindowCount)
-        guard let first = window.first?.altitude, let last = window.last?.altitude else { return 0 }
-        return last - first
-    }
-
-    private var profileAltitudeChangeText: String {
-        String(format: "%+.0f %@", profileAltitudeChangeValue, totalVerticalUnit)
-    }
-
-    private var currentSpeedMetricText: String {
-        String(format: "%.1f %@", displayedCurrentSpeed, speedUnitLabel)
-    }
-
-    private var currentHeartRateValue: Double {
-        watchBridgeService.currentHeartRate
-    }
-
-    private var averageHeartRateValue: Double {
-        watchBridgeService.averageHeartRate
-    }
-
     private var currentHeartRateText: String {
-        guard currentHeartRateValue > 0 else { return "--" }
-        return "\(Int(currentHeartRateValue.rounded()))"
+        textPrimaryValue(for: .heartRate)?.value ?? "--"
     }
 
-    private var averageHeartRateText: String {
-        guard averageHeartRateValue > 0 else { return "--" }
-        return "\(Int(averageHeartRateValue.rounded()))"
+    private var landscapeSpeedCurveInput: ActiveTrackingSeriesCardInput? {
+        ActiveTrackingCardInputAssembler.seriesInput(
+            for: .speedCurve,
+            source: dashboardCardSource
+        )
     }
 
     private var activityStatusTint: Color {
@@ -620,9 +553,6 @@ struct ActiveTrackingView: View {
                     .animation(AnimationTokens.standardEaseInOut, value: verticalSizeClass)
             }
         }
-        .sheet(isPresented: $showingLandscapeSettings) {
-            landscapeSettingsSheet
-        }
         .onAppear {
             pulseRecording = true
             trackingService.setTrackingDashboardVisible(true)
@@ -631,13 +561,6 @@ struct ActiveTrackingView: View {
             if let settings = deviceSettings_ {
                 dashboardLayout = settings.resolvedDashboardLayout
                 selectedHeroInstanceId = dashboardLayout.instances.first(where: { $0.slot == .hero })?.instanceId
-            }
-            // Ensure the landscape .profile instance exists for config persistence.
-            // Users upgrading from layouts that predate the landscape view won't
-            // have this entry; add it silently on first open.
-            if !dashboardLayout.instances.contains(where: { $0.kind == .profile }) {
-                let profileInst = ActiveTrackingCardInstance.make(kind: .profile)
-                dashboardLayout = TrackingDashboardLayout(instances: dashboardLayout.instances + [profileInst])
             }
             Task {
                 try? await Task.sleep(for: .milliseconds(100))
@@ -792,65 +715,102 @@ struct ActiveTrackingView: View {
 
     @ViewBuilder
     private func heroCardView(_ instance: ActiveTrackingCardInstance) -> some View {
-        switch instance.kind {
-        case .currentSpeed:
+        if let input = dashboardCardInputs[instance.instanceId] {
+            switch input {
+            case .scalar(let scalar):
+                heroScalarPage(input: scalar)
+            case .series(let series):
+                heroSeriesPage(input: series)
+            case .composite(let composite):
+                heroCompositePage(input: composite)
+            }
+        } else {
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private func heroScalarPage(input: ActiveTrackingScalarCardInput) -> some View {
+        switch input.primaryValue {
+        case .numeric(let value):
             heroMetricPage(
-                label: String(localized: "stat_current_speed"),
-                value: displayedCurrentSpeed,
-                decimals: 1,
-                suffix: speedUnitLabel,
-                subtitle: ""
+                label: input.title,
+                value: value.value,
+                decimals: value.decimals,
+                suffix: value.unit,
+                subtitle: input.subtitle ?? ""
             )
-        case .peakSpeed:
-            heroMetricPage(
-                label: String(localized: "stat_peak_speed"),
-                value: displayedPeakSpeed,
-                decimals: 1,
-                suffix: speedUnitLabel,
-                subtitle: peakSpeedSubtitle
-            )
-        case .avgSpeed:
-            heroMetricPage(
-                label: String(localized: "stat_avg_speed"),
-                value: displayedAvgSpeed,
-                decimals: 1,
-                suffix: speedUnitLabel,
-                subtitle: avgSpeedSubtitle
-            )
-        case .vertical:
-            heroMetricPage(
-                label: String(localized: "common_vertical"),
-                value: totalVerticalValue,
-                decimals: 0,
-                suffix: totalVerticalUnit,
-                subtitle: verticalSubtitle
-            )
-        case .heartRate:
+        case .text(let value):
             heroTextPage(
-                label: String(localized: "stat_heart_rate"),
-                value: currentHeartRateText,
-                suffix: currentHeartRateValue > 0 ? String(localized: "stat_heart_rate_unit") : "",
-                subtitle: averageHeartRateValue > 0
-                    ? "\(String(localized: "tracking_hero_heart_rate_subtitle")) · \(averageHeartRateText) \(String(localized: "stat_heart_rate_unit"))"
-                    : String(localized: "tracking_hero_heart_rate_subtitle")
-            )
-        case .profile:
-            EmptyView() // shown in landscape overlay only
-        case .speedCurve:
-            heroSpeedCurvePage
-        case .altitudeCurve:
-            heroAltitudeCurvePage
-        case .heartRateCurve:
-            heroHeartRateCurvePage
-        default:
-            heroMetricPage(
-                label: String(localized: "stat_current_speed"),
-                value: displayedCurrentSpeed,
-                decimals: 1,
-                suffix: speedUnitLabel,
-                subtitle: ""
+                label: input.title,
+                value: value.value,
+                suffix: value.unit,
+                subtitle: input.subtitle ?? ""
             )
         }
+    }
+
+    private func heroSeriesPage(input: ActiveTrackingSeriesCardInput) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                Text(input.title)
+                    .font(Typography.caption2Semibold)
+                    .foregroundStyle(.tertiary)
+                    .textCase(.uppercase)
+
+                if let primaryValue = input.primaryValue {
+                    seriesPrimaryValueView(primaryValue)
+                }
+
+                if let subtitle = input.subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+
+            heroSeriesContent(input: input)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private func heroCompositePage(input: ActiveTrackingCompositeCardInput) -> some View {
+        let altitudeSamples = input.embeddedSeries
+            .first { $0.role == .altitude }?
+            .payload
+            .altitudeSamples ?? []
+        let speedSamples = input.embeddedSeries
+            .first { $0.role == .speed }?
+            .payload
+            .speedSamples ?? []
+
+        return VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text(input.title)
+                .font(Typography.caption2Semibold)
+                .foregroundStyle(.tertiary)
+                .textCase(.uppercase)
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Spacing.sm) {
+                ForEach(input.chips, id: \.kind) { chip in
+                    heroMetricChip(
+                        icon: ActiveTrackingCardRegistry.definition(for: chip.kind).icon,
+                        label: chip.title,
+                        value: formattedPrimaryValue(chip.primaryValue),
+                        tint: cardAccent(for: chip.kind)
+                    )
+                }
+            }
+
+            SyncedActivityProfileView(
+                altitudeSamples: altitudeSamples,
+                speedSamples: speedSamples,
+                unitSystem: unitSystem
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private func heroMetricPage(
@@ -915,128 +875,72 @@ struct ActiveTrackingView: View {
                 }
             }
 
-            Text(subtitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-
-    private func profileChipContent(for kind: ActiveTrackingCardKind) -> (icon: String, label: String, value: String, tint: Color) {
-        switch kind {
-        case .currentSpeed:
-            return ("speedometer", String(localized: "stat_current_speed"), currentSpeedMetricText, ColorTokens.sportAccent)
-        case .peakSpeed:
-            return ("bolt.fill", String(localized: "stat_peak_speed"),
-                    String(format: "%.1f %@", displayedPeakSpeed, speedUnitLabel), ColorTokens.sportAccent)
-        case .avgSpeed:
-            return ("gauge.with.dots.needle.33percent", String(localized: "stat_avg_speed"),
-                    String(format: "%.1f %@", displayedAvgSpeed, speedUnitLabel), ColorTokens.sportAccent)
-        case .vertical:
-            return ("arrow.down", String(localized: "common_vertical"),
-                    String(format: "%.0f %@", totalVerticalValue, totalVerticalUnit), activityStatusTint)
-        case .distance:
-            return ("point.topleft.down.to.point.bottomright.curvepath", String(localized: "common_distance"),
-                    String(format: "%.2f %@", totalDistanceValue, totalDistanceUnit), ColorTokens.sportAccent)
-        case .runCount:
-            return ("number", String(localized: "common_runs"),
-                    String(format: "%.0f", runCountValue), ColorTokens.success)
-        case .heartRate:
-            return ("heart.fill", String(localized: "stat_heart_rate"),
-                    currentHeartRateText + " bpm", ColorTokens.brandRed)
-        default:
-            return ("circle", "", "", .secondary)
-        }
-    }
-
-    private var heroSpeedCurvePage: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text(String(localized: "stat_speed_curve"))
-                    .font(Typography.caption2Semibold)
-                    .foregroundStyle(.tertiary)
-                    .textCase(.uppercase)
-                Text(String(format: "%.1f %@", displayedCurrentSpeed, speedUnitLabel))
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
+            if !subtitle.isEmpty {
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
             }
-            LiveSpeedCurveView(unitSystem: unitSystem)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    private var heroAltitudeCurvePage: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text(String(localized: "stat_altitude_curve"))
-                    .font(Typography.caption2Semibold)
-                    .foregroundStyle(.tertiary)
-                    .textCase(.uppercase)
-                Text(profileAltitudeChangeText)
-                    .font(.title2.weight(.semibold))
+    @ViewBuilder
+    private func seriesPrimaryValueView(_ value: ActiveTrackingCardPrimaryValue) -> some View {
+        switch value {
+        case .numeric(let numeric):
+            Text(String(format: "%.\(numeric.decimals)f %@", numeric.value, numeric.unit))
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        case .text(let text):
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.xxs) {
+                Text(text.value)
+                    .font(.title2.weight(.semibold).monospacedDigit())
                     .foregroundStyle(.primary)
-            }
-            AltitudeSparkline(samples: altitudeHeroSamples, unitLabel: totalVerticalUnit)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-
-    private var altitudeHeroSamples: [AltitudeSample] {
-        let cutoff = Date.now.addingTimeInterval(-SharedConstants.altitudeSampleWindowSeconds)
-        return trackingService.altitudeSamples
-            .filter { $0.time >= cutoff }
-            .droppingLeadingZeroLikeSamples()
-    }
-
-    private var heroHeartRateCurvePage: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: Spacing.xxs) {
-                    Text(String(localized: "stat_heart_rate_curve"))
-                        .font(Typography.caption2Semibold)
-                        .foregroundStyle(.tertiary)
-                        .textCase(.uppercase)
-                    HStack(alignment: .firstTextBaseline, spacing: Spacing.xxs) {
-                        Text(currentHeartRateText)
-                            .font(.title2.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(.primary)
-                        if currentHeartRateValue > 0 {
-                            Text("stat_heart_rate_unit")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                Spacer()
-                if averageHeartRateValue > 0 {
-                    VStack(alignment: .trailing, spacing: Spacing.xxs) {
-                        Text(String(localized: "tracking_hero_heart_rate_subtitle"))
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                        Text("\(Int(averageHeartRateValue.rounded())) \(String(localized: "stat_heart_rate_unit"))")
-                            .font(Typography.caption2Semibold)
-                            .foregroundStyle(.secondary)
-                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                if !text.unit.isEmpty {
+                    Text(text.unit)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
-            HeartRateCurveView(samples: heartRateHeroSamples)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    private var heartRateHeroSamples: [HeartRateSample] {
-        let cutoff = Date.now.addingTimeInterval(-SharedConstants.heartRateSampleWindowSeconds)
-        return watchBridgeService.heartRateSamples
-            .filter { $0.time >= cutoff }
-            .droppingLeadingZeroLikeSamples()
+    @ViewBuilder
+    private func heroSeriesContent(input: ActiveTrackingSeriesCardInput) -> some View {
+        switch input.seriesPayload {
+        case .speed(let samples):
+            LiveSpeedCurveView(
+                samples: samples,
+                unitSystem: unitSystem,
+                renderingPolicy: input.renderingPolicy
+            )
+        case .altitude(let samples):
+            AltitudeSparkline(samples: samples, unitLabel: totalVerticalUnit)
+        case .heartRate(let samples):
+            HeartRateCurveView(samples: samples)
+        }
+    }
+
+    private func formattedPrimaryValue(_ value: ActiveTrackingCardPrimaryValue) -> String {
+        switch value {
+        case .numeric(let numeric):
+            if numeric.unit.isEmpty {
+                return String(format: "%.\(numeric.decimals)f", numeric.value)
+            }
+            return String(format: "%.\(numeric.decimals)f %@", numeric.value, numeric.unit)
+        case .text(let text):
+            return text.unit.isEmpty ? text.value : "\(text.value) \(text.unit)"
+        }
     }
 
     // MARK: - Landscape Dashboard
 
+    @ViewBuilder
     private var landscapeDashboard: some View {
         ZStack(alignment: .topTrailing) {
             Color(.systemBackground).ignoresSafeArea()
@@ -1080,19 +984,6 @@ struct ActiveTrackingView: View {
                     }
 
                     Spacer()
-
-                    // Configure button
-                    Button {
-                        showingLandscapeSettings = true
-                    } label: {
-                        HStack(spacing: Spacing.xs) {
-                            Image(systemName: "slider.horizontal.3")
-                            Text(String(localized: "tracking_overview_stats_label"))
-                        }
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                    }
-                    .buttonStyle(.plain)
                 }
                 .padding(Spacing.xl)
                 .frame(width: Spacing.landscapeStatPanel)
@@ -1103,9 +994,19 @@ struct ActiveTrackingView: View {
                     .frame(width: 1)
                     .padding(.vertical, Spacing.lg)
 
-                // Right panel: speed curve full height
-                LiveSpeedCurveView(unitSystem: unitSystem)
+                // Right panel mirrors the shared curve input contract used by hero cards.
+                if let landscapeSpeedCurveInput,
+                   case .speed(let samples) = landscapeSpeedCurveInput.seriesPayload {
+                    LiveSpeedCurveView(
+                        samples: samples,
+                        unitSystem: unitSystem,
+                        renderingPolicy: landscapeSpeedCurveInput.renderingPolicy
+                    )
                     .padding(Spacing.xl)
+                } else {
+                    Color.clear
+                        .padding(Spacing.xl)
+                }
             }
 
             // Controls — top-right corner
@@ -1134,70 +1035,43 @@ struct ActiveTrackingView: View {
         }
     }
 
+    private func cardAccent(for kind: ActiveTrackingCardKind) -> Color {
+        switch kind {
+        case .currentSpeed, .speedCurve, .skiTime:
+            return ColorTokens.sportAccent
+        case .peakSpeed, .liftCount:
+            return ColorTokens.secondaryAccent
+        case .avgSpeed, .distance:
+            return ColorTokens.info
+        case .vertical:
+            return ColorTokens.success
+        case .runCount:
+            return ColorTokens.brandGold
+        case .currentAltitude, .altitudeCurve:
+            return ColorTokens.trailBlack
+        case .heartRate, .heartRateCurve:
+            return ColorTokens.brandRed
+        }
+    }
+
     private func landscapeStatRow(for kind: ActiveTrackingCardKind) -> some View {
-        let chip = profileChipContent(for: kind)
+        let chip = ActiveTrackingCardInputAssembler.scalarChip(for: kind, source: dashboardCardSource)
         return HStack(spacing: Spacing.sm) {
-            Image(systemName: chip.icon)
+            Image(systemName: ActiveTrackingCardRegistry.definition(for: kind).icon)
                 .font(Typography.captionSemibold)
-                .foregroundStyle(chip.tint)
+                .foregroundStyle(cardAccent(for: kind))
                 .frame(width: Spacing.lg, alignment: .center)
-            Text(chip.label)
+            Text(chip?.title ?? "")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             Spacer()
-            Text(chip.value)
+            Text(chip.map { formattedPrimaryValue($0.primaryValue) } ?? "--")
                 .font(Typography.captionSemibold)
                 .monospacedDigit()
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }
-    }
-
-    private var landscapeSettingsSheet: some View {
-        let availableKinds = Self.profileAvailableStatKinds
-        let profileInstance = dashboardLayout.instances.first(where: { $0.kind == .profile })
-        let selectedKinds = Set(profileInstance?.config.profileStatKinds ?? Self.profileDefaultStatKinds)
-        return NavigationStack {
-            List {
-                ForEach(availableKinds, id: \.rawValue) { kind in
-                    let def = ActiveTrackingCardRegistry.definition(for: kind)
-                    let isOn = selectedKinds.contains(kind.rawValue)
-                    Button {
-                        if let inst = profileInstance {
-                            toggleProfileStat(kind, in: inst)
-                        }
-                    } label: {
-                        HStack(spacing: Spacing.md) {
-                            Image(systemName: def.icon)
-                                .font(.body)
-                                .foregroundStyle(isOn ? ColorTokens.primaryAccent : .secondary)
-                                .frame(width: Spacing.xl, alignment: .center)
-                            Text(String(localized: String.LocalizationValue(def.titleKey)))
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            if isOn {
-                                Image(systemName: "checkmark")
-                                    .font(Typography.captionSemibold)
-                                    .foregroundStyle(ColorTokens.primaryAccent)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .navigationTitle(String(localized: "tracking_overview_stats_label"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "common_done")) {
-                        showingLandscapeSettings = false
-                    }
-                    .fontWeight(.semibold)
-                }
-            }
-        }
-        .presentationDetents([.medium])
     }
 
     private var heroEditorSection: some View {
@@ -1218,10 +1092,6 @@ struct ActiveTrackingView: View {
                         editableHeroCard(instance)
                     }
                 }
-            }
-
-            if let selected = selectedHeroInstance, selected.kind == .profile {
-                profileStatPickerSection(for: selected)
             }
 
             if !hiddenHeroKinds.isEmpty {
@@ -1352,8 +1222,6 @@ struct ActiveTrackingView: View {
             return String(localized: "tracking_hero_card_vertical_description")
         case .heartRate:
             return String(localized: "tracking_hero_card_heart_rate_description")
-        case .profile:
-            return String(localized: "tracking_hero_card_profile_description")
         case .speedCurve:
             return String(localized: "tracking_hero_card_speed_curve_description")
         case .altitudeCurve:
@@ -1397,68 +1265,6 @@ struct ActiveTrackingView: View {
                 await trackingService.resumeTracking(unitSystem: unitSystem)
             } else {
                 await trackingService.pauseTracking()
-            }
-        }
-    }
-
-    private func toggleProfileStat(_ kind: ActiveTrackingCardKind, in instance: ActiveTrackingCardInstance) {
-        guard let index = dashboardLayout.instances.firstIndex(where: { $0.instanceId == instance.instanceId }) else { return }
-        let current = instance.config.profileStatKinds ?? Self.profileDefaultStatKinds
-        let kindStr = kind.rawValue
-        let newKinds = current.contains(kindStr)
-            ? current.filter { $0 != kindStr }
-            : current + [kindStr]
-        var newInstances = dashboardLayout.instances
-        newInstances[index].config.profileStatKinds = newKinds
-        dashboardLayout = TrackingDashboardLayout(instances: newInstances)
-    }
-
-    private static let profileAvailableStatKinds: [ActiveTrackingCardKind] = [
-        .currentSpeed, .peakSpeed, .avgSpeed, .vertical, .distance, .runCount, .heartRate
-    ]
-
-    private static let profileDefaultStatKinds: [String] =
-        ActiveTrackingCardRegistry.definition(for: .profile).defaultConfig.profileStatKinds
-        ?? ["currentSpeed", "vertical", "runCount"]
-
-    private func profileStatPickerSection(for instance: ActiveTrackingCardInstance) -> some View {
-        let availableKinds = Self.profileAvailableStatKinds
-        let selectedKinds = Set(instance.config.profileStatKinds ?? Self.profileDefaultStatKinds)
-        return VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text(String(localized: "tracking_overview_stats_label"))
-                .font(Typography.caption2Semibold)
-                .foregroundStyle(.tertiary)
-                .textCase(.uppercase)
-            LazyVGrid(
-                columns: [GridItem(.flexible()), GridItem(.flexible())],
-                spacing: Spacing.xs
-            ) {
-                ForEach(availableKinds, id: \.rawValue) { kind in
-                    let def = ActiveTrackingCardRegistry.definition(for: kind)
-                    let isOn = selectedKinds.contains(kind.rawValue)
-                    Button {
-                        withAnimation(AnimationTokens.quickEaseOut) {
-                            toggleProfileStat(kind, in: instance)
-                        }
-                    } label: {
-                        HStack(spacing: Spacing.xs) {
-                            Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(isOn ? heroCardAccent : Color.secondary)
-                            Text(String(localized: String.LocalizationValue(def.titleKey)))
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, Spacing.md)
-                        .padding(.vertical, Spacing.sm)
-                        .background(
-                            isOn ? heroCardAccent.opacity(0.10) : Color.primary.opacity(0.04),
-                            in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
             }
         }
     }
@@ -1523,7 +1329,7 @@ struct ActiveTrackingView: View {
     private var sessionContent: some View {
         TrackingStatGrid(
             instances: gridInstances,
-            snapshots: gridSnapshots,
+            inputs: dashboardCardInputs,
             isEditing: isEditingLayout,
             cardsAppeared: cardsAppeared,
             onReorder: reorderWidgets,
@@ -1731,98 +1537,29 @@ struct ActiveTrackingView: View {
 private struct HeartRateCurveView: View {
     let samples: [HeartRateSample]
 
-    @State private var selectedSampleTime: Date?
-
     private var displaySamples: [HeartRateSample] {
         samples.droppingLeadingZeroLikeSamples()
     }
 
     var body: some View {
+        let s = displaySamples
         GeometryReader { geo in
-            let size = geo.size
-
-            if displaySamples.count < 2 {
-                Path { path in
-                    path.move(to: CGPoint(x: 0, y: size.height))
-                    path.addLine(to: CGPoint(x: size.width, y: size.height))
+            TrackingSeriesCurveView(
+                points: CurveRendering.indexedPoints(
+                    values: s.map(\.bpm),
+                    in: geo.size,
+                    minimumRange: 20
+                ),
+                coloring: .uniform(ColorTokens.brandRed),
+                fillColors: [
+                    ColorTokens.brandRed.opacity(CurveRendering.standardFillTopOpacity),
+                    .clear,
+                ],
+                selectionLabel: { [s] idx in
+                    guard idx < s.count else { return "--" }
+                    return "\(Int(s[idx].bpm.rounded())) bpm"
                 }
-                .stroke(
-                    Color.secondary.opacity(Opacity.muted),
-                    style: StrokeStyle(lineWidth: 1, dash: [4, 4])
-                )
-            } else {
-                let pts = computePoints(size: size)
-                let selectionIndex = selectedIndex
-                ZStack {
-                    CurveRendering.smoothFillPath(points: pts, baseline: size.height)
-                        .fill(LinearGradient(
-                            colors: [ColorTokens.brandRed.opacity(0.18), Color.clear],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ))
-                    Canvas { context, _ in
-                        drawCurve(into: context, pts: pts)
-                    }
-
-                    if let selectionIndex, selectionIndex < pts.count {
-                        CurveSelectionOverlay(
-                            point: pts[selectionIndex],
-                            baseline: size.height,
-                            label: selectionLabel(for: displaySamples[selectionIndex]),
-                            tint: ColorTokens.brandRed,
-                            chartSize: size
-                        )
-                    }
-                }
-                .contentShape(Rectangle())
-                .simultaneousGesture(
-                    SpatialTapGesture().onEnded { value in
-                        selectPoint(at: value.location.x, points: pts)
-                    }
-                )
-            }
+            )
         }
-        .onChange(of: displaySamples.map(\.time)) { _, latestTimes in
-            guard let selectedSampleTime else { return }
-            if !latestTimes.contains(selectedSampleTime) {
-                self.selectedSampleTime = nil
-            }
-        }
-    }
-
-    private func computePoints(size: CGSize) -> [CGPoint] {
-        let values = displaySamples.map(\.bpm)
-        let minVal = values.min() ?? 0
-        let maxVal = values.max() ?? 1
-        let range = max(maxVal - minVal, 20)
-
-        return displaySamples.enumerated().map { idx, sample in
-            let x = size.width * CGFloat(idx) / CGFloat(displaySamples.count - 1)
-            let normalised = (sample.bpm - minVal) / range
-            let y = size.height * (1.0 - CGFloat(normalised)) * 0.85 + 4
-            return CGPoint(x: x, y: y)
-        }
-    }
-
-    private var selectedIndex: Int? {
-        guard let selectedSampleTime else { return nil }
-        return displaySamples.firstIndex(where: { $0.time == selectedSampleTime })
-    }
-
-    private func drawCurve(into context: GraphicsContext, pts: [CGPoint]) {
-        guard pts.count >= 2 else { return }
-        let strokeStyle = StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
-        let path = CurveRendering.smoothPath(points: pts)
-        context.stroke(path, with: .color(ColorTokens.brandRed), style: strokeStyle)
-    }
-
-    private func selectionLabel(for sample: HeartRateSample) -> String {
-        "\(Int(sample.bpm.rounded())) bpm"
-    }
-
-    private func selectPoint(at x: CGFloat, points: [CGPoint]) {
-        guard let index = CurveRendering.nearestPointIndex(to: x, in: points) else { return }
-        let tappedTime = displaySamples[index].time
-        selectedSampleTime = selectedSampleTime == tappedTime ? nil : tappedTime
     }
 }

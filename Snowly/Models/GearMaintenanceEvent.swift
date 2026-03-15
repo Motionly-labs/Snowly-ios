@@ -30,7 +30,7 @@ enum GearMaintenanceEventType: String, Codable, CaseIterable, Sendable {
 
 @Model
 final class GearMaintenanceEvent {
-    @Attribute(.unique) var id: UUID = UUID()
+    var id: UUID = UUID()
     var type: GearMaintenanceEventType = GearMaintenanceEventType.other
     var date: Date = Date()
     var notes: String?

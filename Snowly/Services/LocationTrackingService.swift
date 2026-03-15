@@ -10,6 +10,7 @@ import Foundation
 import CoreLocation
 import os
 import Observation
+import UIKit
 
 @Observable
 @MainActor
@@ -125,13 +126,11 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
         guard let location = locations.last else { return }
         Task { @MainActor in
 #if DEBUG
-            // In GPX replay mode the stream owns currentLocation/Altitude/Speed/Course.
-            // Still update currentLocation from CLLocationManager so MapKit's blue dot
-            // follows Xcode's simulation (if configured), but skip pipeline injection.
-            if self.gpxReplayName != nil {
-                self.currentLocation = location.coordinate
-                return
-            }
+            // In GPX replay mode, runGPXLoop owns currentLocation/altitude/speed/course.
+            // Skip CLLocationManager updates entirely — on a real device the CLLocationManager
+            // reports the actual physical location, which would overwrite the replayed Zermatt
+            // coordinates and break resort detection at session end.
+            if self.gpxReplayName != nil { return }
 #endif
             self.currentLocation = location.coordinate
             self.currentAltitude = location.altitude
@@ -248,7 +247,7 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
 
     private func configureLocationManager(forTracking: Bool) {
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.distanceFilter = 5
+        locationManager.distanceFilter = batteryAwareDistanceFilter
         locationManager.activityType = .fitness
         locationManager.pausesLocationUpdatesAutomatically = !forTracking
 
@@ -256,6 +255,13 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
         let canUseBackgroundMode = hasBackgroundMode?.contains("location") == true
         locationManager.allowsBackgroundLocationUpdates = forTracking && canUseBackgroundMode
         locationManager.showsBackgroundLocationIndicator = forTracking && canUseBackgroundMode
+    }
+
+    private var batteryAwareDistanceFilter: CLLocationDistance {
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        let level = UIDevice.current.batteryLevel
+        guard level >= 0 else { return 5 }
+        return level <= SharedConstants.lowBatteryThreshold ? 20 : 5
     }
 
     private func normalizedHorizontalAccuracy(for reportedAccuracy: Double) -> Double {
@@ -359,6 +365,8 @@ extension LocationTrackingService {
             currentAltitude = point.altitude
             currentSpeed = point.speed
             currentCourse = point.course
+            currentHorizontalAccuracy = point.horizontalAccuracy
+            currentVerticalAccuracy = point.verticalAccuracy
 
             recentTrackPoints.append(point)
             RecentTrackWindow.trimTrackPoints(&recentTrackPoints, relativeTo: point.timestamp)

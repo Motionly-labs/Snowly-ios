@@ -11,7 +11,7 @@ import SwiftData
 
 @Model
 final class SkiSession {
-    @Attribute(.unique) var id: UUID = UUID()
+    var id: UUID = UUID()
     var startDate: Date = Date()
     var endDate: Date?
     var totalDistance: Double = 0     // meters
@@ -31,7 +31,7 @@ final class SkiSession {
     var resort: Resort?
 
     @Relationship(deleteRule: .cascade)
-    var runs: [SkiRun] = []
+    var runs: [SkiRun]?
 
     /// Computed duration in seconds.
     var duration: TimeInterval {
@@ -56,7 +56,7 @@ final class SkiSession {
     /// Average speed across all runs in m/s.
     var averageSpeed: Double {
         guard totalDistance > 0, duration > 0 else { return 0 }
-        let skiingTime = runs
+        let skiingTime = (runs ?? [])
             .filter { $0.activityType == .skiing }
             .reduce(0.0) { $0 + ($1.duration) }
         guard skiingTime > 0 else { return 0 }

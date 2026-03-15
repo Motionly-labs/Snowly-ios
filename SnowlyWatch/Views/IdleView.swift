@@ -25,19 +25,17 @@ struct IdleView: View {
             HoldProgressCircleButton(
                 systemImage: "figure.skiing.downhill",
                 title: nil,
-                subtitle: nil,
-                tint: connectivity.isPhoneReachable ? .green : WatchColorTokens.brandWarmOrange,
+                subtitle: workoutManager.statusMessage,
+                tint: workoutManager.isStartPending
+                    ? WatchColorTokens.brandWarmAmber
+                    : (connectivity.isPhoneReachable ? WatchColorTokens.connectedAccent : WatchColorTokens.secondaryAccent),
+                isDisabled: workoutManager.isStartPending,
                 holdDuration: Self.startHoldDuration,
-                diameter: 118,
-                iconSize: 34
+                diameter: WatchSpacing.startButtonDiameter,
+                iconSize: WatchSpacing.startButtonIconSize
             ) {
-                if connectivity.isPhoneReachable {
-                    connectivity.send(.requestStart)
-                } else {
-                    workoutManager.startIndependent()
-                }
+                workoutManager.start()
             }
-
             Spacer()
         }
         .padding(WatchSpacing.md)

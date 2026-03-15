@@ -55,6 +55,7 @@ final class CrewService: CrewProviding {
 
     private let apiClient: any CrewAPIProviding
     private let locationService: LocationTrackingService
+    private let locationChannelService: LocationChannelService?
 
     // MARK: - Private State
 
@@ -87,10 +88,12 @@ final class CrewService: CrewProviding {
 
     init(
         apiClient: any CrewAPIProviding,
-        locationService: LocationTrackingService
+        locationService: LocationTrackingService,
+        locationChannelService: LocationChannelService? = nil
     ) {
         self.apiClient = apiClient
         self.locationService = locationService
+        self.locationChannelService = locationChannelService
     }
 
     // MARK: - Configuration
@@ -219,16 +222,58 @@ final class CrewService: CrewProviding {
     // MARK: - Location Sharing
 
     func startLocationSharing() {
-        guard activeCrew != nil else { return }
+        guard let crew = activeCrew else { return }
         stopLocationSharing()
         consecutiveErrors = 0
         lastError = nil
         guard syncPreferences.mode == .automatic else { return }
 
+        if let channelService = locationChannelService,
+           let creds = CrewKeychainService.load() {
+            let serverURL = URL(string: "https://api.snowly.app")!
+            Task { [weak self] in
+                guard let self else { return }
+                await channelService.connect(
+                    crewId: crew.id,
+                    memberToken: creds.memberToken,
+                    serverBaseURL: serverURL
+                )
+                // Small delay to allow connection to establish
+                try? await Task.sleep(for: .milliseconds(500))
+                if channelService.isConnected {
+                    channelService.onLocationUpdated = { [weak self] loc in
+                        self?.applyLocationUpdate(loc)
+                    }
+                    self.startWebSocketUploadLoop()
+                    self.startPollLoop()
+                } else {
+                    self.startRESTLoops()
+                }
+            }
+        } else {
+            startRESTLoops()
+        }
+    }
+
+    private func startRESTLoops() {
         if syncPreferences.shareLocationEnabled {
             startUploadLoop()
         }
         startPollLoop()
+    }
+
+    private func startWebSocketUploadLoop() {
+        guard syncPreferences.shareLocationEnabled else { return }
+        uploadTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                let interval = self.automaticInterval
+                if let location = self.buildLocationUpload() {
+                    _ = await self.locationChannelService?.sendLocationUpdate(location)
+                }
+                try? await Task.sleep(for: .seconds(interval))
+            }
+        }
     }
 
     func stopLocationSharing() {
@@ -240,6 +285,7 @@ final class CrewService: CrewProviding {
         lastEtag = nil
         lastServerTimestamp = nil
         consecutiveErrors = 0
+        locationChannelService?.disconnect()
     }
 
     func updateSyncPreferences(_ preferences: CrewSyncPreferences) {
@@ -543,6 +589,7 @@ final class CrewService: CrewProviding {
         isManualSyncInProgress = false
         latestReceivedPin = nil
         latestMembershipEvent = nil
+        locationChannelService?.disconnect()
         CrewKeychainService.delete()
     }
 
@@ -561,5 +608,30 @@ final class CrewService: CrewProviding {
             members: updatedMembers
         )
         memberLocations.removeAll { $0.userId == removedUserId }
+    }
+
+    func applyLocationUpdate(_ location: MemberChannelLocation) {
+        guard location.userId != userId else { return }
+        let activityType = MemberActivityType(rawValue: location.activityType ?? "") ?? .unknown
+        let memberLocation = MemberLocation(
+            userId: location.userId,
+            displayName: location.displayName,
+            hasAvatar: false,
+            latitude: location.latitude,
+            longitude: location.longitude,
+            altitude: location.altitude,
+            speed: location.speed,
+            course: location.course,
+            horizontalAccuracy: location.accuracy,
+            verticalAccuracy: 0,
+            timestamp: .now,
+            activityType: activityType,
+            isStale: location.isStale
+        )
+        if let idx = memberLocations.firstIndex(where: { $0.userId == location.userId }) {
+            memberLocations[idx] = memberLocation
+        } else {
+            memberLocations.append(memberLocation)
+        }
     }
 }

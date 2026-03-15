@@ -17,6 +17,9 @@ struct PersistedCompletedRun: Codable, Sendable {
     let maxSpeed: Double
     let averageSpeed: Double
     let activityType: RunActivityType
+    /// Absolute path to the on-disk NDJSON track file stored in Application Support.
+    /// Non-nil means the file survives app relaunch and can be read after crash recovery.
+    let trackFilePath: String?
 }
 
 /// Minimal state snapshot for crash recovery.

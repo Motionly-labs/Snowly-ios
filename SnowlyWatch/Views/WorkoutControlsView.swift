@@ -30,33 +30,31 @@ struct WorkoutControlsView: View {
     // MARK: - Pause / Resume
 
     private var pauseResumeButton: some View {
-        Button {
-            if case .paused = workoutManager.trackingState {
-                workoutManager.resume()
-            } else {
-                workoutManager.pause()
-            }
-        } label: {
+        VStack(spacing: WatchSpacing.sm) {
             let isPaused = workoutManager.trackingState == .paused
-            VStack(spacing: WatchSpacing.sm) {
-                ZStack {
-                    Circle()
-                        .fill(WatchColorTokens.brandWarmAmber.opacity(0.16))
-                        .frame(width: 72, height: 72)
 
-                    Image(systemName: isPaused ? "play.fill" : "pause.fill")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(WatchColorTokens.brandWarmAmber)
+            Button {
+                if case .paused = workoutManager.trackingState {
+                    workoutManager.resume()
+                } else {
+                    workoutManager.pause()
                 }
-
-                Text(isPaused ? String(localized: "common_resume") : String(localized: "common_pause"))
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
+            } label: {
+                Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                    .font(WatchTypography.controlIcon)
             }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.circle)
+            .tint(WatchColorTokens.sportAccent)
+
+            Text(isPaused ? String(localized: "common_resume") : String(localized: "common_pause"))
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
         }
-        .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
+        .disabled(workoutManager.isCompanionControlPending)
+        .opacity(workoutManager.isCompanionControlPending ? 0.55 : 1)
     }
 
     // MARK: - Stop (Long Press)
@@ -67,9 +65,10 @@ struct WorkoutControlsView: View {
             title: String(localized: "watch_hold_to_stop"),
             subtitle: nil,
             tint: WatchColorTokens.brandRed,
+            isDisabled: workoutManager.isCompanionControlPending,
             holdDuration: Self.stopHoldDuration,
-            diameter: 92,
-            iconSize: 26
+            diameter: WatchSpacing.stopButtonDiameter,
+            iconSize: WatchSpacing.stopButtonIconSize
         ) {
             workoutManager.stop()
         }

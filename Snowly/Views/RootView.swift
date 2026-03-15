@@ -12,8 +12,10 @@ import SwiftData
 
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(CrewService.self) private var crewService
     @Environment(GearReminderService.self) private var gearReminderService
+    @Environment(PhoneConnectivityService.self) private var phoneConnectivityService
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
     @Query(sort: \DeviceSettings.createdAt) private var deviceSettings: [DeviceSettings]
 
@@ -23,6 +25,10 @@ struct RootView: View {
 
     private var defaultUnitSystem: UnitSystem {
         Locale.current.measurementSystem == .metric ? .metric : .imperial
+    }
+
+    private var watchUnitSystem: UnitSystem {
+        profiles.first?.preferredUnits ?? defaultUnitSystem
     }
 
     var body: some View {
@@ -39,18 +45,28 @@ struct RootView: View {
             configureCrewService()
             resetSeasonBestsIfNeeded()
             gearReminderService.syncAll(using: modelContext)
+            syncWatchMetadata()
         }
         .onChange(of: profiles.first?.id) { _, _ in
             configureCrewService()
+            syncWatchMetadata()
         }
         .onChange(of: profiles.first?.displayName) { _, _ in
             configureCrewService()
         }
+        .onChange(of: profiles.first?.preferredUnits) { _, _ in
+            syncWatchMetadata()
+        }
         .onChange(of: profiles.count) { _, _ in
             normalizeProfiles()
+            syncWatchMetadata()
         }
         .onChange(of: deviceSettings.count) { _, _ in
             normalizeDeviceSettings()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            syncWatchMetadata()
         }
     }
 
@@ -82,14 +98,7 @@ struct RootView: View {
 
     private func normalizeDeviceSettings() {
         if deviceSettings.isEmpty {
-            modelContext.insert(DeviceSettings(hasCompletedOnboarding: hasExistingAppData()))
-            return
-        }
-
-        if deviceSettings.count == 1, let only = deviceSettings.first {
-            if !only.hasCompletedOnboarding && hasExistingAppData() {
-                only.hasCompletedOnboarding = true
-            }
+            modelContext.insert(DeviceSettings())
             return
         }
 
@@ -121,27 +130,10 @@ struct RootView: View {
         )
     }
 
-    private func hasExistingAppData() -> Bool {
-        if !profiles.isEmpty {
-            return true
-        }
-
-        var sessionDescriptor = FetchDescriptor<SkiSession>()
-        sessionDescriptor.fetchLimit = 1
-        if !((try? modelContext.fetch(sessionDescriptor)) ?? []).isEmpty {
-            return true
-        }
-
-        var gearDescriptor = FetchDescriptor<GearSetup>()
-        gearDescriptor.fetchLimit = 1
-        if !((try? modelContext.fetch(gearDescriptor)) ?? []).isEmpty {
-            return true
-        }
-
-        var resortDescriptor = FetchDescriptor<Resort>()
-        resortDescriptor.fetchLimit = 1
-        return !((try? modelContext.fetch(resortDescriptor)) ?? []).isEmpty
+    private func syncWatchMetadata() {
+        phoneConnectivityService.updateWatchMetadata(unitPreference: watchUnitSystem)
     }
+
 }
 
 #Preview {
@@ -172,6 +164,7 @@ struct RootView: View {
         .environment(syncMonitor)
         .environment(musicPlayer)
         .environment(crew)
+        .environment(PhoneConnectivityService())
         .environment(GearReminderService())
         .modelContainer(for: [
             SkiSession.self, SkiRun.self, Resort.self,

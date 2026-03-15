@@ -10,11 +10,13 @@ import SwiftData
 
 @Model
 final class Resort {
-    @Attribute(.unique) var id: UUID = UUID()
+    var id: UUID = UUID()
     var name: String = ""
     var latitude: Double = 0
     var longitude: Double = 0
     var country: String = ""
+    @Relationship(inverse: \SkiSession.resort)
+    var sessions: [SkiSession]?
 
     init(
         id: UUID = UUID(),

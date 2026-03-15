@@ -59,6 +59,14 @@ struct CloudKitCompatibilityTests {
         #expect(container.schema.entities.count == 8)
     }
 
+    @Test("Dual-store container creates successfully with CloudKit enabled")
+    @MainActor
+    func dualStoreContainerCreationWithCloudKit() throws {
+        let container = try makeDualStoreContainer(cloudEnabled: true)
+
+        #expect(container.schema.entities.count == 8)
+    }
+
     @Test("UserProfile does not contain device-specific fields")
     @MainActor
     func userProfileFields() throws {

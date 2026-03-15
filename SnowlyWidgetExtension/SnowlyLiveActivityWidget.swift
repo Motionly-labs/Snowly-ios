@@ -38,11 +38,11 @@ struct SnowlyLiveActivityWidget: Widget {
         let state = context.state
         let unit = context.attributes.unitSystem
 
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 10) {
+        VStack(alignment: .leading, spacing: LiveActivityTokens.sectionSpacing) {
+            HStack(alignment: .center, spacing: LiveActivityTokens.sectionSpacing) {
                 snowlyLogo(size: 30)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: LiveActivityTokens.labelSpacing) {
                     Text(activityLabel(for: state.currentActivity, isPaused: state.isPaused))
                         .font(.caption.bold())
                     Text(formattedElapsedTime(state.elapsedSeconds))
@@ -50,13 +50,13 @@ struct SnowlyLiveActivityWidget: Widget {
                         .foregroundStyle(.secondary)
                 }
 
-                Spacer(minLength: 8)
+                Spacer(minLength: LiveActivityTokens.minSpacerLength)
 
-                HStack(alignment: .lastTextBaseline, spacing: 4) {
+                HStack(alignment: .lastTextBaseline, spacing: LiveActivityTokens.metricValueSpacing) {
                     Text(formattedSpeed(state.currentSpeed, unit: unit))
-                        .font(.system(size: 32, weight: .bold, design: .rounded).monospacedDigit())
+                        .font(LiveActivityTokens.speedFont)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.65)
+                        .minimumScaleFactor(LiveActivityTokens.speedMinScale)
                     Text(speedUnitLabel(unit: unit))
                         .font(.caption.bold())
                         .foregroundStyle(.secondary)
@@ -65,12 +65,12 @@ struct SnowlyLiveActivityWidget: Widget {
                 Button(intent: TogglePauseIntent()) {
                     Image(systemName: state.isPaused ? "play.circle.fill" : "pause.circle.fill")
                         .font(.system(size: 28))
-                        .foregroundStyle(state.isPaused ? .green : .orange)
+                        .foregroundStyle(state.isPaused ? LiveActivityTokens.playAccent : LiveActivityTokens.pauseAccent)
                 }
                 .buttonStyle(.plain)
             }
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 8) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: LiveActivityTokens.gridSpacing), count: 2), spacing: LiveActivityTokens.gridSpacing) {
                 statChip(
                     label: String(localized: "live_activity_max"),
                     value: "\(formattedSpeed(state.maxSpeed, unit: unit)) \(speedUnitLabel(unit: unit))",
@@ -93,8 +93,8 @@ struct SnowlyLiveActivityWidget: Widget {
                 )
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, LiveActivityTokens.contentPaddingH)
+        .padding(.vertical, LiveActivityTokens.contentPaddingV)
     }
 
     // MARK: - Dynamic Island Expanded
@@ -105,7 +105,7 @@ struct SnowlyLiveActivityWidget: Widget {
         let unit = context.attributes.unitSystem
 
         DynamicIslandExpandedRegion(.leading) {
-            HStack(spacing: 6) {
+            HStack(spacing: LiveActivityTokens.pillSpacing) {
                 snowlyLogo(size: 14)
                 Image(systemName: playbackIconName(isPaused: state.isPaused))
                     .font(.caption2.bold())
@@ -114,30 +114,30 @@ struct SnowlyLiveActivityWidget: Widget {
         }
 
         DynamicIslandExpandedRegion(.trailing) {
-            HStack(spacing: 6) {
+            HStack(spacing: LiveActivityTokens.pillSpacing) {
                 Text(formattedElapsedTime(state.elapsedSeconds))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
                 Button(intent: TogglePauseIntent()) {
                     Image(systemName: state.isPaused ? "play.circle.fill" : "pause.circle.fill")
                         .font(.caption)
-                        .foregroundStyle(state.isPaused ? .green : .orange)
+                        .foregroundStyle(state.isPaused ? LiveActivityTokens.playAccent : LiveActivityTokens.pauseAccent)
                 }
                 .buttonStyle(.plain)
             }
         }
 
         DynamicIslandExpandedRegion(.bottom) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: LiveActivityTokens.gridSpacing) {
                 Text("\(formattedSpeed(state.currentSpeed, unit: unit)) \(speedUnitLabel(unit: unit))")
                     .font(.title3.bold().monospacedDigit())
                     .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-                HStack(spacing: 6) {
+                    .minimumScaleFactor(LiveActivityTokens.contentMinScale)
+                HStack(spacing: LiveActivityTokens.pillSpacing) {
                     metricPill("\(String(localized: "live_activity_max")) \(formattedSpeed(state.maxSpeed, unit: unit)) \(speedUnitLabel(unit: unit))")
                     metricPill("\(String(localized: "common_vertical")) \(formattedVertical(state.totalVertical, unit: unit)) \(verticalUnitLabel(unit: unit))")
                 }
-                HStack(spacing: 6) {
+                HStack(spacing: LiveActivityTokens.pillSpacing) {
                     metricPill("\(String(localized: "live_activity_runs")) \(state.runCount)")
                     metricPill(formattedElapsedTime(state.elapsedSeconds))
                     metricPill(activityLabel(for: state.currentActivity, isPaused: state.isPaused))
@@ -190,19 +190,19 @@ struct SnowlyLiveActivityWidget: Widget {
     }
 
     private func statChip(label: String, value: String, align: HorizontalAlignment) -> some View {
-        VStack(alignment: align, spacing: 1) {
+        VStack(alignment: align, spacing: LiveActivityTokens.labelSpacing) {
             Text(label)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
             Text(value)
                 .font(.caption2.monospacedDigit().weight(.semibold))
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(LiveActivityTokens.pillMinScale)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .padding(.horizontal, LiveActivityTokens.chipPaddingH)
+        .padding(.vertical, LiveActivityTokens.chipPaddingV)
         .frame(maxWidth: .infinity, alignment: align == .leading ? .leading : .trailing)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: LiveActivityTokens.chipCornerRadius))
     }
 
     private func metricPill(_ text: String) -> some View {
@@ -210,16 +210,15 @@ struct SnowlyLiveActivityWidget: Widget {
             .font(.caption2.monospacedDigit())
             .foregroundStyle(.secondary)
             .lineLimit(1)
-            .minimumScaleFactor(0.8)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .minimumScaleFactor(LiveActivityTokens.pillMinScale)
+            .padding(.horizontal, LiveActivityTokens.pillPaddingH)
+            .padding(.vertical, LiveActivityTokens.pillPaddingV)
             .background(.ultraThinMaterial, in: Capsule())
     }
 
     private func snowlyLogo(size: CGFloat) -> some View {
         Image("logo-small")
             .resizable()
-            .renderingMode(.original)
             .scaledToFit()
             .frame(width: size, height: size)
     }

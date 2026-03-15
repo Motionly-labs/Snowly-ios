@@ -13,13 +13,13 @@ struct TrackingDashboardLayoutTests {
     // MARK: - Legacy migration (Phase 2: tolerant decode)
 
     @Test func decode_legacyJson_migratesHeroCards() {
-        // speedCurve and profile are hero-only kinds — they stay in hero after demotion pass
+        // speedCurve is a hero-only kind — stays in hero after demotion pass; "profile" is dropped (unknown kind)
         let json = #"{"heroCards":["speedCurve","profile"],"visibleWidgets":["vertical","distance"]}"#
 
         let layout = TrackingDashboardLayout.decode(from: json)
 
         let heroKinds = layout.instances.filter { $0.slot == .hero }.map(\.kind)
-        #expect(heroKinds == [.speedCurve, .profile])
+        #expect(heroKinds == [.speedCurve])
     }
 
     @Test func decode_legacyJson_migratesVisibleWidgets() {

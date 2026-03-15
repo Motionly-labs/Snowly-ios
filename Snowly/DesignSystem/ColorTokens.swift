@@ -41,10 +41,12 @@ enum ColorTokens {
     // MARK: - Surface
     static let surfaceOverlay = Color.white.opacity(0.12)
     static let surfaceDivider = Color.white.opacity(0.15)
+    static let groupedBackground = Color(uiColor: .systemGroupedBackground)
+    static let secondaryGroupedBackground = Color(uiColor: .secondarySystemGroupedBackground)
 
     // MARK: - Accent Hierarchy
-    /// Primary accent — ice blue. Use for navigation, selected states, key metrics, primary CTAs.
-    static let primaryAccent = brandIceBlue
+    /// Primary accent — warm amber. Use for navigation, selected states, key metrics, primary CTAs.
+    static let primaryAccent = brandWarmAmber
     /// Secondary accent — warm orange. Use for secondary actions, supporting info, media controls.
     static let secondaryAccent = brandWarmOrange
 

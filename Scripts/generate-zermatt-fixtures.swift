@@ -9,16 +9,16 @@
 //
 //  Usage:
 //    # Generate both fixtures (loop + summary)
-//    swift Scripts/Generators/generate-zermatt-fixtures.swift
+//    swift Scripts/generate-zermatt-fixtures.swift
 //
 //    # Generate only loop fixture
-//    swift Scripts/Generators/generate-zermatt-fixtures.swift --mode loop
+//    swift Scripts/generate-zermatt-fixtures.swift --mode loop
 //
 //    # Generate only summary fixture
-//    swift Scripts/Generators/generate-zermatt-fixtures.swift --mode summary
+//    swift Scripts/generate-zermatt-fixtures.swift --mode summary
 //
 //    # Generate one mode to custom path
-//    swift Scripts/Generators/generate-zermatt-fixtures.swift --mode summary /tmp/summary.trackpoints.json
+//    swift Scripts/generate-zermatt-fixtures.swift --mode summary /tmp/summary.trackpoints.json
 //
 
 import Foundation
@@ -114,10 +114,33 @@ private let loopCount = 4
 // Keep fixture sampling near real GPS cadence (~1 Hz), so production
 // motion estimation gets enough in-window points for altitude trend detection.
 private let sampleInterval: TimeInterval = 1.0
-private let defaultLoopOutputPath = "/tmp/Snowly/Fixtures/ZermattLoop.trackpoints.json"
-private let defaultLoopGPXPath = "/tmp/Snowly/Locations/ZermattLoop.gpx"
-private let defaultSummaryOutputPath = "/tmp/Snowly/Fixtures/ZermattSkiDay.trackpoints.json"
-private let defaultSummaryGPXPath = "/tmp/Snowly/Locations/ZermattSkiDay.gpx"
+private let scriptURL: URL = {
+    let rawPath = #filePath
+    if rawPath.hasPrefix("/") {
+        return URL(fileURLWithPath: rawPath).standardizedFileURL
+    }
+
+    let workingDirectory = URL(
+        fileURLWithPath: FileManager.default.currentDirectoryPath,
+        isDirectory: true
+    )
+    return URL(fileURLWithPath: rawPath, relativeTo: workingDirectory).standardizedFileURL
+}()
+private let repositoryRootURL = scriptURL
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+private let defaultLoopOutputPath = repositoryRootURL
+    .appendingPathComponent("Snowly/Debug/Fixtures/ZermattLoop.trackpoints.json")
+    .path
+private let defaultLoopGPXPath = repositoryRootURL
+    .appendingPathComponent("Snowly/Debug/Locations/ZermattLoop.gpx")
+    .path
+private let defaultSummaryOutputPath = repositoryRootURL
+    .appendingPathComponent("Snowly/Debug/Fixtures/ZermattSkiDay.trackpoints.json")
+    .path
+private let defaultSummaryGPXPath = repositoryRootURL
+    .appendingPathComponent("Snowly/Debug/Locations/ZermattSkiDay.gpx")
+    .path
 
 private enum FixtureMode: String {
     case loop

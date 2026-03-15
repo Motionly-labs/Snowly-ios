@@ -8,9 +8,9 @@ import Foundation
 @testable import Snowly
 
 @MainActor
-struct ActiveTrackingCardSnapshotAssemblerTests {
+struct ActiveTrackingCardInputAssemblerTests {
 
-    private func makeContext(
+    private func makeSource(
         unitSystem: UnitSystem = .metric,
         skiingMetrics: SessionSkiingMetrics = .zero,
         currentSpeed: Double = 0,
@@ -22,205 +22,171 @@ struct ActiveTrackingCardSnapshotAssemblerTests {
         currentHeartRate: Double = 0,
         averageHeartRate: Double = 0,
         heartRateSamples: [HeartRateSample] = []
-    ) -> ActiveTrackingCardSnapshotAssembler.Context {
-        ActiveTrackingCardSnapshotAssembler.Context(
-            unitSystem: unitSystem,
-            skiingMetrics: skiingMetrics,
-            currentSpeed: currentSpeed,
-            completedRuns: completedRuns,
-            speedSamples: speedSamples,
-            altitudeSamples: altitudeSamples,
-            currentAltitudeMeters: currentAltitudeMeters,
-            elapsedSeconds: elapsedSeconds,
-            currentHeartRate: currentHeartRate,
-            averageHeartRate: averageHeartRate,
-            heartRateSamples: heartRateSamples
+    ) -> ActiveTrackingCardInputAssembler.Source {
+        ActiveTrackingCardInputAssembler.Source(
+            semantic: ActiveTrackingCardInputAssembler.MotionSemanticSnapshot(
+                skiingMetrics: skiingMetrics,
+                currentSpeed: currentSpeed,
+                currentAltitudeMeters: currentAltitudeMeters,
+                completedRuns: completedRuns,
+                elapsedSeconds: elapsedSeconds,
+                currentHeartRate: currentHeartRate,
+                averageHeartRate: averageHeartRate
+            ),
+            presentation: ActiveTrackingCardInputAssembler.MotionPresentationSnapshot(
+                speedSamples: speedSamples,
+                altitudeSamples: altitudeSamples,
+                heartRateSamples: heartRateSamples
+            ),
+            context: ActiveTrackingCardInputAssembler.TrackingCardPresentationContext(
+                unitSystem: unitSystem
+            )
         )
     }
 
-    @Test func snapshot_verticalScalar_convertsMetricCorrectly() {
-        let metrics = SessionSkiingMetrics(totalDistance: 0, totalVertical: 500, maxSpeed: 0, runCount: 0)
-        let ctx = makeContext(unitSystem: .metric, skiingMetrics: metrics)
-        let instance = ActiveTrackingCardInstance.make(kind: .vertical)
+    @Test func peakSpeed_scalarInput_usesSessionSemanticMax() {
+        let now = Date()
+        let lastRun = CompletedRunData(
+            startDate: now.addingTimeInterval(-120),
+            endDate: now.addingTimeInterval(-60),
+            distance: 900,
+            verticalDrop: 280,
+            maxSpeed: 18,
+            averageSpeed: 12,
+            activityType: .skiing,
+            trackData: nil
+        )
+        let bestEarlierRun = CompletedRunData(
+            startDate: now.addingTimeInterval(-300),
+            endDate: now.addingTimeInterval(-240),
+            distance: 1200,
+            verticalDrop: 420,
+            maxSpeed: 26,
+            averageSpeed: 14,
+            activityType: .skiing,
+            trackData: nil
+        )
+        let source = makeSource(
+            skiingMetrics: SessionSkiingMetrics(
+                totalDistance: 2100,
+                totalVertical: 700,
+                maxSpeed: 26,
+                runCount: 2
+            ),
+            completedRuns: [bestEarlierRun, lastRun],
+            elapsedSeconds: 1800
+        )
 
-        let snapshot = ActiveTrackingCardSnapshotAssembler.snapshot(for: instance, context: ctx)
+        let input = ActiveTrackingCardInputAssembler.scalarInput(for: .peakSpeed, source: source)
 
-        guard case .scalar(let s) = snapshot else {
-            Issue.record("Expected scalar snapshot")
+        guard let input else {
+            Issue.record("Expected scalar input")
             return
         }
-        #expect(s.value == 500)
-        #expect(s.unit == "m")
+        guard case .numeric(let value) = input.primaryValue else {
+            Issue.record("Expected numeric peak speed")
+            return
+        }
+
+        #expect(value.value == ActiveTrackingCardInputAssembler.displaySpeed(26, .metric))
+        #expect(input.subtitle?.contains("700") == true)
     }
 
-    @Test func snapshot_altitudeCurveSeries_trimsToWindowSeconds() {
+    @Test func avgSpeed_scalarInput_usesSessionRunsNotLastRunOnly() {
         let now = Date()
-        let old = now.addingTimeInterval(-7200)  // 2 hours ago — outside 1hr window
-        let recent = now.addingTimeInterval(-1800) // 30 min ago — inside 1hr window
-        let samples = [
-            AltitudeSample(time: old, altitude: 1000, state: .skiing),
-            AltitudeSample(time: recent, altitude: 1100, state: .skiing),
-            AltitudeSample(time: now, altitude: 1200, state: .skiing)
+        let runs = [
+            CompletedRunData(
+                startDate: now.addingTimeInterval(-200),
+                endDate: now.addingTimeInterval(-100),
+                distance: 1000,
+                verticalDrop: 320,
+                maxSpeed: 20,
+                averageSpeed: 10,
+                activityType: .skiing,
+                trackData: nil
+            ),
+            CompletedRunData(
+                startDate: now.addingTimeInterval(-90),
+                endDate: now,
+                distance: 600,
+                verticalDrop: 200,
+                maxSpeed: 16,
+                averageSpeed: 6.67,
+                activityType: .skiing,
+                trackData: nil
+            )
         ]
-        let ctx = makeContext(altitudeSamples: samples)
+        let source = makeSource(
+            skiingMetrics: SessionSkiingMetrics(totalDistance: 1600, totalVertical: 520, maxSpeed: 20, runCount: 2),
+            completedRuns: runs
+        )
+
+        let input = ActiveTrackingCardInputAssembler.scalarInput(for: .avgSpeed, source: source)
+
+        guard let input else {
+            Issue.record("Expected avg speed input")
+            return
+        }
+        guard case .numeric(let value) = input.primaryValue else {
+            Issue.record("Expected numeric avg speed")
+            return
+        }
+
+        let expectedSessionAvg = ActiveTrackingCardInputAssembler.displaySpeed(1600.0 / 190.0, .metric)
+        #expect(abs(value.value - expectedSessionAvg) < 0.001)
+        #expect(input.subtitle == String(localized: "tracking_avg_label_session"))
+    }
+
+    @Test func altitudeCurve_seriesInput_trimsWindowAndDropsLeadingZeros() {
+        let now = Date()
+        let altitudeSamples = [
+            AltitudeSample(time: now.addingTimeInterval(-7200), altitude: 0, state: .skiing),
+            AltitudeSample(time: now.addingTimeInterval(-1200), altitude: 1180, state: .skiing),
+            AltitudeSample(time: now.addingTimeInterval(-600), altitude: 1210, state: .skiing),
+            AltitudeSample(time: now, altitude: 1235, state: .skiing)
+        ]
         var instance = ActiveTrackingCardInstance.make(kind: .altitudeCurve)
         instance = ActiveTrackingCardInstance(
             instanceId: instance.instanceId,
             kind: instance.kind,
             slot: instance.slot,
             presentationKind: instance.presentationKind,
-            config: ActiveTrackingCardConfig(windowSeconds: 3600, smoothingAlpha: nil)
+            config: ActiveTrackingCardConfig(windowSeconds: 1800, smoothingAlpha: 0.22)
         )
+        let source = makeSource(altitudeSamples: altitudeSamples)
 
-        let snapshot = ActiveTrackingCardSnapshotAssembler.snapshot(for: instance, context: ctx)
+        let input = ActiveTrackingCardInputAssembler.input(for: instance, source: source)
 
-        guard case .series(let s) = snapshot else {
-            Issue.record("Expected series snapshot")
+        guard case .series(let series) = input else {
+            Issue.record("Expected series input")
             return
         }
-        // Only the 2 recent samples (within 1hr) should be included
-        #expect(s.samples.count == 2)
-    }
-
-    @Test func snapshot_altitudeCurveSeries_dropsLeadingZeroPlaceholder() {
-        let now = Date()
-        let samples = [
-            AltitudeSample(time: now.addingTimeInterval(-20), altitude: 0, state: .skiing),
-            AltitudeSample(time: now.addingTimeInterval(-10), altitude: 1240, state: .skiing),
-            AltitudeSample(time: now, altitude: 1260, state: .skiing),
-        ]
-        let ctx = makeContext(altitudeSamples: samples)
-        let instance = ActiveTrackingCardInstance.make(kind: .altitudeCurve)
-
-        let snapshot = ActiveTrackingCardSnapshotAssembler.snapshot(for: instance, context: ctx)
-
-        guard case .series(let s) = snapshot else {
-            Issue.record("Expected series snapshot")
+        guard case .altitude(let trimmed) = series.seriesPayload else {
+            Issue.record("Expected altitude payload")
             return
         }
-        #expect(s.samples.map(\.altitude) == [1240, 1260])
+        #expect(trimmed.map(\.altitude) == [1180, 1210, 1235])
+        #expect(series.renderingPolicy.windowSeconds == 1800)
+        #expect(series.renderingPolicy.smoothingAlpha == 0.22)
     }
 
-    @Test func snapshot_heartRate_returnsDoubleDashWhenZero() {
-        let ctx = makeContext(currentHeartRate: 0)
-        let instance = ActiveTrackingCardInstance.make(kind: .heartRate)
+    @Test func heartRate_scalarInput_returnsTextValueAndSubtitle() {
+        let source = makeSource(currentHeartRate: 142.4, averageHeartRate: 136.2)
 
-        let snapshot = ActiveTrackingCardSnapshotAssembler.snapshot(for: instance, context: ctx)
+        let input = ActiveTrackingCardInputAssembler.scalarInput(for: .heartRate, source: source)
 
-        guard case .text(let t) = snapshot else {
-            Issue.record("Expected text snapshot")
+        guard let input else {
+            Issue.record("Expected heart-rate scalar input")
             return
         }
-        #expect(t.value == "--")
-        #expect(t.unit == "")
-    }
-
-    @Test func snapshot_heartRate_returnsFormattedBpmWhenNonZero() {
-        let ctx = makeContext(currentHeartRate: 142.6)
-        let instance = ActiveTrackingCardInstance.make(kind: .heartRate)
-
-        let snapshot = ActiveTrackingCardSnapshotAssembler.snapshot(for: instance, context: ctx)
-
-        guard case .text(let t) = snapshot else {
-            Issue.record("Expected text snapshot")
+        guard case .text(let value) = input.primaryValue else {
+            Issue.record("Expected text heart-rate value")
             return
         }
-        #expect(t.value == "143")
-        #expect(t.unit == "bpm")
+
+        #expect(value.value == "142")
+        #expect(value.unit == String(localized: "stat_heart_rate_unit"))
+        #expect(input.subtitle?.contains("136") == true)
     }
 
-    @Test func snapshot_heartRateCurve_returnsHeartRateSeriesSnapshot() {
-        let sample = HeartRateSample(time: .now, bpm: 145)
-        let ctx = makeContext(heartRateSamples: [sample])
-        let instance = ActiveTrackingCardInstance.make(kind: .heartRateCurve)
-
-        let snapshot = ActiveTrackingCardSnapshotAssembler.snapshot(for: instance, context: ctx)
-
-        guard case .heartRateSeries(let s) = snapshot else {
-            Issue.record("Expected heartRateSeries snapshot")
-            return
-        }
-        #expect(s.kind == .heartRateCurve)
-        #expect(s.samples.count == 1)
-        #expect(s.samples.first?.bpm == 145)
-    }
-
-    @Test func snapshot_heartRateCurve_trimsToWindowSeconds() {
-        let now = Date()
-        let old = now.addingTimeInterval(-7200)    // 2 hr ago — outside 1 hr window
-        let recent = now.addingTimeInterval(-1800)  // 30 min ago — inside 1 hr window
-        let samples = [
-            HeartRateSample(time: old, bpm: 120),
-            HeartRateSample(time: recent, bpm: 140),
-            HeartRateSample(time: now, bpm: 155),
-        ]
-        let ctx = makeContext(heartRateSamples: samples)
-        let instance = ActiveTrackingCardInstance.make(kind: .heartRateCurve)
-
-        let snapshot = ActiveTrackingCardSnapshotAssembler.snapshot(for: instance, context: ctx)
-
-        guard case .heartRateSeries(let s) = snapshot else {
-            Issue.record("Expected heartRateSeries snapshot")
-            return
-        }
-        #expect(s.samples.count == 2)
-    }
-
-    @Test func snapshot_heartRateCurve_dropsLeadingZeroPlaceholder() {
-        let now = Date()
-        let samples = [
-            HeartRateSample(time: now.addingTimeInterval(-20), bpm: 0),
-            HeartRateSample(time: now.addingTimeInterval(-10), bpm: 136),
-            HeartRateSample(time: now, bpm: 142),
-        ]
-        let ctx = makeContext(heartRateSamples: samples)
-        let instance = ActiveTrackingCardInstance.make(kind: .heartRateCurve)
-
-        let snapshot = ActiveTrackingCardSnapshotAssembler.snapshot(for: instance, context: ctx)
-
-        guard case .heartRateSeries(let s) = snapshot else {
-            Issue.record("Expected heartRateSeries snapshot")
-            return
-        }
-        #expect(s.samples.map(\.bpm) == [136, 142])
-    }
-
-    @Test func snapshot_profileCard_passesThroughSamples() {
-        let speed = SpeedSample(time: .now, speed: 10, state: .skiing)
-        let alt   = AltitudeSample(time: .now, altitude: 1200, state: .skiing)
-        let ctx = makeContext(speedSamples: [speed], altitudeSamples: [alt])
-        let instance = ActiveTrackingCardInstance.make(kind: .profile)
-
-        let snapshot = ActiveTrackingCardSnapshotAssembler.snapshot(for: instance, context: ctx)
-
-        guard case .profile(let p) = snapshot else {
-            Issue.record("Expected profile snapshot")
-            return
-        }
-        #expect(p.speedSamples.count == 1)
-        #expect(p.altitudeSamples.count == 1)
-    }
-
-    @Test func snapshot_profileCard_dropsLeadingZeroPlaceholders() {
-        let now = Date()
-        let speedSamples = [
-            SpeedSample(time: now.addingTimeInterval(-20), speed: 0, state: .skiing),
-            SpeedSample(time: now.addingTimeInterval(-10), speed: 12, state: .skiing),
-        ]
-        let altitudeSamples = [
-            AltitudeSample(time: now.addingTimeInterval(-20), altitude: 0, state: .skiing),
-            AltitudeSample(time: now.addingTimeInterval(-10), altitude: 1180, state: .skiing),
-        ]
-        let ctx = makeContext(speedSamples: speedSamples, altitudeSamples: altitudeSamples)
-        let instance = ActiveTrackingCardInstance.make(kind: .profile)
-
-        let snapshot = ActiveTrackingCardSnapshotAssembler.snapshot(for: instance, context: ctx)
-
-        guard case .profile(let p) = snapshot else {
-            Issue.record("Expected profile snapshot")
-            return
-        }
-        #expect(p.speedSamples.map(\.speed) == [12])
-        #expect(p.altitudeSamples.map(\.altitude) == [1180])
-    }
 }

@@ -17,9 +17,10 @@ enum WatchMessage: Codable, Sendable {
     case trackingStopped
     case liveUpdate(LiveTrackingData)
     case newPersonalBest(metric: String, value: Double)
-
     case unitPreference(UnitSystem)
-    case sessionHistory(SeasonBestData)
+    case lastCompletedRun(LastRunData?)
+    case independentWorkoutImported(sessionId: UUID)
+    case independentWorkoutImportFailed(sessionId: UUID)
 
     // MARK: - Watch → Phone
     case requestStart
@@ -44,22 +45,20 @@ enum WatchMessage: Codable, Sendable {
         let batteryLevel: Float
     }
 
-    struct SeasonBestData: Codable, Sendable, Equatable {
-        let bestMaxSpeed: Double
-        let bestVertical: Double
-        let totalRuns: Int
-        let totalSessions: Int
+    struct LastRunData: Codable, Sendable, Equatable {
+        let runNumber: Int
+        let startDate: Date
+        let endDate: Date
+        let distance: Double
+        let verticalDrop: Double
+        let maxSpeed: Double
+        let averageSpeed: Double
     }
 
     struct IndependentWorkoutSummary: Codable, Sendable, Equatable {
         let sessionId: UUID
         let startDate: Date
         let endDate: Date
-        let totalDistance: Double
-        let totalVertical: Double
-        let maxSpeed: Double
-        let runCount: Int
-        let elapsedTime: TimeInterval
         let trackPointCount: Int
     }
 

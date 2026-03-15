@@ -12,9 +12,9 @@ import SwiftData
 
 @Model
 final class UserProfile {
-    @Attribute(.unique) var id: UUID = UUID()
+    var id: UUID = UUID()
     var displayName: String = ""
-    var preferredUnits: UnitSystem
+    var preferredUnits: UnitSystem = UnitSystem.metric
 
     // All-time personal bests (single session records)
     var personalBestMaxSpeed: Double = 0      // m/s

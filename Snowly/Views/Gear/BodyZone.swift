@@ -86,11 +86,11 @@ enum BodyZone: Int, CaseIterable, Identifiable {
         case .gear:
             return [.electronics, .safety, .other]
         case .pack:
-            return [.skis, .snowboard]
+            return []
         case .feet:
             return [.boots]
         case .backpack:
-            return [.bag]
+            return [.skis, .snowboard, .bag]
         }
     }
 
@@ -149,7 +149,7 @@ enum BodyZone: Int, CaseIterable, Identifiable {
         case .accessory:
             return .hands
         case .skis, .snowboard:
-            return .pack
+            return .backpack
         case .electronics, .safety, .other:
             return .gear
         case .boots:

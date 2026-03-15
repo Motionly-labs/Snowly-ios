@@ -18,6 +18,13 @@ struct WorkoutSummaryView: View {
                     .font(.headline)
                     .foregroundStyle(WatchColorTokens.brandGradient)
 
+                if let syncMessage = workoutManager.summarySyncMessage {
+                    Text(syncMessage)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
                 Divider()
 
                 summaryRow(
@@ -62,7 +69,7 @@ struct WorkoutSummaryView: View {
     }
 
     private var preferredUnitSystem: UnitSystem {
-        Locale.current.measurementSystem == .metric ? .metric : .imperial
+        workoutManager.preferredUnitSystem
     }
 
     private func summaryRow(icon: String, label: String, value: String) -> some View {

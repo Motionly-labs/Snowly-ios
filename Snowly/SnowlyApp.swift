@@ -34,6 +34,8 @@ final class AppServices {
     let crewPinNotificationService: CrewPinNotificationService
     let skiDataUploadService: SkiDataUploadService
     let gearReminderService: GearReminderService
+    let locationChannelService: LocationChannelService
+    let skiSessionChannelService: SkiSessionChannelService
 
     init() {
         let location = LocationTrackingService()
@@ -71,16 +73,27 @@ final class AppServices {
 
         let crewAPI = CrewAPIClient()
         self.crewAPIClient = crewAPI
+
+        let locationChannel = LocationChannelService()
+        self.locationChannelService = locationChannel
+
+        let skiSessionChannel = SkiSessionChannelService()
+        self.skiSessionChannelService = skiSessionChannel
+
         let crew = CrewService(
             apiClient: crewAPI,
-            locationService: location
+            locationService: location,
+            locationChannelService: locationChannel
         )
         self.crewService = crew
 
         self.crewPinNotificationService = CrewPinNotificationService()
 
         let skiDataAPI = SkiDataAPIClient()
-        self.skiDataUploadService = SkiDataUploadService(apiClient: skiDataAPI)
+        self.skiDataUploadService = SkiDataUploadService(
+            apiClient: skiDataAPI,
+            channelService: skiSessionChannel
+        )
 
         self.gearReminderService = GearReminderService()
     }
@@ -143,6 +156,7 @@ struct SnowlyApp: App {
                 )
             }
 
+#if DEBUG
             SnowlyApp.seedUITestDataIfNeeded(
                 in: container,
                 launchArguments: launchArgumentSet
@@ -151,6 +165,7 @@ struct SnowlyApp: App {
                 in: container,
                 launchArguments: launchArguments
             )
+#endif
             modelContainer = container
         } catch {
             if let recoveredContainer = SnowlyApp.attemptPersistentStoreRecoveryIfNeeded(
@@ -168,6 +183,7 @@ struct SnowlyApp: App {
                     isStoredInMemoryOnly: true,
                     cloudEnabled: false
                 )
+#if DEBUG
                 SnowlyApp.seedUITestDataIfNeeded(
                     in: inMemoryContainer,
                     launchArguments: launchArgumentSet
@@ -176,6 +192,7 @@ struct SnowlyApp: App {
                     in: inMemoryContainer,
                     launchArguments: launchArguments
                 )
+#endif
                 modelContainer = inMemoryContainer
             } catch {
                 fatalError("Failed to create ModelContainer: \(error)")
@@ -223,8 +240,43 @@ struct SnowlyApp: App {
                 }
                 .onChange(of: services.watchBridgeService.completedIndependentWorkout?.summary.sessionId) { _, _ in
                     guard let workout = services.watchBridgeService.completedIndependentWorkout else { return }
-                    SnowlyApp.persistImportedWatchWorkout(workout, in: modelContainer.mainContext)
+                    let importResult = SnowlyApp.persistImportedWatchWorkout(
+                        workout,
+                        in: modelContainer.mainContext
+                    )
+                    switch importResult {
+                    case .imported(let personalBestUpdate):
+                        services.phoneConnectivityService.send(
+                            .independentWorkoutImported(sessionId: workout.summary.sessionId)
+                        )
+                        if let personalBestUpdate,
+                           let notification = StatsService.watchPersonalBestNotification(for: personalBestUpdate) {
+                            services.phoneConnectivityService.send(.newPersonalBest(
+                                metric: notification.metric,
+                                value: notification.value
+                            ))
+                        }
+                    case .alreadyImported:
+                        services.phoneConnectivityService.send(
+                            .independentWorkoutImported(sessionId: workout.summary.sessionId)
+                        )
+                    case .failed:
+                        services.phoneConnectivityService.send(
+                            .independentWorkoutImportFailed(sessionId: workout.summary.sessionId)
+                        )
+                    }
                     services.watchBridgeService.consumeCompletedIndependentWorkout()
+                }
+                .onChange(of: services.trackingService.lastSavedSessionOutcome?.sessionId) { _, _ in
+                    guard let savedOutcome = services.trackingService.lastSavedSessionOutcome,
+                          let personalBestUpdate = savedOutcome.personalBestUpdate,
+                          let notification = StatsService.watchPersonalBestNotification(for: personalBestUpdate) else {
+                        return
+                    }
+                    services.phoneConnectivityService.send(.newPersonalBest(
+                        metric: notification.metric,
+                        value: notification.value
+                    ))
                 }
                 .onChange(of: QuickActionState.shared.pending) { _, pending in
                     guard pending else { return }
@@ -355,6 +407,7 @@ struct SnowlyApp: App {
                 isStoredInMemoryOnly: false,
                 cloudEnabled: false
             )
+#if DEBUG
             seedUITestDataIfNeeded(
                 in: recoveredContainer,
                 launchArguments: launchArgumentSet
@@ -363,6 +416,7 @@ struct SnowlyApp: App {
                 in: recoveredContainer,
                 launchArguments: launchArguments
             )
+#endif
             print("Recovered persistent store by resetting incompatible store files.")
             return recoveredContainer
         } catch {
@@ -378,6 +432,12 @@ struct SnowlyApp: App {
     /// and reset the existing stores once before opening them.
     /// Returns `true` when CloudKit should be skipped for this launch.
     private static func preparePersistentStoresForLaunch() -> Bool {
+        // Ensure Application Support directory exists before SwiftData tries to create store files.
+        // On first install the directory is absent, which causes verbose CoreData recovery noise.
+        if let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            try? FileManager.default.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
+        }
+
         let currentStamp = currentStoreCompatibilityStamp
         let storedStamp = UserDefaults.standard.string(forKey: storeCompatibilityStampKey)
         let decision = PersistentStoreCompatibilityPolicy.evaluate(
@@ -514,10 +574,17 @@ struct SnowlyApp: App {
     }
 
     @MainActor
+    private enum PersistImportedWatchWorkoutResult {
+        case imported(personalBestUpdate: StatsService.PersonalBestUpdate?)
+        case alreadyImported
+        case failed
+    }
+
+    @MainActor
     private static func persistImportedWatchWorkout(
         _ workout: ImportedWatchWorkout,
         in context: ModelContext
-    ) {
+    ) -> PersistImportedWatchWorkoutResult {
         let sessionId = workout.summary.sessionId
         var descriptor = FetchDescriptor<SkiSession>(
             predicate: #Predicate<SkiSession> { session in
@@ -527,7 +594,7 @@ struct SnowlyApp: App {
         descriptor.fetchLimit = 1
 
         if !((try? context.fetch(descriptor)) ?? []).isEmpty {
-            return
+            return .alreadyImported
         }
 
         let completedRuns = buildCompletedRuns(from: workout.trackPoints)
@@ -544,10 +611,7 @@ struct SnowlyApp: App {
             totalDistance: skiingDistance,
             totalVertical: skiingVertical,
             maxSpeed: skiingMaxSpeed,
-            runCount: max(
-                workout.summary.runCount,
-                skiingRunCount
-            )
+            runCount: skiingRunCount
         )
         session.applyGearSnapshot(
             from: fetchActiveGearSetup(in: context),
@@ -572,14 +636,26 @@ struct SnowlyApp: App {
 
         var profileDescriptor = FetchDescriptor<UserProfile>(sortBy: [SortDescriptor(\.createdAt)])
         profileDescriptor.fetchLimit = 1
+        var personalBestUpdate: StatsService.PersonalBestUpdate?
         if let profile = (try? context.fetch(profileDescriptor))?.first {
             let update = StatsService.computePersonalBestUpdates(session: session, profile: profile)
             if update.hasUpdates {
                 StatsService.applyPersonalBestUpdate(update, to: profile)
+                personalBestUpdate = update
+            }
+
+            let seasonUpdate = StatsService.computeSeasonBestUpdates(session: session, profile: profile)
+            if seasonUpdate.hasUpdates {
+                StatsService.applySeasonBestUpdate(seasonUpdate, to: profile)
             }
         }
 
-        try? context.save()
+        do {
+            try context.save()
+            return .imported(personalBestUpdate: personalBestUpdate)
+        } catch {
+            return .failed
+        }
     }
 
     @MainActor
@@ -616,6 +692,7 @@ struct SnowlyApp: App {
         let sortedPoints = trackPoints.sorted { $0.timestamp < $1.timestamp }
         guard !sortedPoints.isEmpty else { return [] }
 
+        let encoder = JSONEncoder()
         var gpsFilter = GPSKalmanFilter()
         var recentPoints: [FilteredTrackPoint] = []
         var currentActivity: DetectedActivity = .idle
@@ -628,24 +705,43 @@ struct SnowlyApp: App {
         var result: [CompletedRunData] = []
 
         func finalizeSegment() {
-            guard let segType = currentSegmentType, !currentSegmentFilteredPoints.isEmpty else { return }
-            if let filteredRun = FixtureReplayService.buildCompletedRunData(
+            guard let segType = currentSegmentType,
+                  let first = currentSegmentFilteredPoints.first,
+                  let last = currentSegmentFilteredPoints.last,
+                  currentSegmentFilteredPoints.count >= 2 else {
+                currentSegmentType = nil
+                currentSegmentFilteredPoints = []
+                lastActiveTime = nil
+                return
+            }
+            let pts = currentSegmentFilteredPoints
+            let distance = zip(pts, pts.dropFirst()).reduce(0.0) { $0 + $1.0.distance(to: $1.1) }
+            let duration = max(last.timestamp.timeIntervalSince(first.timestamp), 1)
+            let avgSpeed = distance / duration
+            let maxSpeed = pts.map(\.estimatedSpeed).max() ?? 0
+            if let effectiveType = SegmentValidator.effectiveType(
                 activityType: segType,
-                points: currentSegmentFilteredPoints
+                firstPoint: first,
+                lastPoint: last,
+                duration: duration,
+                averageSpeed: avgSpeed
             ) {
-                let filteredTrackData = try? JSONEncoder().encode(currentSegmentFilteredPoints)
-                result.append(
-                    CompletedRunData(
-                        startDate: filteredRun.startDate,
-                        endDate: filteredRun.endDate,
-                        distance: filteredRun.distance,
-                        verticalDrop: filteredRun.verticalDrop,
-                        maxSpeed: filteredRun.maxSpeed,
-                        averageSpeed: filteredRun.averageSpeed,
-                        activityType: filteredRun.activityType,
-                        trackData: filteredTrackData
-                    )
+                let verticalDrop = SegmentValidator.verticalDrop(
+                    effectiveType: effectiveType,
+                    firstAltitude: first.altitude,
+                    lastAltitude: last.altitude
                 )
+                let trackData = try? encoder.encode(pts)
+                result.append(CompletedRunData(
+                    startDate: first.timestamp,
+                    endDate: last.timestamp,
+                    distance: distance,
+                    verticalDrop: verticalDrop,
+                    maxSpeed: maxSpeed,
+                    averageSpeed: avgSpeed,
+                    activityType: effectiveType,
+                    trackData: trackData
+                ))
             }
             currentSegmentType = nil
             currentSegmentFilteredPoints = []
@@ -700,6 +796,7 @@ struct SnowlyApp: App {
         return result
     }
 
+#if DEBUG
     private static func seedUITestDataIfNeeded(
         in container: ModelContainer,
         launchArguments: Set<String>
@@ -729,6 +826,7 @@ struct SnowlyApp: App {
             }
         }
     }
+#endif
 }
 
 @MainActor

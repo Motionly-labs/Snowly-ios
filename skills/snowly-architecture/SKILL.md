@@ -171,6 +171,121 @@ Never use `ObservableObject`, `@Published`, `@StateObject`, `@ObservedObject`, o
 
 ---
 
+## watchOS Architecture (SnowlyWatch target)
+
+The watchOS app follows the same principles as the iOS app with two structural differences: no SwiftData layer (watch is stateless between sessions), and `SnowlyWatchApp` plays the role `AppServices` plays on iOS.
+
+### Layer Map
+
+```
+Views → Services → Shared / Utilities
+```
+
+No `@Model`, no `@Query`, no SwiftData anywhere in `SnowlyWatch/`.
+
+### watchOS Directory Structure
+
+```
+SnowlyWatch/
+├── DesignSystem/       Watch-specific tokens (WatchColorTokens, WatchSpacing, WatchOpacity, …)
+├── Services/           @Observable @MainActor services + WatchWorkoutManager
+├── Complications/      WidgetKit complication bundle and views
+└── Views/              SwiftUI views; read service state via @Environment only
+```
+
+### Service Rules
+
+| Rule | Detail |
+|------|--------|
+| Same `@Observable @MainActor final class` pattern as iOS | No `ObservableObject`/`@Published`/`@StateObject` |
+| Injection root is `SnowlyWatchApp` | Services created with `@State`; injected via `.environment()` on the root view |
+| `WatchWorkoutManager` is the orchestrator | Mirrors `SessionTrackingService`; coordinates connectivity, location, HealthKit |
+| Cross-service wiring via `configure(…)` | When a service inherits `NSObject` (HealthKit delegate), `init` injection is blocked. Use a `configure(dep:dep:)` method called from `.onAppear` in `SnowlyWatchApp` instead |
+| `WatchHapticService` is a static utility | Pure static methods; no injection needed |
+
+### watchOS Naming Conventions
+
+| Element | Pattern | Example |
+|---------|---------|---------|
+| Orchestrating service | `Watch{Domain}Manager` | `WatchWorkoutManager` |
+| Supporting service | `Watch{Domain}Service` | `WatchConnectivityService`, `WatchHapticService` |
+| Complication widget | `{Feature}Widget` | `ActiveSessionWidget` |
+| Complication view | `{Feature}WidgetView` | `ActiveSessionWidgetView` |
+| Timeline entry | `{Feature}Entry` | `ActiveSessionEntry` |
+| Timeline provider | `{Feature}Provider` | `ActiveSessionProvider` |
+
+### watchOS Design Tokens
+
+All visual values must use watch-specific tokens. Never hardcode colors, spacing, opacity, corner radii, font sizes, or animation durations in view files.
+
+| Token File | Contents |
+|-----------|----------|
+| `WatchColorTokens.swift` | Brand colors, gradients, semantic aliases (`sportAccent`, `completedAccent`, `connectedAccent`) |
+| `WatchSpacing.swift` | Spacing grid (`xs`–`xl`) + named button geometry constants |
+| `WatchOpacity.swift` | Surface and overlay opacity values |
+| `WatchCornerRadius.swift` | Corner radius scale |
+| `WatchTypography.swift` | Display font styles (timer, control icon, stat icon) |
+| `WatchAnimationTokens.swift` | Animation presets (e.g., `holdRelease`) |
+
+### watchOS Anti-Patterns
+
+| Anti-Pattern | Correct Approach |
+|-------------|-----------------|
+| Calling `WCSession` directly from a view | Route through `WatchConnectivityService` |
+| Workout state logic in view `body` | Lives in `WatchWorkoutManager` |
+| Hardcoded colors/spacing/opacity in watch views | Use `Watch*` token enums |
+| Accessing connectivity from views directly | Views observe `WatchWorkoutManager`; only the manager talks to connectivity |
+| Using `UserDefaults` to persist session data | Keep all session state in `WatchWorkoutManager` (in-memory); summary is sent to iPhone on stop |
+| Storing `TrackPoint` arrays persistently | Buffer in memory on `WatchWorkoutManager`; flush to iPhone in batches on session end |
+
+---
+
+## Widget Extension Architecture (SnowlyWidgetExtension target)
+
+Widgets are pure data renderers. They have no services, no `@Observable`, and cannot import code from the main app target.
+
+### Structural Rules
+
+1. **No `@Observable` / `@Environment` / `@State` for service injection** — widgets receive all data through `ActivityViewContext<Attributes>` (Live Activity) or a `TimelineEntry` struct (complications).
+2. **`TimelineProvider` is stateless** — it produces entries; any async data fetch happens inside `getTimeline`, not in a stored property.
+3. **No business logic in widget views** — only formatting and layout. Formatting helpers (speed, vertical, elapsed time) live as private methods on the widget struct, not inlined in `body`.
+4. **Cannot import iOS app DesignSystem** — all design tokens live in `LiveActivityTokens.swift` within the extension target itself.
+5. **`ControlWidget` tint must use `LiveActivityTokens`** — never `.orange`, `.green`, or any other hardcoded `Color`.
+
+### Widget Naming Conventions
+
+| Element | Pattern | Example |
+|---------|---------|---------|
+| Widget bundle | `{App}WidgetBundle` | `SnowlyWidgetBundle` |
+| Live Activity widget | `{App}LiveActivityWidget` | `SnowlyLiveActivityWidget` |
+| Control widget | `{App}ControlWidget` | `SnowlyControlWidget` |
+| Complication widget | `{Feature}Widget` | `ActiveSessionWidget` |
+| Complication view | `{Feature}WidgetView` | `ActiveSessionWidgetView` |
+
+### Widget Design Tokens
+
+All visual values in widget views must come from `LiveActivityTokens`. The token file lives at `SnowlyWidgetExtension/LiveActivityTokens.swift` and includes its own `Color(hex:)` helper (the main app version is not accessible).
+
+| Token Category | Token Namespace |
+|---------------|-----------------|
+| Colors (play/pause accents) | `LiveActivityTokens.playAccent`, `.pauseAccent` |
+| Spacing and padding | `LiveActivityTokens.contentPaddingH/V`, `.sectionSpacing`, `.gridSpacing`, `.pillSpacing`, … |
+| Chip/pill geometry | `LiveActivityTokens.chipPaddingH/V`, `.chipCornerRadius`, `.pillPaddingH/V` |
+| Typography | `LiveActivityTokens.speedFont` |
+| Scale factors | `LiveActivityTokens.speedMinScale`, `.contentMinScale`, `.pillMinScale` |
+
+### Widget Anti-Patterns
+
+| Anti-Pattern | Correct Approach |
+|-------------|-----------------|
+| Hardcoded `.orange` / `.green` in widget views | Use `LiveActivityTokens.pauseAccent` / `LiveActivityTokens.playAccent` |
+| Hardcoded padding/spacing literals | Use `LiveActivityTokens` spacing constants |
+| Hardcoded corner radii | Use `LiveActivityTokens.chipCornerRadius` |
+| Inline formatting logic in `body` | Extract as a private method on the widget struct |
+| Importing iOS app types directly | Use shared `ActivityAttributes` types; define display logic locally |
+
+---
+
 ## Output
 
 ### Review Report

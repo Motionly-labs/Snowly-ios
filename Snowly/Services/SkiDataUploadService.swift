@@ -16,14 +16,16 @@ final class SkiDataUploadService {
     private(set) var lastError: String?
 
     private let apiClient: any SkiDataAPIProviding
+    private let channelService: SkiSessionChannelService?
 
     nonisolated private static let logger = Logger(
         subsystem: "com.Snowly",
         category: "SkiDataUpload"
     )
 
-    init(apiClient: some SkiDataAPIProviding) {
+    init(apiClient: some SkiDataAPIProviding, channelService: SkiSessionChannelService? = nil) {
         self.apiClient = apiClient
+        self.channelService = channelService
     }
 
     func updateBaseURL(_ url: URL) {
@@ -41,6 +43,14 @@ final class SkiDataUploadService {
             apiClient.setToken(credentials.apiToken)
 
             let payload = buildPayload(session)
+
+            if let channelService, channelService.isConnected {
+                let result = await channelService.uploadSession(payload)
+                if case .success = result {
+                    return
+                }
+                // Fall through to REST on channel failure
+            }
 
             do {
                 try await apiClient.uploadSession(payload)
@@ -87,7 +97,7 @@ final class SkiDataUploadService {
     }
 
     private func buildPayload(_ session: SkiSession) -> SessionUploadPayload {
-        let runs = session.runs.compactMap { buildRunPayload($0) }
+        let runs = (session.runs ?? []).compactMap { buildRunPayload($0) }
         return SessionUploadPayload(
             id: session.id.uuidString,
             startDate: session.startDate,

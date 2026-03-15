@@ -72,6 +72,16 @@ enum SharedConstants {
 
     // MARK: - WCSession
     nonisolated static let watchSessionKey = "snowly.watch.message"
+    nonisolated static let watchContextTrackingStateKey = "snowly.watch.context.trackingState"
+    nonisolated static let watchContextLiveDataKey = "snowly.watch.context.liveData"
+    nonisolated static let watchContextUnitPreferenceKey = "snowly.watch.context.unitPreference"
+    nonisolated static let watchContextLastCompletedRunKey = "snowly.watch.context.lastCompletedRun"
+
+    // MARK: - Watch Complication (UserDefaults keys shared within the watch app bundle)
+    nonisolated static let complicationWidgetKind = "ActiveSessionWidget"
+    nonisolated static let complicationIsTrackingKey = "snowly.complication.isTracking"
+    nonisolated static let complicationRunCountKey = "snowly.complication.runCount"
+    nonisolated static let complicationSessionStartKey = "snowly.complication.sessionStart"
 
     // MARK: - Dashboard Time-Series Windows
     nonisolated static let speedSampleWindowSeconds:    TimeInterval = 600  // 10 min

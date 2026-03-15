@@ -63,12 +63,11 @@ struct HeartRateSample: Sendable, Equatable {
     let bpm: Double
 }
 
-private protocol TimestampedSample {
-    var time: Date { get }
+struct SavedSessionOutcome: Sendable {
+    let sessionId: UUID
+    let personalBestRecords: [String]
+    let personalBestUpdate: StatsService.PersonalBestUpdate?
 }
-
-extension SpeedSample: TimestampedSample {}
-extension AltitudeSample: TimestampedSample {}
 
 private struct TrackingPointIngestResult: Sendable {
     let point: FilteredTrackPoint?
@@ -109,6 +108,7 @@ private struct TrackingEngineSnapshot: Sendable {
     let currentActivity: DetectedActivity
     let runCount: Int
     let completedRuns: [CompletedRunData]
+    let completedRunFilePaths: [String?]
 }
 
 private extension DetectedActivity {
@@ -153,6 +153,7 @@ private actor TrackingEngine {
         let totalVertical: Double
         let maxSpeed: Double
         let completedRuns: [CompletedRunData]
+        let completedRunFileURLs: [URL?]
         let runCount: Int
     }
 
@@ -204,7 +205,9 @@ private actor TrackingEngine {
             maxSpeed = seed.maxSpeed
             completedRuns = seed.completedRuns
             runCount = max(seed.runCount, seed.completedRuns.filter { $0.activityType == .skiing }.count)
-            completedRunFiles = Array(repeating: nil, count: completedRuns.count)
+            completedRunFiles = seed.completedRunFileURLs.isEmpty
+                ? Array(repeating: nil, count: completedRuns.count)
+                : seed.completedRunFileURLs
         }
     }
 
@@ -371,7 +374,8 @@ private actor TrackingEngine {
             skiingMetrics: metrics,
             currentActivity: currentActivity,
             runCount: runCount,
-            completedRuns: completedRuns
+            completedRuns: completedRuns,
+            completedRunFilePaths: completedRunFiles.map { $0?.path }
         )
     }
 
@@ -583,10 +587,16 @@ private actor TrackingEngine {
     }
 
     private func makeSegmentFileURL() -> URL? {
-        let base = FileManager.default.temporaryDirectory
-            .appendingPathComponent("snowly-tracking-runs", isDirectory: true)
+        let fm = FileManager.default
         do {
-            try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+            let support = try fm.url(
+                for: .applicationSupportDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: true
+            )
+            let base = support.appendingPathComponent("snowly-tracking-runs", isDirectory: true)
+            try fm.createDirectory(at: base, withIntermediateDirectories: true)
             return base.appendingPathComponent("\(UUID().uuidString).ndjson")
         } catch {
             return nil
@@ -637,6 +647,7 @@ final class SessionTrackingService {
     private(set) var runCount: Int = 0
     private(set) var completedRuns: [CompletedRunData] = []
     private(set) var skiingMetrics: SessionSkiingMetrics = .zero
+    private(set) var lastSavedSessionOutcome: SavedSessionOutcome?
     var pendingHealthKitWorkoutId: UUID? { healthKitCoordinator.pendingWorkoutId }
 
     /// Rolling 10-minute window of GPS-driven speed samples for the live curve.
@@ -645,6 +656,11 @@ final class SessionTrackingService {
 
     /// Rolling 1-hour window of GPS-driven altitude samples for the profile widget.
     private(set) var altitudeSamples: [AltitudeSample] = []
+
+    // CircularBuffer backing for rolling sample windows — O(1) append, no Array shifting.
+    // Capacities match the retention windows: 600s / 2s = 300, 3600s / 2s = 1800.
+    private var speedSampleBuffer = CircularBuffer<SpeedSample>(capacity: 300)
+    private var altitudeSampleBuffer = CircularBuffer<AltitudeSample>(capacity: 1800)
 
     // MARK: - Internal state
     private var trackingTask: Task<Void, Never>?
@@ -711,6 +727,7 @@ final class SessionTrackingService {
         activeSessionId = sessionId
         startDate = Date()
         liveActivityUnitSystem = unitSystem
+        lastSavedSessionOutcome = nil
 
         resetPublishedStats()
         state = .tracking
@@ -860,6 +877,40 @@ final class SessionTrackingService {
             )
             run.session = session
             context.insert(run)
+        }
+
+        var personalBestRecords: [String] = []
+        var personalBestUpdate: StatsService.PersonalBestUpdate?
+        var profileDescriptor = FetchDescriptor<UserProfile>(sortBy: [SortDescriptor(\.createdAt)])
+        profileDescriptor.fetchLimit = 1
+        if let profile = (try? context.fetch(profileDescriptor))?.first {
+            personalBestRecords = StatsService.checkPersonalBests(
+                session: session,
+                profile: profile
+            )
+
+            let update = StatsService.computePersonalBestUpdates(session: session, profile: profile)
+            if update.hasUpdates {
+                StatsService.applyPersonalBestUpdate(update, to: profile)
+                personalBestUpdate = update
+            }
+
+            let seasonUpdate = StatsService.computeSeasonBestUpdates(session: session, profile: profile)
+            if seasonUpdate.hasUpdates {
+                StatsService.applySeasonBestUpdate(seasonUpdate, to: profile)
+            }
+        }
+
+        do {
+            try context.save()
+            lastSavedSessionOutcome = SavedSessionOutcome(
+                sessionId: session.id,
+                personalBestRecords: personalBestRecords,
+                personalBestUpdate: personalBestUpdate
+            )
+        } catch {
+            Self.logger.error("Failed to save tracked session: \(error.localizedDescription, privacy: .public)")
+            lastSavedSessionOutcome = nil
         }
 
         await trackingEngine.reset()
@@ -1088,50 +1139,30 @@ final class SessionTrackingService {
 
     private func appendCurveSample(point: FilteredTrackPoint, state: SpeedCurveState) {
         let timestamp = point.timestamp
-        let speedSample = SpeedSample(
-            time: timestamp,
-            speed: max(point.estimatedSpeed, 0),
-            state: state
-        )
-        upsertCurveSample(
-            into: &speedSamples,
-            sample: speedSample,
-            minimumSpacing: Self.curveSampleIntervalSeconds,
-            retention: SharedConstants.speedSampleWindowSeconds
-        )
 
+        // Speed: append only when minimumSpacing has elapsed since the last buffered sample.
+        let lastSpeed = speedSampleBuffer[speedSampleBuffer.count - 1]
+        if lastSpeed == nil || timestamp.timeIntervalSince(lastSpeed!.time) >= Self.curveSampleIntervalSeconds {
+            speedSampleBuffer.append(SpeedSample(
+                time: timestamp,
+                speed: max(point.estimatedSpeed, 0),
+                state: state
+            ))
+            speedSamples = speedSampleBuffer.elements
+        }
+
+        // Altitude: same spacing rule, value pre-converted to display units.
         let displayAltitude = liveActivityUnitSystem == .imperial
             ? UnitConversion.metersToFeet(point.altitude)
             : point.altitude
-        let altitudeSample = AltitudeSample(
-            time: timestamp,
-            altitude: displayAltitude,
-            state: state
-        )
-        upsertCurveSample(
-            into: &altitudeSamples,
-            sample: altitudeSample,
-            minimumSpacing: Self.curveSampleIntervalSeconds,
-            retention: SharedConstants.altitudeSampleWindowSeconds
-        )
-    }
-
-    private func upsertCurveSample<T>(
-        into samples: inout [T],
-        sample: T,
-        minimumSpacing: TimeInterval,
-        retention: TimeInterval
-    ) where T: TimestampedSample {
-        if let last = samples.last {
-            guard sample.time.timeIntervalSince(last.time) >= minimumSpacing else { return }
-            samples.append(sample)
-        } else {
-            samples.append(sample)
-        }
-
-        let cutoff = sample.time.addingTimeInterval(-retention)
-        if let firstValid = samples.firstIndex(where: { $0.time >= cutoff }), firstValid > 0 {
-            samples.removeSubrange(0..<firstValid)
+        let lastAltitude = altitudeSampleBuffer[altitudeSampleBuffer.count - 1]
+        if lastAltitude == nil || timestamp.timeIntervalSince(lastAltitude!.time) >= Self.curveSampleIntervalSeconds {
+            altitudeSampleBuffer.append(AltitudeSample(
+                time: timestamp,
+                altitude: displayAltitude,
+                state: state
+            ))
+            altitudeSamples = altitudeSampleBuffer.elements
         }
     }
 
@@ -1167,15 +1198,18 @@ final class SessionTrackingService {
             runCount: snapshot.skiingMetrics.runCount,
             isActive: true,
             elapsedTime: computeElapsedTime(),
-            completedRuns: snapshot.completedRuns.map {
+            completedRuns: snapshot.completedRuns.enumerated().map { index, run in
                 PersistedCompletedRun(
-                    startDate: $0.startDate,
-                    endDate: $0.endDate,
-                    distance: $0.distance,
-                    verticalDrop: $0.verticalDrop,
-                    maxSpeed: $0.maxSpeed,
-                    averageSpeed: $0.averageSpeed,
-                    activityType: $0.activityType
+                    startDate: run.startDate,
+                    endDate: run.endDate,
+                    distance: run.distance,
+                    verticalDrop: run.verticalDrop,
+                    maxSpeed: run.maxSpeed,
+                    averageSpeed: run.averageSpeed,
+                    activityType: run.activityType,
+                    trackFilePath: index < snapshot.completedRunFilePaths.count
+                        ? snapshot.completedRunFilePaths[index]
+                        : nil
                 )
             }
         )
@@ -1275,11 +1309,16 @@ final class SessionTrackingService {
             runCount: runCount
         )
 
+        let fileURLs = (persisted.completedRuns ?? []).map { run -> URL? in
+            guard let path = run.trackFilePath else { return nil }
+            return URL(fileURLWithPath: path)
+        }
         let seed = TrackingEngine.Seed(
             totalDistance: totalDistance,
             totalVertical: totalVertical,
             maxSpeed: maxSpeed,
             completedRuns: restoredRuns,
+            completedRunFileURLs: fileURLs,
             runCount: runCount
         )
         trackingEngine = TrackingEngine(seed: seed)
@@ -1376,6 +1415,8 @@ final class SessionTrackingService {
         skiingMetrics = .zero
         speedSamples = []
         altitudeSamples = []
+        speedSampleBuffer.removeAll()
+        altitudeSampleBuffer.removeAll()
 
         totalPausedTime = 0
         pauseStartTime = nil

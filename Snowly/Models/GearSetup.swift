@@ -10,7 +10,7 @@ import SwiftData
 
 @Model
 final class GearSetup {
-    @Attribute(.unique) var id: UUID = UUID()
+    var id: UUID = UUID()
     var name: String = ""
     var notes: String?
     var isActive: Bool = false
