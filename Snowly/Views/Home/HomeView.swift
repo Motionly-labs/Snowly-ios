@@ -158,20 +158,8 @@ struct HomeView: View {
             .animation(AnimationTokens.moderateEaseInOut, value: pinNotificationService.currentBanner?.id)
             .animation(AnimationTokens.moderateEaseInOut, value: pinNotificationService.currentMembershipBanner?.id)
             .animation(AnimationTokens.standardEaseInOut, value: isPinningMode)
-            .onChange(of: currentPage) { _, newPage in
+            .onChange(of: currentPage) { _, _ in
                 isPinningMode = false
-                mapOverlayActivationTask?.cancel()
-                mapOverlayActivationTask = nil
-                if newPage == .map {
-                    // Defer overlay insertion until after page transition settles
-                    mapOverlayActivationTask = Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(350))
-                        guard !Task.isCancelled, currentPage == .map else { return }
-                        showMapOverlays = true
-                    }
-                } else {
-                    showMapOverlays = false
-                }
             }
             .mapScope(mapScope)
             .fullScreenCover(isPresented: $showingTracking) {
@@ -192,6 +180,14 @@ struct HomeView: View {
                 handleQuickStartIfPending()
                 if locationService.authorizationStatus == .notDetermined {
                     locationService.requestAuthorization()
+                }
+                if !showMapOverlays {
+                    mapOverlayActivationTask?.cancel()
+                    mapOverlayActivationTask = Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(500))
+                        guard !Task.isCancelled else { return }
+                        showMapOverlays = true
+                    }
                 }
             }
             .task(id: trackingIntervalKey) {
