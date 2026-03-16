@@ -23,7 +23,7 @@ nonisolated func haversineDistance(lat1: Double, lon1: Double, lat2: Double, lon
 /// Stored as Codable struct (NOT SwiftData @Model) to avoid
 /// performance issues with 100k+ objects per season.
 struct TrackPoint: Codable, Sendable, Equatable {
-    let timestamp: Date
+    nonisolated let timestamp: Date
     let latitude: Double
     let longitude: Double
     let altitude: Double
@@ -95,7 +95,7 @@ struct TrackPoint: Codable, Sendable, Equatable {
 
 struct FilteredTrackPoint: Codable, Sendable, Equatable {
     let rawTimestamp: Date
-    let timestamp: Date
+    nonisolated let timestamp: Date
     let latitude: Double
     let longitude: Double
     let altitude: Double
@@ -172,7 +172,7 @@ struct FilteredTrackPoint: Codable, Sendable, Equatable {
 }
 
 protocol TimestampedSample: Sendable {
-    var timestamp: Date { get }
+    nonisolated var timestamp: Date { get }
 }
 
 extension TrackPoint: TimestampedSample {}

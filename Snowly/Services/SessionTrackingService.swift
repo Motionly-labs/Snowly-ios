@@ -1146,7 +1146,7 @@ final class SessionTrackingService {
         var didAppendAltitude = false
 
         // Speed: append only when minimumSpacing has elapsed since the last buffered sample.
-        let lastSpeed = speedSampleBuffer[speedSampleBuffer.count - 1]
+        let lastSpeed = speedSampleBuffer.last
         if lastSpeed == nil || timestamp.timeIntervalSince(lastSpeed!.time) >= Self.curveSampleIntervalSeconds {
             speedSampleBuffer.append(SpeedSample(
                 time: timestamp,
@@ -1160,7 +1160,7 @@ final class SessionTrackingService {
         let displayAltitude = liveActivityUnitSystem == .imperial
             ? UnitConversion.metersToFeet(point.altitude)
             : point.altitude
-        let lastAltitude = altitudeSampleBuffer[altitudeSampleBuffer.count - 1]
+        let lastAltitude = altitudeSampleBuffer.last
         if lastAltitude == nil || timestamp.timeIntervalSince(lastAltitude!.time) >= Self.curveSampleIntervalSeconds {
             altitudeSampleBuffer.append(AltitudeSample(
                 time: timestamp,

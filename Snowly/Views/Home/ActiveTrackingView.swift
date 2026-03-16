@@ -276,7 +276,7 @@ private struct LiveSpeedCurveView: View {
         CurveRendering.drawStateSegments(
             into: &context,
             points: coordinates,
-            states: elements.map(\.state),
+            stateProvider: { elements[$0].state },
             stateColor: \.trackingColor,
             style: strokeStyle
         )

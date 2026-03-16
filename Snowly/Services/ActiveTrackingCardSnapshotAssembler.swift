@@ -347,7 +347,7 @@ enum ActiveTrackingCardInputAssembler {
         let cutoff = Date.now.addingTimeInterval(-window)
         let startIndex = binarySearchFirstIndex(in: samples, where: { $0.time >= cutoff })
         guard startIndex < samples.count else { return [] }
-        return Array(samples[startIndex...]).droppingLeadingZeroLikeSamples()
+        return samples[startIndex...].droppingLeadingZeroLikeSamples()
     }
 
     private nonisolated static func trimmedAltitudeSamples(
@@ -362,7 +362,7 @@ enum ActiveTrackingCardInputAssembler {
         let cutoff = Date.now.addingTimeInterval(-window)
         let startIndex = binarySearchFirstIndex(in: samples, where: { $0.time >= cutoff })
         guard startIndex < samples.count else { return [] }
-        return Array(samples[startIndex...]).droppingLeadingZeroLikeSamples()
+        return samples[startIndex...].droppingLeadingZeroLikeSamples()
     }
 
     private nonisolated static func trimmedHeartRateSamples(
@@ -377,7 +377,7 @@ enum ActiveTrackingCardInputAssembler {
         let cutoff = Date.now.addingTimeInterval(-window)
         let startIndex = binarySearchFirstIndex(in: samples, where: { $0.time >= cutoff })
         guard startIndex < samples.count else { return [] }
-        return Array(samples[startIndex...]).droppingLeadingZeroLikeSamples()
+        return samples[startIndex...].droppingLeadingZeroLikeSamples()
     }
 
     /// O(log n) binary search for the first index where `predicate` is true.

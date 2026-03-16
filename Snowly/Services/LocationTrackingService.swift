@@ -143,24 +143,18 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
             self.currentVerticalAccuracy = normalizedVerticalAccuracy
             self.lastError = nil
 
-            let isSimulator: Bool = {
 #if targetEnvironment(simulator)
-                true
-#else
-                false
-#endif
-            }()
-
-            if !isSimulator {
-                guard normalizedHorizontalAccuracy >= 0,
-                      normalizedHorizontalAccuracy <= 50 else {
-                    self.previousTrackingLocation = location
-                    return
-                }
-            } else if normalizedHorizontalAccuracy > 120 {
+            if normalizedHorizontalAccuracy > 120 {
                 self.previousTrackingLocation = location
                 return
             }
+#else
+            guard normalizedHorizontalAccuracy >= 0,
+                  normalizedHorizontalAccuracy <= 50 else {
+                self.previousTrackingLocation = location
+                return
+            }
+#endif
 
             let point = TrackPoint(
                 timestamp: location.timestamp,
