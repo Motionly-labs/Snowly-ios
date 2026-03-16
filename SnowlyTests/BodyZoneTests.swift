@@ -20,7 +20,7 @@ struct BodyZoneTests {
 
         #expect(backpackCategories.contains(.skis))
         #expect(backpackCategories.contains(.snowboard))
-        #expect(backpackCategories.contains(.bag))
+        #expect(backpackCategories.contains(.backpack))
         #expect(BodyZone.pack.categories.isEmpty)
     }
 }

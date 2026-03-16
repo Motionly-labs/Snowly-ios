@@ -145,14 +145,15 @@ enum ActiveTrackingCardInputAssembler {
                 renderingPolicy: policy
             )
         case .altitudeCurve:
+            let trimmedAltitude = trimmedAltitudeSamples(window: policy.windowSeconds, source: source)
             return ActiveTrackingSeriesCardInput(
                 instanceId: instance.instanceId,
                 kind: instance.kind,
                 slot: instance.slot,
                 title: String(localized: "stat_altitude_curve"),
-                primaryValue: altitudeCurvePrimaryValue(window: policy.windowSeconds, source: source),
+                primaryValue: altitudeCurvePrimaryValue(from: trimmedAltitude, unitSystem: source.context.unitSystem),
                 subtitle: nil,
-                seriesPayload: .altitude(trimmedAltitudeSamples(window: policy.windowSeconds, source: source)),
+                seriesPayload: .altitude(trimmedAltitude),
                 renderingPolicy: policy
             )
         case .heartRateCurve:
@@ -344,9 +345,9 @@ enum ActiveTrackingCardInputAssembler {
         }
 
         let cutoff = Date.now.addingTimeInterval(-window)
-        return samples
-            .filter { $0.time >= cutoff }
-            .droppingLeadingZeroLikeSamples()
+        let startIndex = binarySearchFirstIndex(in: samples, where: { $0.time >= cutoff })
+        guard startIndex < samples.count else { return [] }
+        return samples[startIndex...].droppingLeadingZeroLikeSamples()
     }
 
     private nonisolated static func trimmedAltitudeSamples(
@@ -359,9 +360,9 @@ enum ActiveTrackingCardInputAssembler {
         }
 
         let cutoff = Date.now.addingTimeInterval(-window)
-        return samples
-            .filter { $0.time >= cutoff }
-            .droppingLeadingZeroLikeSamples()
+        let startIndex = binarySearchFirstIndex(in: samples, where: { $0.time >= cutoff })
+        guard startIndex < samples.count else { return [] }
+        return samples[startIndex...].droppingLeadingZeroLikeSamples()
     }
 
     private nonisolated static func trimmedHeartRateSamples(
@@ -374,21 +375,39 @@ enum ActiveTrackingCardInputAssembler {
         }
 
         let cutoff = Date.now.addingTimeInterval(-window)
-        return samples
-            .filter { $0.time >= cutoff }
-            .droppingLeadingZeroLikeSamples()
+        let startIndex = binarySearchFirstIndex(in: samples, where: { $0.time >= cutoff })
+        guard startIndex < samples.count else { return [] }
+        return samples[startIndex...].droppingLeadingZeroLikeSamples()
+    }
+
+    /// O(log n) binary search for the first index where `predicate` is true.
+    /// Assumes the predicate transitions from false to true (time-sorted samples).
+    private nonisolated static func binarySearchFirstIndex<T>(
+        in array: [T],
+        where predicate: (T) -> Bool
+    ) -> Int {
+        var lo = 0
+        var hi = array.count
+        while lo < hi {
+            let mid = lo + (hi - lo) / 2
+            if predicate(array[mid]) {
+                hi = mid
+            } else {
+                lo = mid + 1
+            }
+        }
+        return lo
     }
 
     private nonisolated static func altitudeCurvePrimaryValue(
-        window: TimeInterval?,
-        source: Source
+        from samples: [AltitudeSample],
+        unitSystem: UnitSystem
     ) -> ActiveTrackingCardPrimaryValue {
-        let samples = trimmedAltitudeSamples(window: window, source: source)
         guard let first = samples.first?.altitude, let last = samples.last?.altitude else {
             return .text(ActiveTrackingTextValue(value: "--", unit: ""))
         }
         let delta = last - first
-        let unit = verticalUnit(source.context.unitSystem)
+        let unit = verticalUnit(unitSystem)
         let value = String(format: "%+.0f", delta)
         return .text(ActiveTrackingTextValue(value: value, unit: unit))
     }

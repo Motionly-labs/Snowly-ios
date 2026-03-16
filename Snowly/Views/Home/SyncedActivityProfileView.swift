@@ -166,7 +166,7 @@ struct SyncedActivityProfileView: View {
             while j < points.count && displaySamples[j].state == segState {
                 j += 1
             }
-            let segPath = CurveRendering.smoothPath(points: Array(points[(segStart - 1)..<j]))
+            let segPath = CurveRendering.smoothPath(points: points, range: (segStart - 1)..<j)
             context.stroke(segPath, with: .color(speedColor(for: segState)), style: strokeStyle)
             segStart = j
         }

@@ -24,6 +24,12 @@ struct CircularBuffer<Element>: Sendable where Element: Sendable {
 
     var isEmpty: Bool { count == 0 }
 
+    var last: Element? {
+        guard count > 0 else { return nil }
+        let index = (tail - 1 + capacity) % capacity
+        return storage[index]
+    }
+
     mutating func append(_ element: Element) {
         storage[tail] = element
         tail = (tail + 1) % capacity

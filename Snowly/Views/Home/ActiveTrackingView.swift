@@ -168,13 +168,23 @@ private struct LiveSpeedCurveView: View {
             return
         }
 
-        let rawFresh: [SpeedSample]
+        let fresh: ArraySlice<SpeedSample>
         if let lastProcessedSampleTime {
-            rawFresh = samples.filter { $0.time > lastProcessedSampleTime }
+            // Samples are time-sorted — binary search for the first new sample.
+            var lo = 0
+            var hi = samples.count
+            while lo < hi {
+                let mid = lo + (hi - lo) / 2
+                if samples[mid].time <= lastProcessedSampleTime {
+                    lo = mid + 1
+                } else {
+                    hi = mid
+                }
+            }
+            fresh = samples[lo...]
         } else {
-            rawFresh = samples.droppingLeadingZeroLikeSamples()
+            fresh = samples.droppingLeadingZeroLikeSamples()[...]
         }
-        let fresh = rawFresh
         guard !fresh.isEmpty else { return }
 
         var updatedPoints = frozenPoints
@@ -266,7 +276,7 @@ private struct LiveSpeedCurveView: View {
         CurveRendering.drawStateSegments(
             into: &context,
             points: coordinates,
-            states: elements.map(\.state),
+            stateProvider: { elements[$0].state },
             stateColor: \.trackingColor,
             style: strokeStyle
         )

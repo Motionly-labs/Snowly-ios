@@ -291,8 +291,6 @@ final class WatchBridgeService {
                     completedRuns: completedRuns
                 )
 
-                await Task.yield()
-
                 await withCheckedContinuation { continuation in
                     withObservationTracking {
                         _ = self.trackingService.state
@@ -303,6 +301,10 @@ final class WatchBridgeService {
                         continuation.resume()
                     }
                 }
+
+                // Debounce: prevent rapid-fire cycles if multiple observed
+                // properties change in quick succession.
+                try? await Task.sleep(for: .milliseconds(200))
             }
         }
     }
@@ -389,7 +391,11 @@ final class WatchBridgeService {
                 guard self.trackingService.state == .tracking else { break }
 
                 let liveData = self.buildLiveData()
-                self.connectivityService.send(.liveUpdate(liveData))
+                // Use fire-and-forget sendLive — live data is ephemeral and stales
+                // instantly, so transferUserInfo queue buildup is pure waste. The
+                // application context already carries the same data for when the
+                // watch wakes up.
+                self.connectivityService.sendLive(.liveUpdate(liveData))
                 self.connectivityService.updateApplicationContext(
                     state: self.trackingService.state,
                     liveData: liveData

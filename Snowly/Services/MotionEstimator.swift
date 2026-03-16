@@ -20,6 +20,11 @@ enum MotionEstimator {
     /// Doppler is noise-free; ~2 m/s covers ±2m positional error per point.
     nonisolated private static let horizontalSpeedNoiseBudget: Double = 2.0
 
+    struct DualWindowEstimates: Sendable, Equatable {
+        let transition: MotionEstimate
+        let steady: MotionEstimate
+    }
+
     nonisolated static func transitionEstimate(
         current: TrackPoint,
         recentPoints: [TrackPoint]
@@ -44,24 +49,20 @@ enum MotionEstimator {
         current: FilteredTrackPoint,
         recentPoints: [FilteredTrackPoint]
     ) -> MotionEstimate {
-        estimate(
+        dualWindowEstimates(
             current: current,
-            recentPoints: recentPoints,
-            windowSeconds: SharedConstants.transitionFeatureWindowSeconds,
-            window: .transition
-        )
+            recentPoints: recentPoints
+        ).transition
     }
 
     nonisolated static func steadyEstimate(
         current: FilteredTrackPoint,
         recentPoints: [FilteredTrackPoint]
     ) -> MotionEstimate {
-        estimate(
+        dualWindowEstimates(
             current: current,
-            recentPoints: recentPoints,
-            windowSeconds: SharedConstants.steadyFeatureWindowSeconds,
-            window: .steady
-        )
+            recentPoints: recentPoints
+        ).steady
     }
 
     nonisolated static func estimate(
@@ -78,114 +79,80 @@ enum MotionEstimator {
         steadyEstimate(current: current, recentPoints: recentPoints)
     }
 
+    nonisolated static func dualWindowEstimates(
+        current: FilteredTrackPoint,
+        recentPoints: RecentTrackBuffer<FilteredTrackPoint>
+    ) -> DualWindowEstimates {
+        let transitionCutoff = current.timestamp.addingTimeInterval(-SharedConstants.transitionFeatureWindowSeconds)
+        var transitionBuilder = EstimateWindowBuilder(
+            windowSeconds: SharedConstants.transitionFeatureWindowSeconds,
+            window: .transition
+        )
+        var steadyBuilder = EstimateWindowBuilder(
+            windowSeconds: SharedConstants.steadyFeatureWindowSeconds,
+            window: .steady
+        )
+
+        recentPoints.forEach(within: SharedConstants.steadyFeatureWindowSeconds, endingAt: current.timestamp) { point in
+            steadyBuilder.append(point)
+            if point.timestamp >= transitionCutoff {
+                transitionBuilder.append(point)
+            }
+        }
+
+        return DualWindowEstimates(
+            transition: transitionBuilder.build(current: current),
+            steady: steadyBuilder.build(current: current)
+        )
+    }
+
+    nonisolated static func dualWindowEstimates(
+        current: FilteredTrackPoint,
+        recentPoints: [FilteredTrackPoint]
+    ) -> DualWindowEstimates {
+        let transitionCutoff = current.timestamp.addingTimeInterval(-SharedConstants.transitionFeatureWindowSeconds)
+        let steadyCutoff = current.timestamp.addingTimeInterval(-SharedConstants.steadyFeatureWindowSeconds)
+        var transitionBuilder = EstimateWindowBuilder(
+            windowSeconds: SharedConstants.transitionFeatureWindowSeconds,
+            window: .transition
+        )
+        var steadyBuilder = EstimateWindowBuilder(
+            windowSeconds: SharedConstants.steadyFeatureWindowSeconds,
+            window: .steady
+        )
+
+        for point in recentPoints where point.timestamp >= steadyCutoff {
+            steadyBuilder.append(point)
+            if point.timestamp >= transitionCutoff {
+                transitionBuilder.append(point)
+            }
+        }
+
+        return DualWindowEstimates(
+            transition: transitionBuilder.build(current: current),
+            steady: steadyBuilder.build(current: current)
+        )
+    }
+
     nonisolated private static func estimate(
         current: FilteredTrackPoint,
         recentPoints: [FilteredTrackPoint],
         windowSeconds: TimeInterval,
         window: MotionEstimateWindow
     ) -> MotionEstimate {
-        let windowPoints = RecentTrackWindow.filteredPoints(
-            from: recentPoints,
-            endingAt: current.timestamp,
-            within: windowSeconds
-        )
-        // Avoid allPoints = windowPoints + [current] — current is handled inline below,
-        // saving one O(n) copy per window (two windows = two fewer allocations per GPS update).
-        let first = windowPoints.first ?? current
-        let sampleCount = windowPoints.count + 1
-
-        let rawDuration = max(current.timestamp.timeIntervalSince(first.timestamp), 0)
-        let duration = max(rawDuration, 1)
-
-        var horizontalDistance = 0.0
-        if windowPoints.count > 1 {
-            for index in 1..<windowPoints.count {
-                horizontalDistance += windowPoints[index - 1].distance(to: windowPoints[index])
-            }
+        let cutoff = current.timestamp.addingTimeInterval(-windowSeconds)
+        var builder = EstimateWindowBuilder(windowSeconds: windowSeconds, window: window)
+        for point in recentPoints where point.timestamp >= cutoff {
+            builder.append(point)
         }
-        if let lastWindow = windowPoints.last {
-            horizontalDistance += lastWindow.distance(to: current)
-        }
-        let avgHorizontalSpeed: Double
-        if horizontalDistance >= minimumHorizontalDistanceForPathSpeed, rawDuration > 0 {
-            let pathSpeed = horizontalDistance / rawDuration
-            let dopplerSpeed = current.estimatedSpeed
-            // Doppler is unaffected by positional noise; cap path speed to Doppler + budget
-            // to prevent GPS scatter from inflating speed across the skiFastMin boundary.
-            avgHorizontalSpeed = dopplerSpeed > 0
-                ? min(pathSpeed, dopplerSpeed + Self.horizontalSpeedNoiseBudget)
-                : pathSpeed
-        } else {
-            avgHorizontalSpeed = current.estimatedSpeed
-        }
-
-        var rawAltitudes = windowPoints.map(\.altitude)
-        rawAltitudes.append(current.altitude)
-        let filteredAltitudes = rawAltitudes.count >= 3
-            ? medianFilter(values: rawAltitudes, windowSize: 3)
-            : rawAltitudes
-        var relativeTimes = windowPoints.map { $0.timestamp.timeIntervalSince(first.timestamp) }
-        relativeTimes.append(current.timestamp.timeIntervalSince(first.timestamp))
-        let avgVerticalSpeed = verticalSlope(
-            relativeTimes: relativeTimes,
-            values: filteredAltitudes,
-            fallbackDuration: duration
-        )
-
-        var horizontalAccuracies = windowPoints.map(\.horizontalAccuracy)
-        horizontalAccuracies.append(current.horizontalAccuracy)
-        let horizontalQuality = accuracyQualityFactor(
-            accuracies: horizontalAccuracies,
-            idealAccuracy: idealHorizontalAccuracy,
-            maxReliableAccuracy: maxReliableHorizontalAccuracy
-        )
-
-        var verticalAccuracies = windowPoints.map(\.verticalAccuracy)
-        verticalAccuracies.append(current.verticalAccuracy)
-        let verticalQuality = accuracyQualityFactor(
-            accuracies: verticalAccuracies,
-            idealAccuracy: idealVerticalAccuracy,
-            maxReliableAccuracy: maxReliableVerticalAccuracy
-        )
-
-        let maxGap = maxTimestampGap(in: windowPoints, current: current)
-        let coverage = windowSeconds > 0 ? min(rawDuration / windowSeconds, 1) : 1
-        let sampleFactor = min(Double(max(sampleCount - 1, 0)) / 3.0, 1)
-        let targetGap = max(windowSeconds / 2, 1)
-        let gapFactor: Double
-        if sampleCount <= 1 {
-            gapFactor = 0.5
-        } else {
-            gapFactor = min(targetGap / max(maxGap, 1), 1)
-        }
-        let confidence = clamp01(
-            0.35 * coverage
-            + 0.20 * sampleFactor
-            + 0.15 * gapFactor
-            + 0.15 * horizontalQuality
-            + 0.15 * verticalQuality
-        )
-
-        let hasEnoughHistory = sampleCount >= 3 || (sampleCount >= 2 && rawDuration >= windowSeconds * 0.75)
-        let hasReliableTrend = hasEnoughHistory
-            && rawDuration >= minAltitudeTrendTimeSpan
-            && abs(avgVerticalSpeed) >= altitudeTrendMinRate
-            && confidence >= 0.35
-            && verticalQuality >= 0.35
-
-        return MotionEstimate(
-            duration: duration,
-            avgHorizontalSpeed: avgHorizontalSpeed,
-            avgVerticalSpeed: avgVerticalSpeed,
-            hasReliableAltitudeTrend: hasReliableTrend,
-            sampleCount: sampleCount,
-            confidence: confidence,
-            window: window
-        )
+        return builder.build(current: current)
     }
 
     nonisolated static func medianFilter(values: [Double], windowSize: Int) -> [Double] {
         guard windowSize > 0, !values.isEmpty else { return values }
+        if windowSize == 3 {
+            return medianFilter3(values: values)
+        }
         let half = windowSize / 2
         return values.indices.map { i in
             let lo = max(0, i - half)
@@ -257,5 +224,163 @@ enum MotionEstimator {
 
         let span = max(maxReliableAccuracy - idealAccuracy, 1)
         return 1 - (medianAccuracy - idealAccuracy) / span
+    }
+
+    nonisolated private static func medianFilter3(values: [Double]) -> [Double] {
+        guard values.count > 2 else { return values }
+
+        var filtered = values
+        filtered[0] = max(values[0], values[1])
+
+        if values.count > 2 {
+            for index in 1..<(values.count - 1) {
+                filtered[index] = medianOfThree(
+                    values[index - 1],
+                    values[index],
+                    values[index + 1]
+                )
+            }
+        }
+
+        filtered[values.count - 1] = max(values[values.count - 2], values[values.count - 1])
+        return filtered
+    }
+
+    nonisolated private static func medianOfThree(_ a: Double, _ b: Double, _ c: Double) -> Double {
+        a + b + c - min(a, min(b, c)) - max(a, max(b, c))
+    }
+
+    private struct EstimateWindowBuilder {
+        let windowSeconds: TimeInterval
+        let window: MotionEstimateWindow
+
+        private var firstPoint: FilteredTrackPoint?
+        private var previousPoint: FilteredTrackPoint?
+        private var horizontalDistance: Double = 0
+        private var rawAltitudes: [Double] = []
+        private var relativeTimes: [TimeInterval] = []
+        private var horizontalAccuracies: [Double] = []
+        private var verticalAccuracies: [Double] = []
+        private var maxGap: TimeInterval = 0
+
+        nonisolated init(windowSeconds: TimeInterval, window: MotionEstimateWindow) {
+            self.windowSeconds = windowSeconds
+            self.window = window
+            rawAltitudes.reserveCapacity(16)
+            relativeTimes.reserveCapacity(16)
+            horizontalAccuracies.reserveCapacity(16)
+            verticalAccuracies.reserveCapacity(16)
+        }
+
+        nonisolated mutating func append(_ point: FilteredTrackPoint) {
+            if firstPoint == nil {
+                firstPoint = point
+                relativeTimes.append(0)
+            } else {
+                let firstTimestamp = firstPoint?.timestamp ?? point.timestamp
+                relativeTimes.append(point.timestamp.timeIntervalSince(firstTimestamp))
+            }
+
+            if let previousPoint {
+                horizontalDistance += previousPoint.distance(to: point)
+                maxGap = max(maxGap, point.timestamp.timeIntervalSince(previousPoint.timestamp))
+            }
+
+            previousPoint = point
+            rawAltitudes.append(point.altitude)
+            horizontalAccuracies.append(point.horizontalAccuracy)
+            verticalAccuracies.append(point.verticalAccuracy)
+        }
+
+        nonisolated func build(current: FilteredTrackPoint) -> MotionEstimate {
+            let first = firstPoint ?? current
+            let sampleCount = rawAltitudes.count + 1
+            let rawDuration = max(current.timestamp.timeIntervalSince(first.timestamp), 0)
+            let duration = max(rawDuration, 1)
+
+            var totalHorizontalDistance = horizontalDistance
+            var localMaxGap = maxGap
+            if let previousPoint {
+                totalHorizontalDistance += previousPoint.distance(to: current)
+                localMaxGap = max(localMaxGap, current.timestamp.timeIntervalSince(previousPoint.timestamp))
+            }
+
+            let avgHorizontalSpeed: Double
+            if totalHorizontalDistance >= MotionEstimator.minimumHorizontalDistanceForPathSpeed, rawDuration > 0 {
+                let pathSpeed = totalHorizontalDistance / rawDuration
+                let dopplerSpeed = current.estimatedSpeed
+                avgHorizontalSpeed = dopplerSpeed > 0
+                    ? min(pathSpeed, dopplerSpeed + MotionEstimator.horizontalSpeedNoiseBudget)
+                    : pathSpeed
+            } else {
+                avgHorizontalSpeed = current.estimatedSpeed
+            }
+
+            var altitudes = rawAltitudes
+            altitudes.append(current.altitude)
+            let filteredAltitudes = altitudes.count >= 3
+                ? MotionEstimator.medianFilter3(values: altitudes)
+                : altitudes
+
+            var times = relativeTimes
+            times.append(current.timestamp.timeIntervalSince(first.timestamp))
+            let avgVerticalSpeed = MotionEstimator.verticalSlope(
+                relativeTimes: times,
+                values: filteredAltitudes,
+                fallbackDuration: duration
+            )
+
+            var horizontalAccuracies = self.horizontalAccuracies
+            horizontalAccuracies.append(current.horizontalAccuracy)
+            let horizontalQuality = MotionEstimator.accuracyQualityFactor(
+                accuracies: horizontalAccuracies,
+                idealAccuracy: MotionEstimator.idealHorizontalAccuracy,
+                maxReliableAccuracy: MotionEstimator.maxReliableHorizontalAccuracy
+            )
+
+            var verticalAccuracies = self.verticalAccuracies
+            verticalAccuracies.append(current.verticalAccuracy)
+            let verticalQuality = MotionEstimator.accuracyQualityFactor(
+                accuracies: verticalAccuracies,
+                idealAccuracy: MotionEstimator.idealVerticalAccuracy,
+                maxReliableAccuracy: MotionEstimator.maxReliableVerticalAccuracy
+            )
+
+            let coverage = windowSeconds > 0 ? min(rawDuration / windowSeconds, 1) : 1
+            let sampleFactor = min(Double(max(sampleCount - 1, 0)) / 3.0, 1)
+            let targetGap = max(windowSeconds / 2, 1)
+            let gapFactor: Double
+            if sampleCount <= 1 {
+                gapFactor = 0.5
+            } else {
+                gapFactor = min(targetGap / max(localMaxGap, 1), 1)
+            }
+
+            let confidence = MotionEstimator.clamp01(
+                0.35 * coverage
+                + 0.20 * sampleFactor
+                + 0.15 * gapFactor
+                + 0.15 * horizontalQuality
+                + 0.15 * verticalQuality
+            )
+
+            let hasEnoughHistory = sampleCount >= 3
+                || (sampleCount >= 2 && rawDuration >= windowSeconds * 0.75)
+            let hasReliableTrend = hasEnoughHistory
+                && rawDuration >= MotionEstimator.minAltitudeTrendTimeSpan
+                && abs(avgVerticalSpeed) >= MotionEstimator.altitudeTrendMinRate
+                && confidence >= 0.35
+                && verticalQuality >= 0.35
+
+            return MotionEstimate(
+                duration: duration,
+                avgHorizontalSpeed: avgHorizontalSpeed,
+                avgVerticalSpeed: avgVerticalSpeed,
+                hasReliableAltitudeTrend: hasReliableTrend,
+                sampleCount: sampleCount,
+                confidence: confidence,
+                window: window
+            )
+        }
     }
 }

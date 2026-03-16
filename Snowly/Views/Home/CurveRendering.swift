@@ -8,22 +8,34 @@
 import SwiftUI
 
 enum CurveRendering {
-    nonisolated static func smoothPath(points: [CGPoint]) -> Path {
-        var path = Path()
-        guard let first = points.first else { return path }
+    struct StateSegment: Sendable {
+        let range: Range<Int>
+        let state: SpeedCurveState
+    }
 
-        path.move(to: first)
-        guard points.count > 1 else { return path }
-        guard points.count > 2 else {
-            path.addLine(to: points[1])
+    nonisolated static func smoothPath(points: [CGPoint]) -> Path {
+        smoothPath(points: points, range: points.startIndex..<points.endIndex)
+    }
+
+    /// Builds a smooth bezier path from a subrange of `points` without copying to a new Array.
+    nonisolated static func smoothPath(points: [CGPoint], range: Range<Int>) -> Path {
+        var path = Path()
+        guard !range.isEmpty else { return path }
+
+        path.move(to: points[range.lowerBound])
+        guard range.count > 1 else { return path }
+        guard range.count > 2 else {
+            path.addLine(to: points[range.lowerBound + 1])
             return path
         }
 
-        for index in 0..<(points.count - 1) {
-            let previous = index > 0 ? points[index - 1] : points[index]
+        let lo = range.lowerBound
+        let hi = range.upperBound
+        for index in lo..<(hi - 1) {
+            let previous = index > lo ? points[index - 1] : points[index]
             let current = points[index]
             let next = points[index + 1]
-            let following = index + 2 < points.count ? points[index + 2] : next
+            let following = index + 2 < hi ? points[index + 2] : next
 
             let control1 = clampedControlPoint(
                 CGPoint(
@@ -58,11 +70,25 @@ enum CurveRendering {
         return path
     }
 
+    /// Finds the nearest point for a tap hit-test.
+    /// `points` must be x-sorted in ascending order.
     nonisolated static func nearestPointIndex(to x: CGFloat, in points: [CGPoint]) -> Int? {
         guard !points.isEmpty else { return nil }
-        return points.enumerated().min { lhs, rhs in
-            abs(lhs.element.x - x) < abs(rhs.element.x - x)
-        }?.offset
+        // Points are x-sorted — binary search for O(log n) instead of O(n).
+        var lo = 0
+        var hi = points.count
+        while lo < hi {
+            let mid = lo + (hi - lo) / 2
+            if points[mid].x < x {
+                lo = mid + 1
+            } else {
+                hi = mid
+            }
+        }
+        // lo is the first point with x >= target; compare with lo-1 to find closest.
+        if lo == 0 { return 0 }
+        if lo >= points.count { return points.count - 1 }
+        return abs(points[lo - 1].x - x) <= abs(points[lo].x - x) ? lo - 1 : lo
     }
 
     private nonisolated static func clampedControlPoint(
@@ -149,16 +175,83 @@ enum CurveRendering {
         stateColor: (SpeedCurveState) -> Color,
         style: StrokeStyle
     ) {
-        guard points.count >= 2, states.count == points.count else { return }
+        drawStateSegments(
+            into: &context,
+            points: points,
+            segments: stateSegments(points: points, states: states),
+            stateColor: stateColor,
+            style: style
+        )
+    }
+
+    /// Closure-based overload that avoids allocating a `[SpeedCurveState]` array.
+    nonisolated static func drawStateSegments(
+        into context: inout GraphicsContext,
+        points: [CGPoint],
+        stateProvider: (Int) -> SpeedCurveState,
+        stateColor: (SpeedCurveState) -> Color,
+        style: StrokeStyle
+    ) {
+        drawStateSegments(
+            into: &context,
+            points: points,
+            segments: stateSegments(pointCount: points.count, stateProvider: stateProvider),
+            stateColor: stateColor,
+            style: style
+        )
+    }
+
+    nonisolated static func stateSegments(
+        points: [CGPoint],
+        states: [SpeedCurveState]
+    ) -> [StateSegment] {
+        guard states.count == points.count else { return [] }
+        return stateSegments(
+            pointCount: points.count,
+            stateProvider: { states[$0] }
+        )
+    }
+
+    nonisolated static func stateSegments(
+        pointCount: Int,
+        stateProvider: (Int) -> SpeedCurveState
+    ) -> [StateSegment] {
+        guard pointCount >= 2 else { return [] }
+
+        var segments: [StateSegment] = []
+        segments.reserveCapacity(pointCount / 2)
+
         var segStart = 1
-        while segStart < points.count {
-            let seg = states[segStart]
-            var j = segStart
-            while j < points.count && states[j] == seg { j += 1 }
-            let path = smoothPath(points: Array(points[(segStart - 1)..<j]))
-            context.stroke(path, with: .color(stateColor(seg)), style: style)
-            segStart = j
+        while segStart < pointCount {
+            let seg = stateProvider(segStart)
+            var end = segStart
+            while end < pointCount && stateProvider(end) == seg {
+                end += 1
+            }
+            segments.append(StateSegment(range: (segStart - 1)..<end, state: seg))
+            segStart = end
         }
+
+        return segments
+    }
+
+    nonisolated private static func drawStateSegments(
+        into context: inout GraphicsContext,
+        points: [CGPoint],
+        segments: [StateSegment],
+        stateColor: (SpeedCurveState) -> Color,
+        style: StrokeStyle
+    ) {
+        for segment in segments {
+            let path = smoothPath(points: points, range: segment.range)
+            context.stroke(path, with: .color(stateColor(segment.state)), style: style)
+        }
+    }
+}
+
+extension CurveRendering.StateSegment: Equatable {
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.range == rhs.range && lhs.state == rhs.state
     }
 }
 
