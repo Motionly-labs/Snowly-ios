@@ -111,10 +111,6 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		33A1043A2F558EA80066DAF5 /* Snowly */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				AA0000012F550000000000D /* Exceptions for "Snowly" folder in "Snowly Watch App" target */,
-				33C6BFBA2F5C540000DF2C52 /* Exceptions for "Snowly" folder in "SnowlyWidgetExtension" target */,
-			);
 			path = Snowly;
 			sourceTree = "<group>";
 		};

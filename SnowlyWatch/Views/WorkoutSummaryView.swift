@@ -77,7 +77,7 @@ struct WorkoutSummaryView: View {
             Image(systemName: icon)
                 .font(.caption)
                 .foregroundStyle(WatchColorTokens.completedAccent)
-                .frame(width: 20)
+                .frame(width: WatchSpacing.summaryIconFrameWidth)
 
             Text(label)
                 .font(.caption)

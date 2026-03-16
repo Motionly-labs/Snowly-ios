@@ -102,10 +102,16 @@ struct GearAssetEditorView: View {
                 Section(String(localized: "gear_editor_gear_section")) {
                     TextField(String(localized: "gear_editor_gear_name_placeholder"), text: $name)
 
-                    Picker("Category", selection: $category) {
-                        ForEach(GearAssetCategory.allCases, id: \.self) { category in
+                    NavigationLink {
+                        GearCategoryPickerView(selection: $category)
+                    } label: {
+                        HStack {
+                            Text("Category")
+                                .foregroundStyle(.primary)
+                            Spacer()
                             Label(category.rawValue, systemImage: category.iconName)
-                                .tag(category)
+                                .foregroundStyle(.secondary)
+                                .font(.subheadline)
                         }
                     }
 

@@ -98,7 +98,7 @@ struct ActiveSessionWidgetView: View {
     // MARK: - Circular
 
     private var circularView: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: WatchSpacing.xs) {
             Image(systemName: "figure.skiing.downhill")
                 .font(.title3)
             if entry.isTracking {
@@ -112,7 +112,7 @@ struct ActiveSessionWidgetView: View {
     // MARK: - Rectangular
 
     private var rectangularView: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: WatchSpacing.xs) {
             HStack {
                 Image(systemName: "figure.skiing.downhill")
                 Text(LocalizedStringKey("watch_widget_app_name"))

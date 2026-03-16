@@ -110,7 +110,7 @@ struct OnboardingPermissionsStep: View {
                     icon: "location.fill",
                     title: String(localized: "onboarding_permissions_location_title"),
                     subtitle: String(localized: "onboarding_permissions_location_subtitle"),
-                    color: .blue,
+                    color: ColorTokens.info,
                     action: locationAction,
                     onRequest: { locationService.requestAuthorization() }
                 )
@@ -119,7 +119,7 @@ struct OnboardingPermissionsStep: View {
                     icon: "cloud.sun.fill",
                     title: String(localized: "onboarding_permissions_weather_title"),
                     subtitle: String(localized: "onboarding_permissions_weather_subtitle"),
-                    color: .cyan,
+                    color: ColorTokens.info,
                     action: weatherAction,
                     onRequest: { locationService.requestAuthorization() }
                 )

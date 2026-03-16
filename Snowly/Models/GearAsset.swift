@@ -9,31 +9,155 @@ import Foundation
 import SwiftData
 
 enum GearAssetCategory: String, Codable, CaseIterable, Sendable {
+    // Head
+    case helmet = "Helmet"
+    case goggles = "Goggles"
+    case balaclava = "Balaclava"
+    // Body
+    case jacket = "Jacket"
+    case pants = "Pants"
+    case baseLayer = "Base Layer"
+    case midLayer = "Mid Layer"
+    // Hands
+    case gloves = "Gloves"
+    case mittens = "Mittens"
+    // Feet
+    case boots = "Boots"
+    case socks = "Socks"
+    // Ride
     case skis = "Skis"
     case snowboard = "Snowboard"
-    case boots = "Boots"
-    case outerwear = "Outerwear"
-    case protection = "Protection"
-    case accessory = "Accessory"
-    case electronics = "Electronics"
-    case bag = "Bag"
-    case safety = "Safety"
+    case bindings = "Bindings"
+    case poles = "Poles"
+    // Protection
+    case backProtector = "Back Protector"
+    case kneeGuards = "Knee Guards"
+    case wristGuards = "Wrist Guards"
+    // Safety
+    case beacon = "Beacon"
+    case probe = "Probe"
+    case shovel = "Shovel"
+    case airbagPack = "Airbag Pack"
+    // Electronics
+    case actionCamera = "Action Camera"
+    case gpsDevice = "GPS Device"
+    case headphones = "Headphones"
+    // Bag
+    case backpack = "Backpack"
+    case bootBag = "Boot Bag"
+    case gearBag = "Gear Bag"
+    // Other
     case other = "Other"
+
+    /// Migrates legacy raw values from the previous flat category scheme.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = try container.decode(String.self)
+        if let match = GearAssetCategory(rawValue: raw) {
+            self = match
+            return
+        }
+        switch raw {
+        case "Protection": self = .helmet
+        case "Outerwear": self = .jacket
+        case "Accessory": self = .gloves
+        case "Electronics": self = .actionCamera
+        case "Safety": self = .beacon
+        case "Bag": self = .backpack
+        default: self = .other
+        }
+    }
 
     var iconName: String {
         switch self {
+        case .helmet: return "shield.fill"
+        case .goggles: return "eyeglasses"
+        case .balaclava: return "person.fill"
+        case .jacket: return "tshirt.fill"
+        case .pants: return "figure.stand"
+        case .baseLayer: return "thermometer.snowflake"
+        case .midLayer: return "rectangle.stack.fill"
+        case .gloves: return "hand.raised.fill"
+        case .mittens: return "hand.raised.fill"
+        case .boots: return "shoe.fill"
+        case .socks: return "shoe.fill"
         case .skis: return "figure.skiing.downhill"
         case .snowboard: return "figure.snowboarding"
-        case .boots: return "shoe.fill"
-        case .outerwear: return "tshirt.fill"
-        case .protection: return "shield.fill"
-        case .accessory: return "sparkles"
-        case .electronics: return "bolt.fill"
-        case .bag: return "bag.fill"
-        case .safety: return "cross.case.fill"
+        case .bindings: return "link"
+        case .poles: return "arrow.up.and.down.circle"
+        case .backProtector: return "shield.lefthalf.filled"
+        case .kneeGuards: return "bandage.fill"
+        case .wristGuards: return "hand.raised.slash.fill"
+        case .beacon: return "antenna.radiowaves.left.and.right"
+        case .probe: return "scope"
+        case .shovel: return "hammer.fill"
+        case .airbagPack: return "bag.fill"
+        case .actionCamera: return "camera.fill"
+        case .gpsDevice: return "location.fill"
+        case .headphones: return "headphones"
+        case .backpack: return "bag.fill"
+        case .bootBag: return "suitcase.fill"
+        case .gearBag: return "suitcase.rolling.fill"
         case .other: return "ellipsis.circle.fill"
         }
     }
+}
+
+extension GearAssetCategory {
+    /// First-level grouping used by the category picker.
+    enum Group: String, CaseIterable, Identifiable {
+        case head = "Head"
+        case body = "Body"
+        case hands = "Hands"
+        case feet = "Feet"
+        case ride = "Ride"
+        case protection = "Protection"
+        case safety = "Safety"
+        case electronics = "Electronics"
+        case bag = "Bag"
+        case other = "Other"
+
+        var id: String { rawValue }
+
+        var iconName: String {
+            switch self {
+            case .head: return "person.fill"
+            case .body: return "tshirt.fill"
+            case .hands: return "hand.raised.fill"
+            case .feet: return "shoe.fill"
+            case .ride: return "figure.skiing.downhill"
+            case .protection: return "shield.fill"
+            case .safety: return "cross.case.fill"
+            case .electronics: return "bolt.fill"
+            case .bag: return "bag.fill"
+            case .other: return "ellipsis.circle.fill"
+            }
+        }
+
+        var categories: [GearAssetCategory] {
+            switch self {
+            case .head: return [.helmet, .goggles, .balaclava]
+            case .body: return [.jacket, .pants, .baseLayer, .midLayer]
+            case .hands: return [.gloves, .mittens]
+            case .feet: return [.boots, .socks]
+            case .ride: return [.skis, .snowboard, .bindings, .poles]
+            case .protection: return [.backProtector, .kneeGuards, .wristGuards]
+            case .safety: return [.beacon, .probe, .shovel, .airbagPack]
+            case .electronics: return [.actionCamera, .gpsDevice, .headphones]
+            case .bag: return [.backpack, .bootBag, .gearBag]
+            case .other: return [.other]
+            }
+        }
+
+        static func group(for category: GearAssetCategory) -> Group {
+            for group in Group.allCases where group.categories.contains(category) {
+                return group
+            }
+            return .other
+        }
+    }
+
+    var group: Group { Group.group(for: self) }
 }
 
 enum GearMaintenanceRuleType: String, Codable, CaseIterable, Sendable {

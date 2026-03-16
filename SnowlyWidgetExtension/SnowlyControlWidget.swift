@@ -25,7 +25,7 @@ struct SnowlyControlWidget: ControlWidget {
                         .scaledToFit()
                 }
             }
-            .tint(isTracking ? LiveActivityTokens.pauseAccent : .primary)
+            .tint(isTracking ? LiveActivityTokens.pauseAccent : LiveActivityTokens.controlIdleAccent)
         }
         .displayName(LocalizedStringResource("control_widget_display_name"))
         .description(LocalizedStringResource("control_widget_description"))

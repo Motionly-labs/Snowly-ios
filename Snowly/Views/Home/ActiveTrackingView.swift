@@ -307,6 +307,13 @@ struct ActiveTrackingView: View {
     @State private var isEditingLayout = false
     @State private var dashboardLayout: TrackingDashboardLayout = .default
 
+    // Cached dashboard state — updated at 1 Hz by the timer task, NOT on every
+    // GPS update. Decouples the view from high-frequency @Observable mutations on
+    // SessionTrackingService properties (speedSamples, altitudeSamples, etc.) that
+    // previously caused 5-10× redundant dashboardCardInputs recomputation per render.
+    @State private var cachedCardSource: ActiveTrackingCardInputAssembler.Source?
+    @State private var cachedCardInputs: [UUID: AnyActiveTrackingCardInput] = [:]
+
     private var deviceSettings_: DeviceSettings? { deviceSettings.first }
 
     private var heroInstances: [ActiveTrackingCardInstance] {
@@ -326,7 +333,9 @@ struct ActiveTrackingView: View {
         profiles.first?.preferredUnits ?? .metric
     }
 
-    private var dashboardCardSource: ActiveTrackingCardInputAssembler.Source {
+    /// Builds a fresh snapshot from tracking service properties.
+    /// Called by `refreshDashboardSnapshot()` at 1 Hz — NOT inline in body.
+    private func buildDashboardCardSource() -> ActiveTrackingCardInputAssembler.Source {
         ActiveTrackingCardInputAssembler.Source(
             semantic: ActiveTrackingCardInputAssembler.MotionSemanticSnapshot(
                 skiingMetrics: trackingService.skiingMetrics,
@@ -348,10 +357,18 @@ struct ActiveTrackingView: View {
         )
     }
 
-    private var dashboardCardInputs: [UUID: AnyActiveTrackingCardInput] {
-        Dictionary(uniqueKeysWithValues: dashboardLayout.instances.map { instance in
-            (instance.instanceId, ActiveTrackingCardInputAssembler.input(for: instance, source: dashboardCardSource))
+    /// Recomputes the entire dashboard card dictionary once and caches it.
+    /// Called at 1 Hz from the timer task and on appear.
+    private func refreshDashboardSnapshot() {
+        let source = buildDashboardCardSource()
+        cachedCardSource = source
+        cachedCardInputs = Dictionary(uniqueKeysWithValues: dashboardLayout.instances.map { instance in
+            (instance.instanceId, ActiveTrackingCardInputAssembler.input(for: instance, source: source))
         })
+    }
+
+    private var dashboardCardInputs: [UUID: AnyActiveTrackingCardInput] {
+        cachedCardInputs
     }
 
     private var speedUnitLabel: String {
@@ -359,7 +376,8 @@ struct ActiveTrackingView: View {
     }
 
     private func scalarCardInput(for kind: ActiveTrackingCardKind) -> ActiveTrackingScalarCardInput? {
-        ActiveTrackingCardInputAssembler.scalarInput(for: kind, source: dashboardCardSource)
+        guard let source = cachedCardSource else { return nil }
+        return ActiveTrackingCardInputAssembler.scalarInput(for: kind, source: source)
     }
 
     private func numericPrimaryValue(for kind: ActiveTrackingCardKind) -> ActiveTrackingNumericValue? {
@@ -461,9 +479,10 @@ struct ActiveTrackingView: View {
     }
 
     private var landscapeSpeedCurveInput: ActiveTrackingSeriesCardInput? {
-        ActiveTrackingCardInputAssembler.seriesInput(
+        guard let source = cachedCardSource else { return nil }
+        return ActiveTrackingCardInputAssembler.seriesInput(
             for: .speedCurve,
-            source: dashboardCardSource
+            source: source
         )
     }
 
@@ -562,6 +581,7 @@ struct ActiveTrackingView: View {
                 dashboardLayout = settings.resolvedDashboardLayout
                 selectedHeroInstanceId = dashboardLayout.instances.first(where: { $0.slot == .hero })?.instanceId
             }
+            refreshDashboardSnapshot()
             Task {
                 try? await Task.sleep(for: .milliseconds(100))
                 cardsAppeared = true
@@ -572,6 +592,7 @@ struct ActiveTrackingView: View {
             if !validId {
                 selectedHeroInstanceId = heroInstances.first?.instanceId
             }
+            refreshDashboardSnapshot()
             saveLayout()
         }
         .onChange(of: verticalSizeClass) { _, newClass in
@@ -583,13 +604,14 @@ struct ActiveTrackingView: View {
         .onDisappear {
             trackingService.setTrackingDashboardVisible(false)
         }
-        .onChange(of: trackingService.skiingMetrics.runCount) { _, _ in
+        .onChange(of: trackingService.runCount) { _, _ in
             rebuildCachedRuns()
         }
         .task(id: trackingService.state) {
             guard trackingService.state != .idle else { return }
             while !Task.isCancelled {
                 updateElapsedTime()
+                refreshDashboardSnapshot()
                 try? await Task.sleep(for: .seconds(1))
             }
         }
@@ -1055,7 +1077,7 @@ struct ActiveTrackingView: View {
     }
 
     private func landscapeStatRow(for kind: ActiveTrackingCardKind) -> some View {
-        let chip = ActiveTrackingCardInputAssembler.scalarChip(for: kind, source: dashboardCardSource)
+        let chip = cachedCardSource.flatMap { ActiveTrackingCardInputAssembler.scalarChip(for: kind, source: $0) }
         return HStack(spacing: Spacing.sm) {
             Image(systemName: ActiveTrackingCardRegistry.definition(for: kind).icon)
                 .font(Typography.captionSemibold)

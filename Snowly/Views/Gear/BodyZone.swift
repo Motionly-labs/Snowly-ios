@@ -78,19 +78,21 @@ enum BodyZone: Int, CaseIterable, Identifiable {
     var categories: [GearAssetCategory] {
         switch self {
         case .head:
-            return [.protection]
+            return [.helmet, .goggles, .balaclava]
         case .body:
-            return [.outerwear]
+            return [.jacket, .pants, .baseLayer, .midLayer]
         case .hands:
-            return [.accessory]
+            return [.gloves, .mittens]
         case .gear:
-            return [.electronics, .safety, .other]
+            return [.backProtector, .kneeGuards, .wristGuards,
+                    .beacon, .probe, .shovel, .airbagPack,
+                    .actionCamera, .gpsDevice, .headphones, .other]
         case .pack:
             return []
         case .feet:
-            return [.boots]
+            return [.boots, .socks]
         case .backpack:
-            return [.skis, .snowboard, .bag]
+            return [.skis, .snowboard, .bindings, .poles, .backpack, .bootBag, .gearBag]
         }
     }
 
@@ -142,20 +144,20 @@ enum BodyZone: Int, CaseIterable, Identifiable {
 
     static func zone(for category: GearAssetCategory) -> BodyZone {
         switch category {
-        case .protection:
+        case .helmet, .goggles, .balaclava:
             return .head
-        case .outerwear:
+        case .jacket, .pants, .baseLayer, .midLayer:
             return .body
-        case .accessory:
+        case .gloves, .mittens:
             return .hands
-        case .skis, .snowboard:
-            return .backpack
-        case .electronics, .safety, .other:
-            return .gear
-        case .boots:
+        case .boots, .socks:
             return .feet
-        case .bag:
+        case .skis, .snowboard, .bindings, .poles, .backpack, .bootBag, .gearBag:
             return .backpack
+        case .backProtector, .kneeGuards, .wristGuards,
+             .beacon, .probe, .shovel, .airbagPack,
+             .actionCamera, .gpsDevice, .headphones, .other:
+            return .gear
         }
     }
 }

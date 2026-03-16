@@ -36,6 +36,9 @@ final class WatchBridgeService {
     private(set) var averageHeartRate: Double = 0
     private(set) var heartRateSamples: [HeartRateSample] = []
 
+    // CircularBuffer avoids O(n) array concatenation + suffix copy on every heart rate update.
+    private var heartRateSampleBuffer = CircularBuffer<HeartRateSample>(capacity: SharedConstants.heartRateCurveMaxPoints)
+
     // MARK: - Watch live session state (independent mode real-time processing)
 
     private struct WatchLiveSessionState: Sendable {
@@ -166,11 +169,8 @@ final class WatchBridgeService {
             currentHeartRate = vitals.currentHeartRate
             averageHeartRate = vitals.averageHeartRate
             if vitals.currentHeartRate > 0 {
-                let sample = HeartRateSample(time: .now, bpm: vitals.currentHeartRate)
-                let updated = heartRateSamples + [sample]
-                heartRateSamples = updated.count > SharedConstants.heartRateCurveMaxPoints
-                    ? Array(updated.suffix(SharedConstants.heartRateCurveMaxPoints))
-                    : updated
+                heartRateSampleBuffer.append(HeartRateSample(time: .now, bpm: vitals.currentHeartRate))
+                heartRateSamples = heartRateSampleBuffer.elements
             }
 
         default:
@@ -334,6 +334,7 @@ final class WatchBridgeService {
             connectivityService.updateApplicationContext(state: state, liveData: nil)
             currentHeartRate = 0
             averageHeartRate = 0
+            heartRateSampleBuffer.removeAll()
             heartRateSamples = []
         }
     }

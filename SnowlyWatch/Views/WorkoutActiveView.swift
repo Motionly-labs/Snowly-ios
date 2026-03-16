@@ -110,7 +110,7 @@ struct WorkoutActiveView: View {
             ForEach(pageOrder, id: \.rawValue) { page in
                 Capsule()
                     .fill(page == selectedPage ? Color.white : Color.white.opacity(WatchOpacity.pageIndicatorInactive))
-                    .frame(width: page == selectedPage ? 14 : 6, height: 6)
+                    .frame(width: page == selectedPage ? WatchSpacing.pageIndicatorActiveWidth : WatchSpacing.pageIndicatorInactiveSize, height: WatchSpacing.pageIndicatorInactiveSize)
             }
         }
         .padding(.bottom, WatchSpacing.xs)

@@ -40,7 +40,7 @@ struct ShareCardView: View {
 
     private var mapPanel: some View {
         ZStack {
-            Color(hex: "F1F5F9") // slate-100 equivalent
+            ColorTokens.shareCardBackground
             
             // Map Grid Background (subtle dots)
             GeometryReader { proxy in
@@ -52,7 +52,7 @@ struct ShareCardView: View {
                         }
                     }
                 }
-                .fill(Color(hex: "A8A2BC").opacity(0.3))
+                .fill(ColorTokens.shareCardGridDot.opacity(0.3))
             }
             
             // Subtle Gradient Multiply
@@ -78,7 +78,7 @@ struct ShareCardView: View {
                     HStack {
                         Text(resortName)
                             .font(.system(size: 32, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color(hex: "1E293B")) // slate-800
+                            .foregroundStyle(ColorTokens.shareCardTitle)
                             .padding(.horizontal, 40)
                             .padding(.vertical, 20)
                             .background(
@@ -148,7 +148,7 @@ struct ShareCardView: View {
         // Add subtle divider line on left matching React sharecard
         .overlay(alignment: .leading) {
             Rectangle()
-                .fill(Color(hex: "F1F5F9"))
+                .fill(ColorTokens.shareCardBackground)
                 .frame(width: 2)
         }
     }
@@ -166,12 +166,12 @@ struct ShareCardView: View {
                     if !displayName.isEmpty {
                         Text(displayName)
                             .font(.system(size: 48, weight: .heavy, design: .rounded))
-                            .foregroundStyle(Color(hex: "0F172A")) // slate-900
+                            .foregroundStyle(ColorTokens.shareCardHeadline)
                             .lineLimit(1)
                     }
                     Text(startDate.longDisplay)
                         .font(.system(size: 24, weight: .medium, design: .rounded))
-                        .foregroundStyle(Color(hex: "64748B")) // slate-500
+                        .foregroundStyle(ColorTokens.shareCardSecondary)
                         .tracking(1)
                 }
             }
@@ -189,12 +189,12 @@ struct ShareCardView: View {
                         RoundedRectangle(cornerRadius: 24, style: .continuous)
                             .fill(Color.white)
                             .shadow(color: .black.opacity(0.05), radius: 2)
-                            .overlay(RoundedRectangle(cornerRadius: 24).stroke(Color(hex: "E2E8F0"), lineWidth: 1))
+                            .overlay(RoundedRectangle(cornerRadius: 24).stroke(ColorTokens.shareCardBorder, lineWidth: 1))
                     )
                 
                 Text("SNOWLY")
                     .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(hex: "94A3B8")) // slate-400
+                    .foregroundStyle(ColorTokens.shareCardMuted)
                     .tracking(2.5)
             }
         }
@@ -206,23 +206,23 @@ struct ShareCardView: View {
                 Image(systemName: icon)
                     .font(.system(size: 32, weight: .semibold))
                     .foregroundStyle(ColorTokens.primaryAccent)
-                
+
                 Text(label.uppercased())
                     .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(hex: "94A3B8")) // slate-400
+                    .foregroundStyle(ColorTokens.shareCardMuted)
                     .tracking(2.5)
             }
             
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(value)
                     .font(.system(size: 100, weight: .black, design: .rounded).monospacedDigit())
-                    .foregroundStyle(Color(hex: "0F172A")) // slate-900
+                    .foregroundStyle(ColorTokens.shareCardHeadline)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                 
                 Text(unit)
                     .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(hex: "94A3B8")) // slate-400
+                    .foregroundStyle(ColorTokens.shareCardMuted)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

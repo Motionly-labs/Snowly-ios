@@ -259,6 +259,50 @@
         }
       }
     },
+    "watch_last_run_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last Run"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senaste aket"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一趟"
+          }
+        }
+      }
+    },
+    "watch_last_run_title_format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Run %lld"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ak %lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %lld 趟"
+          }
+        }
+      }
+    },
     "watch_placeholder_dash" : {
       "localizations" : {
         "en" : {
@@ -369,156 +413,27 @@
         }
       }
     },
-    "watch_widget_app_name" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snowly"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snowly"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snowly"
-          }
-        }
-      }
+    "watch_status_hk_unavailable" : {
+
     },
-    "watch_widget_description" : {
+    "watch_status_last_run_complete_format" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Current ski session status"
+            "value" : "Run %lld complete"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aktuell skidsessionsstatus"
+            "value" : "Ak %lld klart"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "当前滑雪记录状态"
-          }
-        }
-      }
-    },
-    "watch_widget_display_name" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snowly"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snowly"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snowly"
-          }
-        }
-      }
-    },
-    "watch_widget_inline_ready" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snowly - Ready"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snowly - Redo"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snowly - 就绪"
-          }
-        }
-      }
-    },
-    "watch_widget_inline_tracking_format %lld %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld runs - %2$@"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld åk - %2$@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld 趟 - %2$@"
-          }
-        }
-      }
-    },
-    "watch_widget_ready" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ready to ski"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Redo att åka"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "准备滑雪"
-          }
-        }
-      }
-    },
-    "watch_widget_run_count_format %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld runs"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld åk"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 趟"
+            "value" : "第 %lld 趟已完成"
           }
         }
       }
@@ -541,6 +456,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在通过 iPhone 暂停..."
+          }
+        }
+      }
+    },
+    "watch_status_personal_best" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New personal best"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nytt personbasta"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新的个人最佳"
+          }
+        }
+      }
+    },
+    "watch_status_personal_best_metric" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New PB: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nytt PB: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新的个人最佳：%@"
           }
         }
       }
@@ -765,112 +724,164 @@
         }
       }
     },
-    "watch_last_run_title" : {
+    "watch_widget_app_name" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Last Run"
+            "value" : "Snowly"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Senaste aket"
+            "value" : "Snowly"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "上一趟"
+            "value" : "Snowly"
           }
         }
       }
     },
-    "watch_last_run_title_format" : {
+    "watch_widget_description" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Run %lld"
+            "value" : "Current ski session status"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ak %lld"
+            "value" : "Aktuell skidsessionsstatus"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "第 %lld 趟"
+            "value" : "当前滑雪记录状态"
           }
         }
       }
     },
-    "watch_status_last_run_complete_format" : {
+    "watch_widget_display_name" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Run %lld complete"
+            "value" : "Snowly"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ak %lld klart"
+            "value" : "Snowly"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "第 %lld 趟已完成"
+            "value" : "Snowly"
           }
         }
       }
     },
-    "watch_status_personal_best" : {
+    "watch_widget_inline_ready" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New personal best"
+            "value" : "Snowly - Ready"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nytt personbasta"
+            "value" : "Snowly - Redo"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新的个人最佳"
+            "value" : "Snowly - 就绪"
           }
         }
       }
     },
-    "watch_status_personal_best_metric" : {
+    "watch_widget_inline_tracking_format" : {
+
+    },
+    "watch_widget_inline_tracking_format %lld %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New PB: %@"
+            "value" : "%1$lld runs - %2$@"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nytt PB: %@"
+            "value" : "%1$lld åk - %2$@"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新的个人最佳：%@"
+            "value" : "%1$lld 趟 - %2$@"
+          }
+        }
+      }
+    },
+    "watch_widget_ready" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ready to ski"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redo att åka"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "准备滑雪"
+          }
+        }
+      }
+    },
+    "watch_widget_run_count_format" : {
+
+    },
+    "watch_widget_run_count_format %lld" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld runs"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld åk"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 趟"
           }
         }
       }

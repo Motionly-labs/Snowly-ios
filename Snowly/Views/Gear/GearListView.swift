@@ -165,9 +165,16 @@ struct GearListView: View {
 
             Spacer()
 
-            Text(lockerGear.isEmpty ? "EMPTY" : "\(lockerGear.count) GEAR")
-                .font(.caption.bold())
-                .foregroundStyle(lockerGear.isEmpty ? .secondary : ColorTokens.primaryAccent)
+            if let activeChecklist {
+                NavigationLink(destination: GearDetailView(setup: activeChecklist)) {
+                    Text("gear_list_checklist_link")
+                        .font(.caption.weight(.semibold))
+                }
+            } else {
+                Text(lockerGear.isEmpty ? "EMPTY" : "\(lockerGear.count) GEAR")
+                    .font(.caption.bold())
+                    .foregroundStyle(lockerGear.isEmpty ? .secondary : ColorTokens.primaryAccent)
+            }
         }
     }
 
@@ -194,40 +201,10 @@ struct GearListView: View {
         let checkedIDs = checkedGearIDs(for: checklist, in: checklistGear)
         let packedCount = checkedIDs.count
         let totalCount = checklistGear.count
-        let progress = checklistProgress(for: checklistGear, checkedGearIDs: checkedIDs)
         let zoneGear = selectedZone.map { $0.gear(from: checklistGear) } ?? []
         let usage = activeChecklistUsage ?? .empty(for: checklist.id)
 
         return VStack(alignment: .leading, spacing: Spacing.lg) {
-            HStack(alignment: .top, spacing: Spacing.md) {
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text(String(localized: "gear_visual_checklist"))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(ColorTokens.primaryAccent)
-                    Text(checklist.name)
-                        .font(Typography.primaryTitle)
-                    Text(checklistStatusText(progress: progress, packedCount: packedCount, totalCount: totalCount))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: Spacing.sm) {
-                    NavigationLink(destination: GearDetailView(setup: checklist)) {
-                        Text("gear_list_checklist_link")
-                            .font(.caption.weight(.semibold))
-                    }
-
-                    if !checkedIDs.isEmpty {
-                        Button("Reset") {
-                            resetChecklist(checklist)
-                        }
-                        .font(.caption.weight(.semibold))
-                    }
-                }
-            }
-
             if !checklistGear.isEmpty {
                 HStack(spacing: Spacing.md) {
                     summaryPill(value: "\(packedCount)/\(totalCount)", label: "Packed", accent: ColorTokens.primaryAccent)
@@ -257,6 +234,14 @@ struct GearListView: View {
                     selectedZone: selectedZone,
                     onZoneTap: { handleZoneTap($0, in: checklistGear) }
                 )
+
+                if !checkedIDs.isEmpty {
+                    Button("Reset") {
+                        resetChecklist(checklist)
+                    }
+                    .font(.caption.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                }
 
                 if let selectedZone, !zoneGear.isEmpty {
                     GearZoneChecklistCard(
@@ -485,8 +470,8 @@ struct GearListView: View {
 
         let skis = GearAsset(name: "Bent 100", category: .skis, brand: "Atomic", model: "Bent 100", sortOrder: 0)
         let boots = GearAsset(name: "Hawk Prime", category: .boots, brand: "Atomic", model: "120 S", sortOrder: 1)
-        let jacket = GearAsset(name: "Shell Jacket", category: .outerwear, brand: "Norrøna", model: "Lofoten", sortOrder: 2)
-        let goggles = GearAsset(name: "Line Miner", category: .protection, brand: "Oakley", model: "XM", sortOrder: 3)
+        let jacket = GearAsset(name: "Shell Jacket", category: .jacket, brand: "Norrøna", model: "Lofoten", sortOrder: 2)
+        let goggles = GearAsset(name: "Line Miner", category: .goggles, brand: "Oakley", model: "XM", sortOrder: 3)
         skis.setupIDs = [checklist.id, spareChecklist.id]
         boots.setupIDs = [checklist.id]
         jacket.setupIDs = [checklist.id]

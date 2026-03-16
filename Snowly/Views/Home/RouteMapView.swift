@@ -32,11 +32,11 @@ struct RouteMapView: View {
         routeMap(segments: segments, region: region, interactive: false)
             .overlay(alignment: .topTrailing) {
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(Typography.captionSemibold)
                     .foregroundStyle(.white.opacity(0.85))
-                    .padding(8)
+                    .padding(Spacing.sm)
                     .snowlyGlass(in: Circle())
-                    .padding(10)
+                    .padding(Spacing.gutter)
             }
             .contentShape(RoundedRectangle(cornerRadius: CornerRadius.large))
             .onTapGesture { showingFullscreen = true }
@@ -227,9 +227,9 @@ private struct FullscreenRouteMapView: View {
 
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(Typography.smallSemibold)
                     .foregroundStyle(.white.opacity(0.9))
-                    .padding(12)
+                    .padding(Spacing.md)
                     .snowlyGlass(in: Circle())
             }
             .padding(.top, 56)

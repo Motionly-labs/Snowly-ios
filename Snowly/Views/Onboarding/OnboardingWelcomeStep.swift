@@ -22,10 +22,6 @@ struct OnboardingWelcomeStep: View {
                 .frame(width: 92, height: 92)
 
             VStack(spacing: Spacing.sm) {
-                Text("SNOWLY")
-                    .font(Typography.splashTitle.italic())
-                    .tracking(2)
-
                 Text(String(localized: "onboarding_welcome_title"))
                     .font(Typography.onboardingTitle)
 

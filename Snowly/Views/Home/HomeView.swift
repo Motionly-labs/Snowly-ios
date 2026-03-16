@@ -56,6 +56,7 @@ struct HomeView: View {
     @State private var crewActionError: String?
     @State private var lastHomeDataRefreshAt: Date?
     @State private var showingGPSNotReadyAlert = false
+    @State private var lastCameraUpdateAt: Date?
 
     private var unitSystem: UnitSystem {
         profiles.first?.preferredUnits ?? .metric
@@ -71,6 +72,144 @@ struct HomeView: View {
     }
 
     var body: some View {
+        bodyContent
+            .alert(String(localized: "crew_create_title"), isPresented: $showCrewCreateAlert) {
+                TextField(String(localized: "crew_name_placeholder"), text: $crewNameInput)
+                Button(String(localized: "common_create")) { createCrew() }
+                    .disabled(crewNameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Button(String(localized: "common_cancel"), role: .cancel) { crewNameInput = "" }
+            }
+            .alert(String(localized: "crew_join_title"), isPresented: $showCrewJoinAlert) {
+                TextField(String(localized: "crew_join_token_placeholder"), text: $crewJoinTokenInput)
+                Button(String(localized: "crew_join_action")) { joinCrew() }
+                    .disabled(crewJoinTokenInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Button(String(localized: "common_cancel"), role: .cancel) { crewJoinTokenInput = "" }
+            }
+            .alert(String(localized: "gps_error_title"), isPresented: $showingGPSNotReadyAlert) {
+                if locationService.authorizationStatus == .denied
+                    || locationService.authorizationStatus == .restricted {
+                    Button(String(localized: "common_open_settings")) {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                }
+                Button(String(localized: "common_ok"), role: .cancel) {}
+            } message: {
+                Text(gpsNotReadyAlertMessage)
+            }
+    }
+
+    private var bodyContent: some View {
+        mapWithOverlays
+            .mapScope(mapScope)
+            .fullScreenCover(isPresented: $showingTracking) {
+                ActiveTrackingView()
+                    .environment(trackingService)
+                    .environment(batteryService)
+                    .environment(skiMapService)
+            }
+            .onChange(of: showingTracking) { _, isNowTracking in
+                guard !isNowTracking, let coord = locationService.currentLocation else { return }
+                withAnimation(.easeInOut(duration: 1.0)) {
+                    mapPosition = .region(MKCoordinateRegion(
+                        center: coord,
+                        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                    ))
+                }
+            }
+            .onChange(of: scenePhase) {
+                if scenePhase == .background {
+                    trackingService.persistSnapshotNowIfNeeded()
+                }
+                trackingService.updateAppActiveState(scenePhase == .active)
+            }
+            .onAppear {
+                trackingService.updateAppActiveState(scenePhase == .active)
+                applyTrackingIntervalSettings()
+                handleQuickStartIfPending()
+                if locationService.authorizationStatus == .notDetermined {
+                    locationService.requestAuthorization()
+                }
+                if !showMapOverlays {
+                    mapOverlayActivationTask?.cancel()
+                    mapOverlayActivationTask = Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(500))
+                        guard !Task.isCancelled else { return }
+                        showMapOverlays = true
+                    }
+                }
+            }
+            .onDisappear {
+                cacheOfflineNoticeTask?.cancel()
+                cacheOfflineNoticeTask = nil
+                mapOverlayActivationTask?.cancel()
+                mapOverlayActivationTask = nil
+            }
+            .task(id: trackingIntervalKey) {
+                applyTrackingIntervalSettings()
+            }
+            .onChange(of: trackingService.quickStartPending) {
+                handleQuickStartIfPending()
+            }
+            .onChange(of: crewService.focusRequestedPin?.id) { _, _ in
+                focusOnRequestedPinIfNeeded()
+            }
+            .onChange(of: resetTrigger) { _, _ in
+                guard currentPage != .primary else { return }
+                withAnimation(.easeInOut(duration: 0.2)) { currentPage = .primary }
+            }
+            .onChange(of: mapLocationKey) { _, key in
+                guard key != "none", let coord = locationService.currentLocation else { return }
+                guard !hasInitializedMapCamera || currentPage == .primary else { return }
+
+                // 10-second throttle: prevent MapKit camera animation backlog
+                if hasInitializedMapCamera,
+                   let last = lastCameraUpdateAt,
+                   Date().timeIntervalSince(last) < 10 { return }
+
+                let animation: Animation = hasInitializedMapCamera ? .linear(duration: 0.8) : .easeInOut(duration: 1.0)
+                withAnimation(animation) {
+                    mapPosition = .region(MKCoordinateRegion(
+                        center: coord,
+                        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                    ))
+                }
+                hasInitializedMapCamera = true
+                lastCameraUpdateAt = Date()
+            }
+            .task(id: dataRefreshLocationKey) {
+                guard let coord = locationService.currentLocation else { return }
+                guard !showingTracking else { return }
+                guard shouldRefreshHomeDataNow() else { return }
+                await refreshHomeData(for: coord)
+            }
+            .onChange(of: locationService.authorizationStatus) { _, status in
+                if status == .denied || status == .restricted {
+                    hasInitializedMapCamera = false
+                    lastSkiAreaLoadCoordinate = nil
+                }
+            }
+            .onChange(of: skiMapService.currentSkiArea?.boundingBox) { _, _ in
+                if let skiArea = skiMapService.currentSkiArea {
+                    cachedTrailLabels = deduplicatedTrailLabels(from: skiArea.trails)
+                    cachedLiftLabels = deduplicatedLiftLabels(from: skiArea.lifts)
+                } else {
+                    cachedTrailLabels = []
+                    cachedLiftLabels = []
+                }
+            }
+            .onChange(of: skiMapService.lastError) { _, newError in
+                guard newError != nil else { return }
+                presentCacheOfflineNoticeIfNeeded()
+            }
+            .onChange(of: skiMapService.currentSkiArea != nil) { _, hasCachedArea in
+                guard hasCachedArea, skiMapService.lastError != nil else { return }
+                presentCacheOfflineNoticeIfNeeded()
+            }
+    }
+
+    private var mapWithOverlays: some View {
         mapBackground
             .overlay {
                 if isPinningMode {
@@ -160,121 +299,6 @@ struct HomeView: View {
             .animation(AnimationTokens.standardEaseInOut, value: isPinningMode)
             .onChange(of: currentPage) { _, _ in
                 isPinningMode = false
-            }
-            .mapScope(mapScope)
-            .fullScreenCover(isPresented: $showingTracking) {
-                ActiveTrackingView()
-                    .environment(trackingService)
-                    .environment(batteryService)
-                    .environment(skiMapService)
-            }
-            .onChange(of: scenePhase) {
-                if scenePhase == .background {
-                    trackingService.persistSnapshotNowIfNeeded()
-                }
-                trackingService.updateAppActiveState(scenePhase == .active)
-            }
-            .onAppear {
-                trackingService.updateAppActiveState(scenePhase == .active)
-                applyTrackingIntervalSettings()
-                handleQuickStartIfPending()
-                if locationService.authorizationStatus == .notDetermined {
-                    locationService.requestAuthorization()
-                }
-                if !showMapOverlays {
-                    mapOverlayActivationTask?.cancel()
-                    mapOverlayActivationTask = Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(500))
-                        guard !Task.isCancelled else { return }
-                        showMapOverlays = true
-                    }
-                }
-            }
-            .task(id: trackingIntervalKey) {
-                applyTrackingIntervalSettings()
-            }
-            .onChange(of: trackingService.quickStartPending) {
-                handleQuickStartIfPending()
-            }
-            .onChange(of: crewService.focusRequestedPin?.id) { _, _ in
-                focusOnRequestedPinIfNeeded()
-            }
-            .onChange(of: resetTrigger) { _, _ in
-                guard currentPage != .primary else { return }
-                withAnimation(.easeInOut(duration: 0.2)) { currentPage = .primary }
-            }
-            .task(id: locationCoordinateKey) {
-                guard let coord = locationService.currentLocation else { return }
-                guard !showingTracking else { return }
-                guard shouldRefreshHomeDataNow() else { return }
-
-                // Only auto-center once to avoid resetting user camera interactions
-                // (pitch / heading / rotation) on every location update.
-                if !hasInitializedMapCamera {
-                    withAnimation(.easeInOut(duration: 1.0)) {
-                        mapPosition = .region(MKCoordinateRegion(
-                            center: coord,
-                            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-                        ))
-                    }
-                    hasInitializedMapCamera = true
-                }
-
-                await refreshHomeData(for: coord)
-            }
-            .onChange(of: locationService.authorizationStatus) { _, status in
-                if status == .denied || status == .restricted {
-                    hasInitializedMapCamera = false
-                    lastSkiAreaLoadCoordinate = nil
-                }
-            }
-            .onChange(of: skiMapService.currentSkiArea?.boundingBox) { _, _ in
-                if let skiArea = skiMapService.currentSkiArea {
-                    cachedTrailLabels = deduplicatedTrailLabels(from: skiArea.trails)
-                    cachedLiftLabels = deduplicatedLiftLabels(from: skiArea.lifts)
-                } else {
-                    cachedTrailLabels = []
-                    cachedLiftLabels = []
-                }
-            }
-            .onChange(of: skiMapService.lastError) { _, newError in
-                guard newError != nil else { return }
-                presentCacheOfflineNoticeIfNeeded()
-            }
-            .onChange(of: skiMapService.currentSkiArea != nil) { _, hasCachedArea in
-                guard hasCachedArea, skiMapService.lastError != nil else { return }
-                presentCacheOfflineNoticeIfNeeded()
-            }
-            .onDisappear {
-                cacheOfflineNoticeTask?.cancel()
-                cacheOfflineNoticeTask = nil
-                mapOverlayActivationTask?.cancel()
-                mapOverlayActivationTask = nil
-            }
-            .alert(String(localized: "crew_create_title"), isPresented: $showCrewCreateAlert) {
-                TextField(String(localized: "crew_name_placeholder"), text: $crewNameInput)
-                Button(String(localized: "common_create")) { createCrew() }
-                    .disabled(crewNameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                Button(String(localized: "common_cancel"), role: .cancel) { crewNameInput = "" }
-            }
-            .alert(String(localized: "crew_join_title"), isPresented: $showCrewJoinAlert) {
-                TextField(String(localized: "crew_join_token_placeholder"), text: $crewJoinTokenInput)
-                Button(String(localized: "crew_join_action")) { joinCrew() }
-                    .disabled(crewJoinTokenInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                Button(String(localized: "common_cancel"), role: .cancel) { crewJoinTokenInput = "" }
-            }
-            .alert(String(localized: "gps_error_title"), isPresented: $showingGPSNotReadyAlert) {
-                if locationService.authorizationStatus == .denied
-                    || locationService.authorizationStatus == .restricted {
-                    Button(String(localized: "common_open_settings")) {
-                        if let url = URL(string: UIApplication.openSettingsURLString) {
-                            UIApplication.shared.open(url)
-                        }
-                    }
-                }
-                Button(String(localized: "common_ok"), role: .cancel) {}
-            } message: {
-                Text(gpsNotReadyAlertMessage)
             }
     }
 
@@ -575,7 +599,7 @@ struct HomeView: View {
                 ForEach(skiArea.lifts) { lift in
                     MapPolyline(coordinates: lift.coordinates.map(\.clLocationCoordinate2D))
                         .stroke(
-                            Color.white.opacity(Opacity.heavy),
+                            ColorTokens.mapLiftPolyline,
                             style: StrokeStyle(lineWidth: 1.5, lineCap: .round, dash: [6, 4])
                         )
                 }
@@ -585,7 +609,7 @@ struct HomeView: View {
                     Annotation("", coordinate: label.coordinate.clLocationCoordinate2D, anchor: .bottom) {
                         Text(label.name)
                             .font(.caption2)
-                            .foregroundStyle(.white.opacity(Opacity.nearFull))
+                            .foregroundStyle(ColorTokens.mapLiftLabel)
                             .padding(.horizontal, Spacing.xs)
                             .padding(.vertical, Spacing.xxs)
                             .snowlyGlass(in: Capsule())
@@ -608,7 +632,7 @@ struct HomeView: View {
                 .font(Typography.speedDisplay)
                 .foregroundStyle(ColorTokens.warning)
             Circle()
-                .fill(.black.opacity(Opacity.soft))
+                .fill(ColorTokens.mapPinShadow)
                 .frame(width: Spacing.sm, height: Spacing.xs)
         }
         .shadowStyle(.subtle)
@@ -840,17 +864,14 @@ struct HomeView: View {
     }
 
     private func shouldReloadSkiArea(for coordinate: CLLocationCoordinate2D) -> Bool {
-        guard skiMapService.currentSkiArea != nil,
-              let lastSkiAreaLoadCoordinate else {
-            return true
-        }
+        guard let lastSkiAreaLoadCoordinate else { return true }
 
         let last = CLLocation(
             latitude: lastSkiAreaLoadCoordinate.latitude,
             longitude: lastSkiAreaLoadCoordinate.longitude
         )
         let current = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        return current.distance(from: last) >= SkiMapCacheService.defaultReclassifyDistanceMeters
+        return current.distance(from: last) >= 10_000
     }
 
     @ViewBuilder
@@ -871,13 +892,22 @@ struct HomeView: View {
         return title
     }
 
-    /// Quantized to ~100m grid to avoid re-triggering .task on every GPS update.
-    /// Each 0.001° of latitude ≈ 111m, so rounding to 3 decimal places
-    /// prevents the task from restarting unless the user moves ~100m.
-    private var locationCoordinateKey: String {
+    /// Quantised to ~111 m grid for map camera tracking. The camera span
+    /// is ~5 km so sub-100 m shifts are invisible, and the 10-second
+    /// throttle in onChange further prevents animation backlog.
+    private var mapLocationKey: String {
         guard let coord = locationService.currentLocation else { return "none" }
         let lat = (coord.latitude * 1000).rounded() / 1000
         let lon = (coord.longitude * 1000).rounded() / 1000
+        return "\(lat),\(lon)"
+    }
+
+    /// Quantised to ~1 km grid so weather/resort data only refreshes
+    /// when the user moves meaningfully, not on GPS jitter.
+    private var dataRefreshLocationKey: String {
+        guard let coord = locationService.currentLocation else { return "none" }
+        let lat = (coord.latitude * 100).rounded() / 100
+        let lon = (coord.longitude * 100).rounded() / 100
         return "\(lat),\(lon)"
     }
 
@@ -926,9 +956,9 @@ struct HomeView: View {
     private func windSpeedShort(_ kmh: Double) -> String {
         switch unitSystem {
         case .metric:
-            return "\(Int(round(kmh))) km/h"
+            return "\(Int(round(kmh))) \(Formatters.speedUnit(.metric))"
         case .imperial:
-            return "\(Int(round(kmh * 0.621371))) mph"
+            return "\(Int(round(kmh * 0.621371))) \(Formatters.speedUnit(.imperial))"
         }
     }
 

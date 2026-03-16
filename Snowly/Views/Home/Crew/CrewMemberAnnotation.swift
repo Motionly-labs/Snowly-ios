@@ -12,17 +12,11 @@ struct CrewMemberAnnotation: View {
 
     var body: some View {
         VStack(spacing: Spacing.xxs) {
-            Circle()
-                .fill(CrewMarkerColor.color(for: member.userId))
-                .frame(width: 32, height: 32)
-                .overlay {
-                    Text(initial)
-                        .font(Typography.smallBold)
-                        .foregroundStyle(.white)
-                }
-                .overlay(Circle().stroke(.white, lineWidth: 2))
-                .shadowStyle(.subtle)
-                .opacity(member.isStale ? Opacity.strong : 1.0)
+            LocationDotView(
+                color: CrewMarkerColor.color(for: member.userId),
+                initial: initial,
+                isStale: member.isStale
+            )
 
             Image(systemName: activityIcon)
                 .font(.caption2)
@@ -30,7 +24,7 @@ struct CrewMemberAnnotation: View {
 
             Text(member.displayName)
                 .font(Typography.caption2Semibold)
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .padding(.horizontal, Spacing.gap)
                 .padding(.vertical, Spacing.xxs)
                 .snowlyGlass(in: Capsule())

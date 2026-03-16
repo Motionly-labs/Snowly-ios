@@ -385,7 +385,7 @@ struct TrackingStatGrid: View {
                     .fill(ColorTokens.brandRed)
                     .frame(width: 22, height: 22)
                 Image(systemName: "minus")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(Typography.caption2Semibold)
                     .foregroundStyle(.white)
             }
         }

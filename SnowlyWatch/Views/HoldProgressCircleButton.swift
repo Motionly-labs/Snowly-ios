@@ -22,8 +22,8 @@ struct HoldProgressCircleButton: View {
     @State private var didCompleteHold = false
 
     var body: some View {
-        let ringWidth = max(4, diameter * 0.065)
-        let innerDiameter = diameter * 0.78
+        let ringWidth = max(WatchSpacing.holdButtonMinRingWidth, diameter * WatchSpacing.holdButtonRingWidthRatio)
+        let innerDiameter = diameter * WatchSpacing.holdButtonInnerDiameterRatio
         VStack(spacing: WatchSpacing.sm) {
             ZStack {
                 Circle()
@@ -52,7 +52,7 @@ struct HoldProgressCircleButton: View {
                     .foregroundStyle(tint)
             }
             .contentShape(Circle())
-            .onLongPressGesture(minimumDuration: holdDuration, maximumDistance: 28) {
+            .onLongPressGesture(minimumDuration: holdDuration, maximumDistance: WatchSpacing.holdButtonGestureMaxDistance) {
                 didCompleteHold = true
                 action()
                 holdProgress = 0

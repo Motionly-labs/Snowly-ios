@@ -26,7 +26,7 @@ struct SnowlyLiveActivityWidget: Widget {
             } minimal: {
                 Image(systemName: playbackIconName(isPaused: context.state.isPaused))
                     .font(.caption)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(LiveActivityTokens.minimalForeground)
             }
         }
     }
@@ -64,7 +64,7 @@ struct SnowlyLiveActivityWidget: Widget {
 
                 Button(intent: TogglePauseIntent()) {
                     Image(systemName: state.isPaused ? "play.circle.fill" : "pause.circle.fill")
-                        .font(.system(size: 28))
+                        .font(.system(size: LiveActivityTokens.pausePlayIconSize))
                         .foregroundStyle(state.isPaused ? LiveActivityTokens.playAccent : LiveActivityTokens.pauseAccent)
                 }
                 .buttonStyle(.plain)
@@ -157,15 +157,15 @@ struct SnowlyLiveActivityWidget: Widget {
         TimelineView(.periodic(from: context.attributes.startDate, by: 4)) { timeline in
             let item = compactCarouselItem(context: context, at: timeline.date)
 
-            HStack(spacing: 3) {
+            HStack(spacing: LiveActivityTokens.compactItemSpacing) {
                 Image(systemName: item.symbolName)
                     .font(.caption2)
                 Text(item.value)
                     .font(.caption.monospacedDigit())
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(LiveActivityTokens.compactForeground)
             .lineLimit(1)
-            .minimumScaleFactor(0.75)
+            .minimumScaleFactor(LiveActivityTokens.contentMinScale)
             .contentTransition(.numericText())
         }
     }

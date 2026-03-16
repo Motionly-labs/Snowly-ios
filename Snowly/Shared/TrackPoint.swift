@@ -211,12 +211,22 @@ enum RecentTrackWindow {
         keyPath: KeyPath<T, Date>
     ) {
         let cutoff = timestamp.addingTimeInterval(-retention)
-        if let firstValid = points.firstIndex(where: { $0[keyPath: keyPath] >= cutoff }) {
-            if firstValid > 0 {
-                points.removeFirst(firstValid)
+        // Binary search for cutoff — O(log n) vs O(n) linear scan.
+        // Points are time-ordered (append-only).
+        var lo = 0
+        var hi = points.count
+        while lo < hi {
+            let mid = lo + (hi - lo) / 2
+            if points[mid][keyPath: keyPath] < cutoff {
+                lo = mid + 1
+            } else {
+                hi = mid
             }
-        } else {
+        }
+        if lo >= points.count {
             points.removeAll(keepingCapacity: true)
+        } else if lo > 0 {
+            points.removeFirst(lo)
         }
     }
 

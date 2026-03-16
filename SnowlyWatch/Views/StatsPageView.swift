@@ -80,7 +80,7 @@ struct StatsPageView: View {
             Image(systemName: icon)
                 .font(WatchTypography.statIcon)
                 .foregroundStyle(WatchColorTokens.sportAccent)
-                .frame(width: 18)
+                .frame(width: WatchSpacing.statIconFrameWidth)
 
             Text(label)
                 .font(.caption)

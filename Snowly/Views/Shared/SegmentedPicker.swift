@@ -35,7 +35,7 @@ struct SegmentedPicker<T: Hashable, Label: View>: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(3)
+        .padding(Spacing.xxs)
         .frame(maxWidth: .infinity)
         .background(.quinary, in: Capsule())
     }

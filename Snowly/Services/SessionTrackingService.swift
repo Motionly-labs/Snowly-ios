@@ -223,14 +223,7 @@ private actor TrackingEngine {
             )
         }
 
-        // Record cutoff so ingest() skips any live-stream points that overlap with
-        // the seeded history. Seed history only warms detection windows; the Kalman
-        // filter itself stays cold so pre-start speed/course noise cannot leak into
-        // the first live tracking sample.
         primeEndTimestamp = sortedPoints.last?.timestamp
-
-        // Seed the current altitude from the last primed point so the
-        // altitude card has an immediate value before the first live GPS tick.
         currentAltitude = sortedPoints.last?.altitude ?? 0
 
         previousFilteredPoint = nil
@@ -238,7 +231,13 @@ private actor TrackingEngine {
         candidateStartTime = nil
         currentActivity = .idle
         currentSpeed = 0
+
+        // Warm up the Kalman filter with passively collected GPS history
+        // so covariances are settled before the first live point arrives.
         gpsFilter.reset()
+        for point in sortedPoints {
+            _ = gpsFilter.update(point: point)
+        }
     }
 
     func ingest(point: TrackPoint, motion: MotionHint) -> TrackingPointIngestResult {
@@ -678,6 +677,7 @@ final class SessionTrackingService {
 
     private var isDashboardVisible = false
     private var isAppActive = true
+    private var lastGPSSyncDate: Date?
 
     private static let curveSampleIntervalSeconds: TimeInterval = 2
     private static let recoveryStateMaxAge: TimeInterval = 12 * 3600
@@ -1025,6 +1025,8 @@ final class SessionTrackingService {
             )
         }
 
+        lastGPSSyncDate = Date()
+
         // Use the scalar returned by ingest() — no second actor hop into TrackingEngine.
         pushLiveActivityUpdate(scalar: ingestResult.scalar)
     }
@@ -1065,8 +1067,12 @@ final class SessionTrackingService {
     private func handleTimerTick(interval _: TimeInterval) async {
         guard startDate != nil else { return }
 
-        // Skip full UI sync when dashboard not visible and app inactive
-        if isDashboardVisible || isAppActive {
+        // Skip full UI sync when a GPS-driven sync already ran recently — the
+        // per-point processTrackPoint() path already calls applyScalarSnapshot(),
+        // so repeating it from the timer wastes an actor hop and doubles the
+        // @Observable mutations that drive SwiftUI re-renders.
+        let gpsSyncedRecently = lastGPSSyncDate.map { Date().timeIntervalSince($0) < 0.8 } ?? false
+        if !gpsSyncedRecently, isDashboardVisible || isAppActive {
             await syncPublishedSnapshot()
         }
 

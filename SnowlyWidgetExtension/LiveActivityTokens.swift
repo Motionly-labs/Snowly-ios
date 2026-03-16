@@ -17,6 +17,12 @@ enum LiveActivityTokens {
     static let playAccent = Color(hex: "34C759")
     /// Tint for the pause action / active-tracking state. Matches iOS primaryAccent (brandIceBlue).
     static let pauseAccent = Color(hex: "1E88E5")
+    /// Foreground color for Dynamic Island minimal view.
+    static let minimalForeground = Color.white
+    /// Foreground color for compact trailing carousel text.
+    static let compactForeground = Color.white
+    /// Tint for control widget idle (not-tracking) state.
+    static let controlIdleAccent = Color.primary
 
     // MARK: - Spacing
 
@@ -32,6 +38,8 @@ enum LiveActivityTokens {
     static let metricValueSpacing: CGFloat = 4
     /// Spacing between pill/chip items in a row.
     static let pillSpacing: CGFloat = 6
+    /// Spacing between icon and value in the compact trailing view.
+    static let compactItemSpacing: CGFloat = 3
     /// Spacing between grid cells (stat chips).
     static let gridSpacing: CGFloat = 8
     /// Minimum spacer length in the header row.
@@ -54,6 +62,8 @@ enum LiveActivityTokens {
 
     /// Large speed readout in the lock-screen header.
     static let speedFont: Font = .system(size: 32, weight: .bold, design: .rounded).monospacedDigit()
+    /// Icon size for the pause/play button on the lock screen.
+    static let pausePlayIconSize: CGFloat = 28
 
     // MARK: - Scale Factors
 
