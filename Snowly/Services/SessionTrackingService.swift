@@ -169,7 +169,7 @@ private actor TrackingEngine {
     private var currentAltitude: Double = 0
 
     // MARK: - Detection state
-    private var recentPoints: [FilteredTrackPoint] = []
+    private var recentPoints = RecentTrackBuffer<FilteredTrackPoint>()
     private var previousFilteredPoint: FilteredTrackPoint?
     private var candidateActivity: DetectedActivity?
     private var candidateStartTime: Date?
@@ -215,12 +215,9 @@ private actor TrackingEngine {
         guard !points.isEmpty else { return }
 
         let sortedPoints = points.sorted { $0.timestamp < $1.timestamp }
+        recentPoints.removeAll()
         for point in sortedPoints {
             recentPoints.append(point.filteredEstimatePoint)
-            RecentTrackWindow.trimFilteredPoints(
-                &recentPoints,
-                relativeTo: point.timestamp
-            )
         }
 
         primeEndTimestamp = sortedPoints.last?.timestamp
@@ -274,7 +271,6 @@ private actor TrackingEngine {
         let rawActivity = detectionDecision.activity
 
         recentPoints.append(filteredPoint)
-        RecentTrackWindow.trimFilteredPoints(&recentPoints, relativeTo: filteredPoint.timestamp)
 
         // applyDwellTime is nonisolated — no MainActor hop needed.
         let dwellResult = SessionTrackingService.applyDwellTime(
@@ -396,7 +392,7 @@ private actor TrackingEngine {
         totalVertical = 0
         currentActivity = .idle
 
-        recentPoints = []
+        recentPoints.removeAll()
         previousFilteredPoint = nil
         candidateActivity = nil
         candidateStartTime = nil
@@ -542,7 +538,7 @@ private actor TrackingEngine {
     private func clearRealtimeState() {
         gpsFilter.reset()
         previousFilteredPoint = nil
-        recentPoints = []
+        recentPoints.removeAll()
         candidateActivity = nil
         candidateStartTime = nil
         currentSpeed = 0
@@ -650,10 +646,11 @@ final class SessionTrackingService {
     var pendingHealthKitWorkoutId: UUID? { healthKitCoordinator.pendingWorkoutId }
 
     /// Rolling 10-minute window of GPS-driven speed samples for the live curve.
-    /// Samples are bucketed by arrival time to avoid timer-generated plateaus.
+    /// Materialized only when a new sample is appended, not on every view read.
     private(set) var speedSamples: [SpeedSample] = []
 
     /// Rolling 1-hour window of GPS-driven altitude samples for the profile widget.
+    /// Materialized only when a new sample is appended, not on every view read.
     private(set) var altitudeSamples: [AltitudeSample] = []
 
     // CircularBuffer backing for rolling sample windows — O(1) append, no Array shifting.
@@ -1145,6 +1142,8 @@ final class SessionTrackingService {
 
     private func appendCurveSample(point: FilteredTrackPoint, state: SpeedCurveState) {
         let timestamp = point.timestamp
+        var didAppendSpeed = false
+        var didAppendAltitude = false
 
         // Speed: append only when minimumSpacing has elapsed since the last buffered sample.
         let lastSpeed = speedSampleBuffer[speedSampleBuffer.count - 1]
@@ -1154,7 +1153,7 @@ final class SessionTrackingService {
                 speed: max(point.estimatedSpeed, 0),
                 state: state
             ))
-            speedSamples = speedSampleBuffer.elements
+            didAppendSpeed = true
         }
 
         // Altitude: same spacing rule, value pre-converted to display units.
@@ -1168,6 +1167,13 @@ final class SessionTrackingService {
                 altitude: displayAltitude,
                 state: state
             ))
+            didAppendAltitude = true
+        }
+
+        if didAppendSpeed {
+            speedSamples = speedSampleBuffer.elements
+        }
+        if didAppendAltitude {
             altitudeSamples = altitudeSampleBuffer.elements
         }
     }
@@ -1331,6 +1337,8 @@ final class SessionTrackingService {
 
         currentSpeed = 0
         currentActivity = .idle
+        speedSampleBuffer.removeAll()
+        altitudeSampleBuffer.removeAll()
         speedSamples = []
         altitudeSamples = []
         state = .paused
@@ -1419,10 +1427,10 @@ final class SessionTrackingService {
         runCount = 0
         completedRuns = []
         skiingMetrics = .zero
-        speedSamples = []
-        altitudeSamples = []
         speedSampleBuffer.removeAll()
         altitudeSampleBuffer.removeAll()
+        speedSamples = []
+        altitudeSamples = []
 
         totalPausedTime = 0
         pauseStartTime = nil

@@ -90,6 +90,16 @@ final class PhoneConnectivityService: NSObject {
 
     // MARK: - Public API
 
+    /// Fire-and-forget send for ephemeral live data.
+    /// Uses `sendMessage` only — does NOT fall back to `transferUserInfo`.
+    /// Prevents persistent queue buildup for data that becomes stale immediately.
+    func sendLive(_ message: WatchMessage) {
+        guard let session, canCommunicateWithWatch(session), session.isReachable else { return }
+        guard let data = try? JSONEncoder().encode(message) else { return }
+        let payload: [String: Any] = [SharedConstants.watchSessionKey: data]
+        session.sendMessage(payload, replyHandler: nil, errorHandler: nil)
+    }
+
     /// Encodes and sends a WatchMessage to the Watch.
     /// Uses live sendMessage when reachable; falls back to transferUserInfo.
     func send(_ message: WatchMessage) {

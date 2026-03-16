@@ -148,15 +148,39 @@ enum RunDetectionService {
         previousActivity: DetectedActivity = .idle,
         motion: MotionHint = .unknown
     ) -> DetectionDecision {
-        let transitionEstimate = MotionEstimator.transitionEstimate(
-            current: point,
-            recentPoints: recentPoints
+        return analyze(
+            previousActivity: previousActivity,
+            motion: motion,
+            estimates: MotionEstimator.dualWindowEstimates(
+                current: point,
+                recentPoints: recentPoints
+            )
         )
-        let steadyEstimate = MotionEstimator.steadyEstimate(
-            current: point,
-            recentPoints: recentPoints
-        )
+    }
 
+    nonisolated static func analyze(
+        point: FilteredTrackPoint,
+        recentPoints: RecentTrackBuffer<FilteredTrackPoint>,
+        previousActivity: DetectedActivity = .idle,
+        motion: MotionHint = .unknown
+    ) -> DetectionDecision {
+        analyze(
+            previousActivity: previousActivity,
+            motion: motion,
+            estimates: MotionEstimator.dualWindowEstimates(
+                current: point,
+                recentPoints: recentPoints
+            )
+        )
+    }
+
+    nonisolated private static func analyze(
+        previousActivity: DetectedActivity,
+        motion: MotionHint,
+        estimates: MotionEstimator.DualWindowEstimates
+    ) -> DetectionDecision {
+        let transitionEstimate = estimates.transition
+        let steadyEstimate = estimates.steady
         let transitionActivity = classify(
             estimate: transitionEstimate,
             previousActivity: previousActivity,

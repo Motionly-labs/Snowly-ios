@@ -28,6 +28,8 @@ final class HealthKitCoordinator {
     private var workoutStartToken = UUID()
     private let flushInterval: TimeInterval
     private static let logger = Logger(subsystem: "com.Snowly", category: "HealthKitCoordinator")
+    private static let maxPendingRoutePoints = 1_800
+    private static let maxPendingDistanceSamples = 1_800
 
     init(
         healthKitService: (any HealthKitProviding)?,
@@ -77,12 +79,14 @@ final class HealthKitCoordinator {
         }
 
         pendingRoutePoints.append(point)
+        trimPendingRoutePointsIfNeeded()
         if isSkiing && distance > 0 {
             pendingDistanceSamples.append((
                 meters: distance,
                 start: previousPoint.timestamp,
                 end: point.timestamp
             ))
+            trimPendingDistanceSamplesIfNeeded()
         }
 
         // Schedule a flush if not already pending
@@ -220,5 +224,17 @@ final class HealthKitCoordinator {
             guard !Task.isCancelled else { return }
             await self?.flushPendingHealthKitData()
         }
+    }
+
+    private func trimPendingRoutePointsIfNeeded() {
+        guard pendingRoutePoints.count > Self.maxPendingRoutePoints else { return }
+        pendingRoutePoints = Array(pendingRoutePoints.suffix(Self.maxPendingRoutePoints))
+        Self.logger.debug("Trimmed pending HealthKit route buffer to \(Self.maxPendingRoutePoints, privacy: .public) points")
+    }
+
+    private func trimPendingDistanceSamplesIfNeeded() {
+        guard pendingDistanceSamples.count > Self.maxPendingDistanceSamples else { return }
+        pendingDistanceSamples = Array(pendingDistanceSamples.suffix(Self.maxPendingDistanceSamples))
+        Self.logger.debug("Trimmed pending HealthKit distance buffer to \(Self.maxPendingDistanceSamples, privacy: .public) samples")
     }
 }

@@ -39,7 +39,7 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
     private var trackingContinuation: AsyncStream<TrackPoint>.Continuation?
     private var previousTrackingLocation: CLLocation?
     private var isCollectingLocationUpdates = false
-    private var recentTrackPoints: [TrackPoint] = []
+    private var recentTrackPoints = RecentTrackBuffer<TrackPoint>()
 
 #if DEBUG
     // Set by -replay_gpx <name>. Drives startTracking() with a GPX stream instead of
@@ -84,7 +84,7 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
     }
 
     func recentTrackPointsSnapshot() -> [TrackPoint] {
-        recentTrackPoints
+        recentTrackPoints.snapshot()
     }
 
     func startTracking() -> AsyncStream<TrackPoint> {
@@ -174,10 +174,6 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
             )
 
             self.recentTrackPoints.append(point)
-            RecentTrackWindow.trimTrackPoints(
-                &self.recentTrackPoints,
-                relativeTo: point.timestamp
-            )
 
             if self.isTracking {
                 self.trackingContinuation?.yield(point)
@@ -203,7 +199,7 @@ final class LocationTrackingService: NSObject, LocationProviding, CLLocationMana
                 manager.requestLocation()
             case .denied, .restricted:
                 self.stopAllLocationUpdates()
-                self.recentTrackPoints.removeAll(keepingCapacity: false)
+                self.recentTrackPoints.removeAll()
             case .notDetermined:
                 break
             @unknown default:
@@ -303,7 +299,10 @@ extension LocationTrackingService {
         isTracking = true
 
         let primeCount = min(45, points.count)
-        recentTrackPoints = Array(points.prefix(primeCount))
+        recentTrackPoints.removeAll()
+        for point in points.prefix(primeCount) {
+            recentTrackPoints.append(point)
+        }
 
         if let first = points.first {
             currentLocation = CLLocationCoordinate2D(latitude: first.latitude, longitude: first.longitude)
@@ -369,7 +368,6 @@ extension LocationTrackingService {
             currentVerticalAccuracy = point.verticalAccuracy
 
             recentTrackPoints.append(point)
-            RecentTrackWindow.trimTrackPoints(&recentTrackPoints, relativeTo: point.timestamp)
 
             if isTracking {
                 continuation.yield(point)

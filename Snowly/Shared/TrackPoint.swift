@@ -171,6 +171,110 @@ struct FilteredTrackPoint: Codable, Sendable, Equatable {
     }
 }
 
+protocol TimestampedSample: Sendable {
+    var timestamp: Date { get }
+}
+
+extension TrackPoint: TimestampedSample {}
+extension FilteredTrackPoint: TimestampedSample {}
+
+/// Append-only time window with amortized O(1) append/evict and binary-search lookup.
+/// Used in tracking hot paths to avoid `Array.removeFirst()` shifts on every GPS point.
+struct RecentTrackBuffer<Element: TimestampedSample>: Sendable {
+    private var storage: [Element] = []
+    private var head: Int = 0
+
+    let retention: TimeInterval
+
+    nonisolated init(retention: TimeInterval = SharedConstants.historyRetentionSeconds) {
+        self.retention = retention
+    }
+
+    nonisolated var count: Int {
+        storage.count - head
+    }
+
+    nonisolated var isEmpty: Bool {
+        count == 0
+    }
+
+    nonisolated var last: Element? {
+        guard head < storage.count else { return nil }
+        return storage[storage.count - 1]
+    }
+
+    nonisolated mutating func append(_ element: Element) {
+        storage.append(element)
+        evict(relativeTo: element.timestamp)
+    }
+
+    nonisolated mutating func evict(relativeTo timestamp: Date) {
+        guard head < storage.count else {
+            if !storage.isEmpty {
+                storage.removeAll(keepingCapacity: true)
+            }
+            head = 0
+            return
+        }
+
+        let cutoff = timestamp.addingTimeInterval(-retention)
+        head = lowerBound(for: cutoff)
+        compactIfNeeded()
+    }
+
+    nonisolated mutating func removeAll() {
+        storage.removeAll(keepingCapacity: true)
+        head = 0
+    }
+
+    nonisolated func snapshot() -> [Element] {
+        guard head < storage.count else { return [] }
+        return Array(storage[head...])
+    }
+
+    nonisolated func forEach(
+        within window: TimeInterval,
+        endingAt timestamp: Date,
+        _ body: (Element) -> Void
+    ) {
+        let start = lowerBound(for: timestamp.addingTimeInterval(-window))
+        guard start < storage.count else { return }
+        for index in start..<storage.count {
+            body(storage[index])
+        }
+    }
+
+    private nonisolated func lowerBound(for cutoff: Date) -> Int {
+        var lo = head
+        var hi = storage.count
+
+        while lo < hi {
+            let mid = lo + (hi - lo) / 2
+            if storage[mid].timestamp < cutoff {
+                lo = mid + 1
+            } else {
+                hi = mid
+            }
+        }
+
+        return lo
+    }
+
+    private nonisolated mutating func compactIfNeeded() {
+        if head >= storage.count {
+            storage.removeAll(keepingCapacity: true)
+            head = 0
+            return
+        }
+
+        let compactionThreshold = max(64, storage.count / 2)
+        guard head >= compactionThreshold else { return }
+
+        storage.removeFirst(head)
+        head = 0
+    }
+}
+
 enum RecentTrackWindow {
     nonisolated static func trimTrackPoints(
         _ points: inout [TrackPoint],
