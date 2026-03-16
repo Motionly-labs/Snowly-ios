@@ -378,6 +378,9 @@ struct SessionSummaryView: View {
                 liftBreakdownSection(session)
                     .padding(.horizontal)
 
+                uploadSection(session: session)
+                    .padding(.horizontal)
+
                 exportDataButton(session: session)
                     .padding(.horizontal)
 
@@ -411,6 +414,7 @@ struct SessionSummaryView: View {
 
                     speedCurveSection(session: session)
                     liftBreakdownSection(session)
+                    uploadSection(session: session)
                     exportDataButton(session: session)
                     Color.clear.frame(height: Spacing.xxl)
                 }
@@ -740,6 +744,111 @@ struct SessionSummaryView: View {
                     .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
                 }
             }
+        }
+    }
+
+    // MARK: - Upload
+
+    @ViewBuilder
+    private func uploadSection(session: SkiSession) -> some View {
+        VStack(spacing: Spacing.sm) {
+            switch uploadService.uploadState {
+            case .idle:
+                Button {
+                    guard let profile = profiles.first else { return }
+                    Task {
+                        await uploadService.upload(
+                            session: session,
+                            userId: profile.id.uuidString,
+                            displayName: profile.displayName
+                        )
+                    }
+                } label: {
+                    HStack(spacing: Spacing.sm) {
+                        Image(systemName: "icloud.and.arrow.up")
+                        Text(String(localized: "upload_button_title"))
+                            .font(Typography.subheadlineMedium)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.md)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(ColorTokens.primaryAccent)
+                .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+
+            case .uploading:
+                HStack(spacing: Spacing.sm) {
+                    ProgressView().controlSize(.small)
+                    Text(String(localized: "upload_state_uploading"))
+                        .font(Typography.subheadlineMedium)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.md)
+                .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+
+            case .success:
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Text(String(localized: "upload_state_success"))
+                        .font(Typography.subheadlineMedium)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.md)
+                .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+                .task {
+                    try? await Task.sleep(for: .seconds(2))
+                    uploadService.resetState()
+                }
+
+            case .error(let message):
+                VStack(spacing: Spacing.sm) {
+                    HStack(spacing: Spacing.sm) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.red)
+                        Text(uploadErrorMessage(for: message))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.leading)
+                        Spacer()
+                    }
+
+                    Button {
+                        guard let profile = profiles.first else { return }
+                        Task {
+                            await uploadService.upload(
+                                session: session,
+                                userId: profile.id.uuidString,
+                                displayName: profile.displayName
+                            )
+                        }
+                    } label: {
+                        HStack(spacing: Spacing.sm) {
+                            Image(systemName: "arrow.clockwise")
+                            Text(String(localized: "upload_button_retry"))
+                                .font(Typography.subheadlineMedium)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, Spacing.sm)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(ColorTokens.primaryAccent)
+                }
+                .padding(Spacing.md)
+                .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous))
+            }
+        }
+    }
+
+    private func uploadErrorMessage(for message: String) -> String {
+        if message.contains("401") || message.lowercased().contains("authentication") {
+            return String(localized: "upload_error_session_expired")
+        } else if message.contains("5") && message.contains("00") {
+            return String(localized: "upload_error_server")
+        } else {
+            return String(localized: "upload_error_failed")
         }
     }
 

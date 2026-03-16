@@ -9,11 +9,37 @@
 import Foundation
 import os
 
+// MARK: - Upload State
+
+enum UploadState: Equatable {
+    case idle
+    case uploading
+    case success
+    case error(String)
+
+    static func == (lhs: UploadState, rhs: UploadState) -> Bool {
+        switch (lhs, rhs) {
+        case (.idle, .idle), (.uploading, .uploading), (.success, .success):
+            return true
+        case (.error(let a), .error(let b)):
+            return a == b
+        default:
+            return false
+        }
+    }
+}
+
 @Observable
 @MainActor
 final class SkiDataUploadService {
-    private(set) var isUploading = false
-    private(set) var lastError: String?
+    private(set) var uploadState: UploadState = .idle
+
+    var isUploading: Bool { uploadState == .uploading }
+
+    var lastError: String? {
+        if case .error(let message) = uploadState { return message }
+        return nil
+    }
 
     private let apiClient: any SkiDataAPIProviding
     private let channelService: SkiSessionChannelService?
@@ -32,11 +58,13 @@ final class SkiDataUploadService {
         apiClient.updateBaseURL(url)
     }
 
+    func resetState() {
+        uploadState = .idle
+    }
+
     /// Silently registers the device if needed, then uploads the session.
     func upload(session: SkiSession, userId: String, displayName: String) async {
-        isUploading = true
-        lastError = nil
-        defer { isUploading = false }
+        uploadState = .uploading
 
         do {
             let credentials = try await ensureCredentials(userId: userId, displayName: displayName)
@@ -47,13 +75,14 @@ final class SkiDataUploadService {
             if let channelService, channelService.isConnected {
                 let result = await channelService.uploadSession(payload)
                 if case .success = result {
+                    uploadState = .success
                     return
                 }
                 // Fall through to REST on channel failure
             }
 
             do {
-                try await apiClient.uploadSession(payload)
+                try await apiClient.uploadSession(payload, userId: credentials.userId)
             } catch SkiDataAPIError.unauthorized {
                 let newToken = try await apiClient.reauthenticate(
                     userId: credentials.userId,
@@ -66,11 +95,12 @@ final class SkiDataUploadService {
                 )
                 try SnowlyUserKeychainService.save(updated)
                 apiClient.setToken(newToken)
-                try await apiClient.uploadSession(payload)
+                try await apiClient.uploadSession(payload, userId: credentials.userId)
             }
+            uploadState = .success
         } catch {
             Self.logger.error("Upload failed: \(error.localizedDescription, privacy: .public)")
-            lastError = error.localizedDescription
+            uploadState = .error(error.localizedDescription)
         }
     }
 

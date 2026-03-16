@@ -65,7 +65,6 @@ struct RunUploadPayload: Encodable {
 final class SkiDataAPIClient: SkiDataAPIProviding {
     private(set) var baseURL: URL
     private var apiToken: String?
-    private var userId: String = ""
     private let session: URLSession
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
@@ -97,10 +96,6 @@ final class SkiDataAPIClient: SkiDataAPIProviding {
 
     func setToken(_ token: String) {
         self.apiToken = token
-    }
-
-    func setUserId(_ id: String) {
-        self.userId = id
     }
 
     // MARK: - Registration
@@ -158,7 +153,7 @@ final class SkiDataAPIClient: SkiDataAPIProviding {
 
     // MARK: - Upload
 
-    func uploadSession(_ payload: SessionUploadPayload) async throws {
+    func uploadSession(_ payload: SessionUploadPayload, userId: String) async throws {
         let req = try buildRequest(
             method: "POST",
             path: "/snowly/users/\(userId)/sessions",
