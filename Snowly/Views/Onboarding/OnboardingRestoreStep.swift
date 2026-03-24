@@ -5,7 +5,7 @@
 //  Waits for CloudKit to sync down the user's existing data.
 //  - Profiles arriving via @Query → success → complete onboarding
 //  - Import event completes with empty profiles → not found
-//  - 15-second timeout → not found
+//  - 30-second timeout → offer choice to continue waiting or start fresh
 //
 
 import CoreData
@@ -15,7 +15,11 @@ import SwiftUI
 struct OnboardingRestoreStep: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SyncMonitorService.self) private var syncMonitor
+    @Environment(LaunchRestorationCoordinator.self) private var coordinator
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
+    @Query private var sessions: [SkiSession]
+    @Query private var gearSetups: [GearSetup]
+    @Query private var resorts: [Resort]
 
     let onStartFresh: () -> Void
 
@@ -47,9 +51,13 @@ struct OnboardingRestoreStep: View {
             }
         }
         .animation(.easeInOut(duration: 0.4), value: phase)
-        .task { await runTimeout() }
+        .task {
+            coordinator.beginRestoration(modelContext: modelContext)
+            await runTimeout()
+        }
         .onChange(of: profiles.count) { _, count in
             guard count > 0, phase == .syncing else { return }
+            coordinator.profilesArrived()
             phase = .restored
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(800))
@@ -78,6 +86,22 @@ struct OnboardingRestoreStep: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, Spacing.xxxl)
+
+            if !syncProgressItems.isEmpty {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    ForEach(syncProgressItems, id: \.label) { item in
+                        HStack(spacing: Spacing.xs) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(ColorTokens.success)
+                                .font(.caption)
+                            Text(item.label)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .padding(.top, Spacing.sm)
+            }
         }
     }
 
@@ -124,11 +148,40 @@ struct OnboardingRestoreStep: View {
         }
     }
 
+    // MARK: - Sync Progress
+
+    private struct SyncProgressItem {
+        let label: String
+    }
+
+    private var syncProgressItems: [SyncProgressItem] {
+        var items: [SyncProgressItem] = []
+        if !profiles.isEmpty {
+            items.append(SyncProgressItem(label: String(localized: "onboarding_restore_progress_profile")))
+        }
+        if !sessions.isEmpty {
+            items.append(SyncProgressItem(
+                label: String(localized: "onboarding_restore_progress_sessions \(sessions.count)")
+            ))
+        }
+        if !gearSetups.isEmpty {
+            items.append(SyncProgressItem(
+                label: String(localized: "onboarding_restore_progress_gear \(gearSetups.count)")
+            ))
+        }
+        if !resorts.isEmpty {
+            items.append(SyncProgressItem(
+                label: String(localized: "onboarding_restore_progress_resorts \(resorts.count)")
+            ))
+        }
+        return items
+    }
+
     // MARK: - Logic
 
     private func runTimeout() async {
         do {
-            try await Task.sleep(for: .seconds(15))
+            try await Task.sleep(for: .seconds(30))
             guard phase == .syncing else { return }
             phase = .notFound
         } catch {}
@@ -160,6 +213,17 @@ struct OnboardingRestoreStep: View {
         } else {
             modelContext.insert(DeviceSettings(hasCompletedOnboarding: true))
         }
+
+        // Clear the grace deadline since restoration succeeded.
+        UserDefaults.standard.removeObject(forKey: "snowly_returning_user_grace_deadline")
+
+        // Backfill Keychain fingerprint from the restored profile.
+        if let profile = profiles.first, UserIdentityKeychainService.load() == nil {
+            try? UserIdentityKeychainService.save(
+                UserIdentityFingerprint(profileId: profile.id, createdAt: profile.createdAt)
+            )
+        }
+
         try? modelContext.save()
     }
 }

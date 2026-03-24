@@ -43,6 +43,7 @@ final class SkiDataUploadService {
 
     private let apiClient: any SkiDataAPIProviding
     private let channelService: SkiSessionChannelService?
+    private var activeServerURL: String?
 
     nonisolated private static let logger = Logger(
         subsystem: "com.Snowly",
@@ -56,6 +57,7 @@ final class SkiDataUploadService {
 
     func updateBaseURL(_ url: URL) {
         apiClient.updateBaseURL(url)
+        activeServerURL = ServerCredentialService.normalizeURL(url.absoluteString)
     }
 
     func resetState() {
@@ -64,66 +66,126 @@ final class SkiDataUploadService {
 
     /// Silently registers the device if needed, then uploads the session.
     func upload(session: SkiSession, userId: String, displayName: String) async {
+        guard activeServerURL != nil else {
+            uploadState = .error(String(localized: "upload_error_no_server"))
+            return
+        }
+
         uploadState = .uploading
+        debugConsole("Starting upload for session \(session.id.uuidString) userId=\(userId) server=\(activeServerURL ?? "<nil>")")
+        Self.logger.info(
+            "Starting upload for session \(session.id.uuidString, privacy: .public) userId=\(userId, privacy: .public) server=\(self.activeServerURL ?? "<nil>", privacy: .public)"
+        )
 
         do {
-            let credentials = try await ensureCredentials(userId: userId, displayName: displayName)
-            apiClient.setToken(credentials.apiToken)
+            let credential = try await ensureCredentials(userId: userId, displayName: displayName)
+            apiClient.setToken(credential.apiToken)
 
             let payload = buildPayload(session)
+            debugConsole("Prepared upload payload for session \(payload.id) runs=\(payload.runs.count)")
+            Self.logger.info(
+                "Prepared upload payload for session \(payload.id, privacy: .public) runs=\(payload.runs.count, privacy: .public)"
+            )
 
             if let channelService, channelService.isConnected {
                 let result = await channelService.uploadSession(payload)
                 if case .success = result {
+                    debugConsole("Upload succeeded over channel for session \(payload.id)")
+                    Self.logger.info("Upload succeeded over channel for session \(payload.id, privacy: .public)")
                     uploadState = .success
                     return
                 }
-                // Fall through to REST on channel failure
+                if case .failure(let error) = result {
+                    debugConsole("Channel upload failed for session \(payload.id): \(String(describing: error)). Falling back to REST.")
+                    Self.logger.error(
+                        "Channel upload failed for session \(payload.id, privacy: .public): \(String(describing: error), privacy: .public). Falling back to REST."
+                    )
+                }
             }
 
             do {
-                try await apiClient.uploadSession(payload, userId: credentials.userId)
+                try await apiClient.uploadSession(payload, userId: credential.userId)
             } catch SkiDataAPIError.unauthorized {
+                debugConsole("Upload unauthorized for session \(payload.id). Attempting reauthentication.")
+                Self.logger.error(
+                    "Upload unauthorized for session \(payload.id, privacy: .public). Attempting reauthentication."
+                )
                 let newToken = try await apiClient.reauthenticate(
-                    userId: credentials.userId,
-                    deviceSecret: credentials.deviceSecret
+                    userId: credential.userId,
+                    deviceSecret: credential.deviceSecret
                 )
-                let updated = SnowlyUserCredentials(
-                    userId: credentials.userId,
-                    deviceSecret: credentials.deviceSecret,
-                    apiToken: newToken
-                )
-                try SnowlyUserKeychainService.save(updated)
+                try ServerCredentialService.update(apiToken: newToken, forServerURL: credential.serverURL)
                 apiClient.setToken(newToken)
-                try await apiClient.uploadSession(payload, userId: credentials.userId)
+                try await apiClient.uploadSession(payload, userId: credential.userId)
             }
+            debugConsole("Upload succeeded over REST for session \(payload.id)")
+            Self.logger.info("Upload succeeded over REST for session \(payload.id, privacy: .public)")
             uploadState = .success
         } catch {
-            Self.logger.error("Upload failed: \(error.localizedDescription, privacy: .public)")
+            debugConsole("Upload failed for session \(session.id.uuidString): \(String(describing: error))")
+            Self.logger.error(
+                "Upload failed for session \(session.id.uuidString, privacy: .public): \(String(describing: error), privacy: .public)"
+            )
             uploadState = .error(error.localizedDescription)
         }
     }
 
     // MARK: - Private
 
-    private func ensureCredentials(userId: String, displayName: String) async throws -> SnowlyUserCredentials {
-        if let existing = SnowlyUserKeychainService.load() {
-            return existing
+    private func ensureCredentials(userId: String, displayName: String) async throws -> ServerCredential {
+        guard let serverURL = activeServerURL else {
+            throw SkiDataAPIError.networkUnavailable
         }
 
+        // 1. Check per-server credentials
+        if let credential = ServerCredentialService.load(forServerURL: serverURL) {
+            debugConsole("Using existing server credential for \(serverURL)")
+            Self.logger.info("Using existing server credential for \(serverURL, privacy: .public)")
+            return credential
+        }
+
+        // 2. Compatibility: migrate legacy global Keychain entry
+        if let legacy = SnowlyUserKeychainService.load() {
+            debugConsole("Migrating legacy credential into per-server storage for \(serverURL)")
+            Self.logger.info("Migrating legacy credential into per-server storage for \(serverURL, privacy: .public)")
+            let credential = ServerCredential(
+                serverURL: serverURL,
+                userId: legacy.userId,
+                username: displayName,
+                deviceSecret: legacy.deviceSecret,
+                apiToken: legacy.apiToken
+            )
+            try ServerCredentialService.save(credential)
+            SnowlyUserKeychainService.delete()
+            return credential
+        }
+
+        // 3. Fallback: register on the fly (normally registration happens when adding a server)
         let deviceSecret = UUID().uuidString
-        let apiToken = try await apiClient.register(
+        debugConsole("No credential found for \(serverURL). Registering user \(userId) before upload.")
+        Self.logger.info(
+            "No credential found for \(serverURL, privacy: .public). Registering user \(userId, privacy: .public) before upload."
+        )
+        let registration = try await apiClient.register(
             userId: userId,
             displayName: displayName,
             deviceSecret: deviceSecret
         )
-        let credentials = SnowlyUserCredentials(
+        let credential = ServerCredential(
+            serverURL: serverURL,
             userId: userId,
+            username: registration.username,
             deviceSecret: deviceSecret,
-            apiToken: apiToken
+            apiToken: registration.apiToken
         )
-        try SnowlyUserKeychainService.save(credentials)
-        return credentials
+        try ServerCredentialService.save(credential)
+        return credential
+    }
+
+    private func debugConsole(_ message: String) {
+#if DEBUG
+        print("[SkiDataUpload] \(message)")
+#endif
     }
 
     private func buildPayload(_ session: SkiSession) -> SessionUploadPayload {

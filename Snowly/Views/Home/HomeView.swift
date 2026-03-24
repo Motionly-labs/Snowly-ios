@@ -22,6 +22,13 @@ struct HomeView: View {
         case map      // Unified map page (trails + crew)
     }
 
+    private enum CrewInputSheet: String, Identifiable {
+        case create
+        case join
+
+        var id: String { rawValue }
+    }
+
     @Environment(SessionTrackingService.self) private var trackingService
     @Environment(BatteryMonitorService.self) private var batteryService
     @Environment(LocationTrackingService.self) private var locationService
@@ -49,8 +56,7 @@ struct HomeView: View {
     @State private var cachedTrailLabels: [MapLabel] = []
     @State private var cachedLiftLabels: [MapLabel] = []
     @State private var showMapOverlays = false
-    @State private var showCrewCreateAlert = false
-    @State private var showCrewJoinAlert = false
+    @State private var activeCrewInputSheet: CrewInputSheet?
     @State private var crewNameInput = ""
     @State private var crewJoinTokenInput = ""
     @State private var crewActionError: String?
@@ -73,17 +79,24 @@ struct HomeView: View {
 
     var body: some View {
         bodyContent
-            .alert(String(localized: "crew_create_title"), isPresented: $showCrewCreateAlert) {
-                TextField(String(localized: "crew_name_placeholder"), text: $crewNameInput)
-                Button(String(localized: "common_create")) { createCrew() }
-                    .disabled(crewNameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                Button(String(localized: "common_cancel"), role: .cancel) { crewNameInput = "" }
-            }
-            .alert(String(localized: "crew_join_title"), isPresented: $showCrewJoinAlert) {
-                TextField(String(localized: "crew_join_token_placeholder"), text: $crewJoinTokenInput)
-                Button(String(localized: "crew_join_action")) { joinCrew() }
-                    .disabled(crewJoinTokenInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                Button(String(localized: "common_cancel"), role: .cancel) { crewJoinTokenInput = "" }
+            .sheet(item: $activeCrewInputSheet, onDismiss: resetCrewInput) { sheet in
+                NavigationStack {
+                    CrewInputSheetView(
+                        title: crewSheetTitle(for: sheet),
+                        placeholder: crewSheetPlaceholder(for: sheet),
+                        actionTitle: crewSheetActionTitle(for: sheet),
+                        text: crewSheetTextBinding(for: sheet),
+                        submit: {
+                            switch sheet {
+                            case .create:
+                                createCrew()
+                            case .join:
+                                joinCrew()
+                            }
+                        }
+                    )
+                }
+                .presentationDetents([.medium])
             }
             .alert(String(localized: "gps_error_title"), isPresented: $showingGPSNotReadyAlert) {
                 if locationService.authorizationStatus == .denied
@@ -378,12 +391,12 @@ struct HomeView: View {
     private var crewPlusButton: some View {
         Menu {
             Button {
-                showCrewCreateAlert = true
+                activeCrewInputSheet = .create
             } label: {
                 Label(String(localized: "crew_create"), systemImage: "plus.circle")
             }
             Button {
-                showCrewJoinAlert = true
+                activeCrewInputSheet = .join
             } label: {
                 Label(String(localized: "crew_join"), systemImage: "link")
             }
@@ -723,6 +736,7 @@ struct HomeView: View {
         Task {
             do {
                 _ = try await crewService.createCrew(name: name)
+                activeCrewInputSheet = nil
                 crewNameInput = ""
                 crewActionError = nil
             } catch {
@@ -737,12 +751,54 @@ struct HomeView: View {
         Task {
             do {
                 try await crewService.joinCrew(token: inviteInput)
+                activeCrewInputSheet = nil
                 crewJoinTokenInput = ""
                 crewActionError = nil
             } catch {
                 crewActionError = error.localizedDescription
             }
         }
+    }
+
+    private func crewSheetTitle(for sheet: CrewInputSheet) -> String {
+        switch sheet {
+        case .create:
+            String(localized: "crew_create_title")
+        case .join:
+            String(localized: "crew_join_title")
+        }
+    }
+
+    private func crewSheetPlaceholder(for sheet: CrewInputSheet) -> String {
+        switch sheet {
+        case .create:
+            String(localized: "crew_name_placeholder")
+        case .join:
+            String(localized: "crew_join_token_placeholder")
+        }
+    }
+
+    private func crewSheetActionTitle(for sheet: CrewInputSheet) -> String {
+        switch sheet {
+        case .create:
+            String(localized: "common_create")
+        case .join:
+            String(localized: "crew_join_action")
+        }
+    }
+
+    private func crewSheetTextBinding(for sheet: CrewInputSheet) -> Binding<String> {
+        switch sheet {
+        case .create:
+            $crewNameInput
+        case .join:
+            $crewJoinTokenInput
+        }
+    }
+
+    private func resetCrewInput() {
+        crewNameInput = ""
+        crewJoinTokenInput = ""
     }
 
     // MARK: - Trail Colors
@@ -987,6 +1043,55 @@ struct HomeView: View {
         .snowlyGlass(in: RoundedRectangle(cornerRadius: CornerRadius.medium))
         .padding(.horizontal, Spacing.xl)
         .shadowStyle(.subtle)
+    }
+}
+
+private struct CrewInputSheetView: View {
+    let title: String
+    let placeholder: String
+    let actionTitle: String
+    @Binding var text: String
+    let submit: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var isFocused: Bool
+
+    private var isSubmitDisabled: Bool {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                TextField(placeholder, text: $text)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .focused($isFocused)
+                    .submitLabel(.done)
+                    .onSubmit {
+                        guard !isSubmitDisabled else { return }
+                        submit()
+                    }
+            }
+        }
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button(String(localized: "common_cancel")) {
+                    dismiss()
+                }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button(actionTitle) {
+                    submit()
+                }
+                .disabled(isSubmitDisabled)
+            }
+        }
+        .onAppear {
+            isFocused = true
+        }
     }
 }
 

@@ -85,6 +85,7 @@ final class DeviceSettings {
     var trackingDashboardLayoutJSON: String = TrackingDashboardLayout.default.encoded()
     var gearChecklistStateJSON: String = "{}"
     var gearReminderSchedulesJSON: String = "{}"
+    var cloudRestorationGraceDeadline: Date? = nil
     var createdAt: Date = Date()
 
     var resolvedAutoPause: AutoPauseOption {
@@ -132,6 +133,7 @@ final class DeviceSettings {
         trackingDashboardLayoutJSON: String = TrackingDashboardLayout.default.encoded(),
         gearChecklistStateJSON: String = "{}",
         gearReminderSchedulesJSON: String = "{}",
+        cloudRestorationGraceDeadline: Date? = nil,
         createdAt: Date = Date()
     ) {
         self.id = id
@@ -146,6 +148,7 @@ final class DeviceSettings {
         self.trackingDashboardLayoutJSON = trackingDashboardLayoutJSON
         self.gearChecklistStateJSON = gearChecklistStateJSON
         self.gearReminderSchedulesJSON = gearReminderSchedulesJSON
+        self.cloudRestorationGraceDeadline = cloudRestorationGraceDeadline
         self.createdAt = createdAt
     }
 }

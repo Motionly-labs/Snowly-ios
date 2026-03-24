@@ -124,12 +124,23 @@ struct CloudKitCompatibilityTests {
         let modelTypes = SchemaV1.models
         let typeNames = modelTypes.map { String(describing: $0) }
 
-        #expect(typeNames.contains("DeviceSettings"))
+        // V1 uses a frozen snapshot of DeviceSettings (V1DeviceSettings).
+        #expect(typeNames.contains("V1DeviceSettings"))
         #expect(typeNames.contains("UserProfile"))
         #expect(typeNames.contains("ServerProfile"))
         #expect(typeNames.contains("GearSetup"))
         #expect(typeNames.contains("GearAsset"))
         #expect(typeNames.contains("GearMaintenanceEvent"))
+        #expect(modelTypes.count == 9)
+    }
+
+    @Test("SchemaV2 references current DeviceSettings")
+    func schemaV2IncludesDeviceSettings() {
+        let modelTypes = SchemaV2.models
+        let typeNames = modelTypes.map { String(describing: $0) }
+
+        #expect(typeNames.contains("DeviceSettings"))
+        #expect(typeNames.contains("UserProfile"))
         #expect(modelTypes.count == 9)
     }
 

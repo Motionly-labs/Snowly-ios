@@ -1230,47 +1230,6 @@ final class SessionTrackingService {
 
     private func loadTrackData(for runStorage: [CompletedRunStorage]) async -> [MaterializedCompletedRun] {
         await Task.detached(priority: .utility) {
-            func decodeNDJSON<T: Decodable>(from data: Data, as _: T.Type) -> [T]? {
-                let lines = data.split(separator: 0x0A)
-                guard !lines.isEmpty else { return [] }
-
-                let decoder = JSONDecoder()
-                var points: [T] = []
-                points.reserveCapacity(lines.count)
-
-                for line in lines where !line.isEmpty {
-                    guard let point = try? decoder.decode(T.self, from: Data(line)) else {
-                        return nil
-                    }
-                    points.append(point)
-                }
-                return points
-            }
-
-            func canonicalTrackData(from rawData: Data?) -> Data? {
-                guard let rawData else { return nil }
-
-                if let points = try? JSONDecoder().decode([TrackPoint].self, from: rawData) {
-                    return try? JSONEncoder().encode(points)
-                }
-
-                if let points = decodeNDJSON(from: rawData, as: TrackPoint.self) {
-                    return try? JSONEncoder().encode(points)
-                }
-
-                // Keep legacy filtered blobs readable during migration, but new runs
-                // now canonicalize to raw TrackPoint arrays.
-                if let points = try? JSONDecoder().decode([FilteredTrackPoint].self, from: rawData) {
-                    return try? JSONEncoder().encode(points)
-                }
-
-                if let points = decodeNDJSON(from: rawData, as: FilteredTrackPoint.self) {
-                    return try? JSONEncoder().encode(points)
-                }
-
-                return nil
-            }
-
             return runStorage.map { storedRun in
                 let rawTrackData: Data?
                 if let embedded = storedRun.summary.trackData {
@@ -1283,7 +1242,7 @@ final class SessionTrackingService {
 
                 return MaterializedCompletedRun(
                     summary: storedRun.summary,
-                    trackData: canonicalTrackData(from: rawTrackData)
+                    trackData: Self.canonicalTrackData(from: rawTrackData)
                 )
             }
         }.value
@@ -1300,15 +1259,15 @@ final class SessionTrackingService {
         totalPausedTime = max(0, Date().timeIntervalSince(persisted.startDate) - restoredElapsed)
         pauseStartTime = Date()
 
-        let restoredRuns = (persisted.completedRuns ?? []).map {
+        let restoredRuns = (persisted.completedRuns ?? []).map { storedRun in
             CompletedRunData(
-                startDate: $0.startDate,
-                endDate: $0.endDate,
-                distance: $0.distance,
-                verticalDrop: $0.verticalDrop,
-                maxSpeed: $0.maxSpeed,
-                averageSpeed: $0.averageSpeed,
-                activityType: $0.activityType,
+                startDate: storedRun.startDate,
+                endDate: storedRun.endDate,
+                distance: storedRun.distance,
+                verticalDrop: storedRun.verticalDrop,
+                maxSpeed: storedRun.maxSpeed,
+                averageSpeed: storedRun.averageSpeed,
+                activityType: storedRun.activityType,
                 trackData: nil
             )
         }
@@ -1342,6 +1301,47 @@ final class SessionTrackingService {
         speedSamples = []
         altitudeSamples = []
         state = .paused
+    }
+
+    nonisolated private static func canonicalTrackData(from rawData: Data?) -> Data? {
+        guard let rawData else { return nil }
+
+        if let points = try? JSONDecoder().decode([TrackPoint].self, from: rawData) {
+            return try? JSONEncoder().encode(points)
+        }
+
+        if let points = decodeNDJSON(from: rawData, as: TrackPoint.self) {
+            return try? JSONEncoder().encode(points)
+        }
+
+        // Keep legacy filtered blobs readable during migration, but new runs
+        // now canonicalize to raw TrackPoint arrays.
+        if let points = try? JSONDecoder().decode([FilteredTrackPoint].self, from: rawData) {
+            return try? JSONEncoder().encode(points)
+        }
+
+        if let points = decodeNDJSON(from: rawData, as: FilteredTrackPoint.self) {
+            return try? JSONEncoder().encode(points)
+        }
+
+        return nil
+    }
+
+    nonisolated private static func decodeNDJSON<T: Decodable>(from rawData: Data, as _: T.Type) -> [T]? {
+        guard let text = String(data: rawData, encoding: .utf8) else { return nil }
+
+        let decoder = JSONDecoder()
+        var points: [T] = []
+        let lines = text.split(whereSeparator: \.isNewline)
+
+        for line in lines where !line.isEmpty {
+            guard let point = try? decoder.decode(T.self, from: Data(line.utf8)) else {
+                return nil
+            }
+            points.append(point)
+        }
+
+        return points
     }
 
     /// Returns the required dwell time for a state transition.

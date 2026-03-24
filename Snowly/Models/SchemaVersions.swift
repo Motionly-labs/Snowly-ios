@@ -7,7 +7,7 @@ import Foundation
 import SwiftData
 
 enum SchemaV1: VersionedSchema {
-    static var versionIdentifier = Schema.Version(1, 0, 0)
+    static let versionIdentifier = Schema.Version(1, 0, 0)
 
     static var models: [any PersistentModel.Type] {
         [
@@ -21,15 +21,5 @@ enum SchemaV1: VersionedSchema {
             DeviceSettings.self,
             ServerProfile.self,
         ]
-    }
-}
-
-enum SnowlyMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self]
-    }
-
-    static var stages: [MigrationStage] {
-        []
     }
 }

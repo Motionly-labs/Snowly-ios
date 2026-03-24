@@ -16,7 +16,9 @@ struct WorkoutActiveView: View {
 
     @Environment(WatchWorkoutManager.self) private var workoutManager
     @Environment(\.isLuminanceReduced) private var isLuminanceReduced
-    @State private var selectedPage: Page = .live
+    @State private var selectedPage: Page = ProcessInfo.processInfo.arguments.contains("-watch_ui_testing_controls")
+        ? .controls
+        : .live
     private let pageOrder: [Page] = [.stats, .live, .controls]
 
     var body: some View {
@@ -44,6 +46,7 @@ struct WorkoutActiveView: View {
 
                 pageIndicator
             }
+            .accessibilityIdentifier("watch_active_screen")
         }
     }
 
@@ -52,11 +55,6 @@ struct WorkoutActiveView: View {
     private var mainMetricsPage: some View {
         VStack(spacing: WatchSpacing.lg) {
             Spacer()
-
-            Text(String(localized: "common_ski_time"))
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
 
             Text(Formatters.timer(workoutManager.elapsedTime))
                 .font(WatchTypography.timerLarge)
@@ -70,9 +68,9 @@ struct WorkoutActiveView: View {
                     value: "\(workoutManager.runCount)"
                 )
                 liveMetric(
-                    icon: "mountain.2.fill",
-                    label: String(localized: "common_vertical"),
-                    value: Formatters.vertical(workoutManager.totalVertical, unit: preferredUnitSystem)
+                    icon: "arrow.triangle.swap",
+                    label: String(localized: "common_distance"),
+                    value: Formatters.distance(workoutManager.totalDistance, unit: preferredUnitSystem)
                 )
             }
 
@@ -103,6 +101,7 @@ struct WorkoutActiveView: View {
 
             Spacer()
         }
+        .accessibilityIdentifier("watch_active_screen")
     }
 
     private var pageIndicator: some View {

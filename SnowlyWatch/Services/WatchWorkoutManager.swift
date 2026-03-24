@@ -35,6 +35,25 @@ private enum IndependentSyncStatus: Sendable, Equatable {
     case failed
 }
 
+private enum WatchUITestScenario {
+    case idle
+    case active
+    case paused
+    case summary
+
+    init(arguments: [String]) {
+        if arguments.contains("-watch_ui_testing_summary") {
+            self = .summary
+        } else if arguments.contains("-watch_ui_testing_paused") {
+            self = .paused
+        } else if arguments.contains("-watch_ui_testing_active") {
+            self = .active
+        } else {
+            self = .idle
+        }
+    }
+}
+
 // MARK: - WatchWorkoutManager
 
 @Observable
@@ -78,6 +97,7 @@ final class WatchWorkoutManager: NSObject {
     private var accumulatedPauseTime: TimeInterval = 0
     private var bufferedPoints: [TrackPoint] = []
     private var lastSentBatchEndIndex: Int = 0
+    private var totalBufferedPointCount: Int = 0
     private var activeMode: WatchTrackingMode?
     private var lastHeartRatePushAt: Date?
     private var pendingControl: PendingCompanionControl?
@@ -86,6 +106,7 @@ final class WatchWorkoutManager: NSObject {
     private var lastKnownPhoneReachability: Bool?
     private var summaryMode: WatchTrackingMode?
     private var independentSyncStatus: IndependentSyncStatus?
+    private var isUITestingInteractive = false
 
     var statusMessage: String? {
         if let pendingControl {
@@ -146,10 +167,55 @@ final class WatchWorkoutManager: NSObject {
         }
     }
 
+    @discardableResult
+    func applyUITestingConfigurationIfNeeded(
+        arguments: [String] = ProcessInfo.processInfo.arguments
+    ) -> Bool {
+        guard arguments.contains("-watch_ui_testing") else { return false }
+
+        resetStats()
+        clearPendingControl()
+        clearTransientStatus()
+        lastKnownPhoneReachability = false
+        isUITestingInteractive = arguments.contains("-watch_ui_testing_interactive")
+
+        switch WatchUITestScenario(arguments: arguments) {
+        case .idle:
+            activeMode = nil
+            summaryMode = nil
+            trackingState = .idle
+
+        case .active:
+            configureUITestWorkoutState(as: .active(mode: .independent))
+
+        case .paused:
+            configureUITestWorkoutState(as: .paused)
+
+        case .summary:
+            configureUITestWorkoutState(as: .summary)
+            summaryMode = .independent
+            independentSyncStatus = .synced
+        }
+
+        return true
+    }
+
     // MARK: - Companion Mode
 
     func start() {
         guard pendingControl == nil else { return }
+
+        if isUITestingInteractive {
+            configureUITestWorkoutState(as: .active(mode: .independent))
+            summaryMode = nil
+            independentSyncStatus = nil
+            sessionId = UUID()
+            startDate = .now.addingTimeInterval(-elapsedTime)
+            pauseDate = nil
+            accumulatedPauseTime = 0
+            WatchWidgetSharedStore.write(isTracking: true, runCount: runCount, sessionStart: startDate)
+            return
+        }
 
         if connectivityService?.isPhoneReachable == true {
             beginPendingControl(.start)
@@ -235,6 +301,17 @@ final class WatchWorkoutManager: NSObject {
         case .active, .paused:
             break
         default:
+            return
+        }
+
+        if isUITestingInteractive {
+            timer?.invalidate()
+            timer = nil
+            pauseDate = nil
+            summaryMode = .independent
+            independentSyncStatus = .synced
+            trackingState = .summary
+            WatchWidgetSharedStore.write(isTracking: false, runCount: 0, sessionStart: nil)
             return
         }
 
@@ -449,18 +526,78 @@ final class WatchWorkoutManager: NSObject {
 
         guard let previous, previous != isReachable else { return }
 
-        if !isReachable, pendingControl != nil {
-            clearPendingControl()
-            showTransientStatus(String(localized: "watch_status_phone_unreachable"))
-            WatchHapticService.playFailure()
+        if !isReachable {
+            if pendingControl != nil {
+                clearPendingControl()
+            }
+
+            if isCompanionSessionActive {
+                escalateToIndependent()
+            } else {
+                showTransientStatus(String(localized: "watch_status_phone_unreachable"))
+                WatchHapticService.playFailure()
+            }
             return
         }
 
         guard isCompanionSessionContext else { return }
-        let message = isReachable
-            ? String(localized: "watch_status_phone_connected")
-            : String(localized: "watch_status_phone_disconnected")
-        showTransientStatus(message)
+        showTransientStatus(String(localized: "watch_status_phone_connected"))
+    }
+
+    /// Whether the Watch is in an active or paused companion session
+    /// (excludes pending-only states).
+    private var isCompanionSessionActive: Bool {
+        switch trackingState {
+        case .active(let mode):
+            return mode == .companion
+        case .paused:
+            return activeMode == .companion
+        default:
+            return false
+        }
+    }
+
+    /// Transitions a companion session to independent mode so tracking
+    /// continues even when the iPhone becomes unreachable.
+    /// Preserves accumulated stats; starts local GPS, HealthKit, and timer.
+    private func escalateToIndependent() {
+        let wasActive: Bool
+        switch trackingState {
+        case .active(.companion):
+            wasActive = true
+        case .paused where activeMode == .companion:
+            wasActive = false
+        default:
+            return
+        }
+
+        let currentSessionId = UUID()
+        sessionId = currentSessionId
+        // Back-date so the timer continues from the current elapsed time.
+        startDate = Date.now.addingTimeInterval(-elapsedTime)
+        accumulatedPauseTime = 0
+        activeMode = .independent
+
+        startHealthKitWorkout()
+        connectivityService?.send(.watchWorkoutStarted(sessionId: currentSessionId))
+
+        if wasActive {
+            pauseDate = nil
+            trackingState = .active(mode: .independent)
+            locationService?.requestAuthorization()
+            locationService?.startTracking { [weak self] point in
+                Task { @MainActor in
+                    self?.processTrackPoint(point)
+                }
+            }
+            startTimer()
+        } else {
+            pauseDate = Date.now
+            trackingState = .paused
+            workoutSession?.pause()
+        }
+
+        showTransientStatus(String(localized: "watch_status_switched_independent"))
     }
 
     private var isCompanionSessionContext: Bool {
@@ -512,6 +649,7 @@ final class WatchWorkoutManager: NSObject {
 
     private func processTrackPoint(_ point: TrackPoint) {
         bufferedPoints.append(point)
+        totalBufferedPointCount += 1
         // Use raw CLLocation speed for immediate display; phone pushes back precise values.
         if point.speed >= 0 {
             currentSpeed = point.speed
@@ -526,7 +664,10 @@ final class WatchWorkoutManager: NSObject {
               connectivityService?.isPhoneReachable == true else { return }
         let end = bufferedPoints.endIndex
         connectivityService?.send(.watchTrackPoints(Array(bufferedPoints[lastSentBatchEndIndex..<end])))
-        lastSentBatchEndIndex = end
+        // Trim already-sent prefix to prevent O(n) memory growth over the session.
+        // totalBufferedPointCount preserves the true count for the workout summary.
+        bufferedPoints.removeFirst(end)
+        lastSentBatchEndIndex = 0
     }
 
     // MARK: - HealthKit Workout
@@ -577,7 +718,7 @@ final class WatchWorkoutManager: NSObject {
                 sessionId: sessionId,
                 startDate: startDate,
                 endDate: endDate,
-                trackPointCount: bufferedPoints.count
+                trackPointCount: totalBufferedPointCount
             )))
         }
 
@@ -594,13 +735,13 @@ final class WatchWorkoutManager: NSObject {
             }
         }
 
-        // Flush any unsent points then signal end
-        if lastSentBatchEndIndex < bufferedPoints.endIndex {
-            let remaining = Array(bufferedPoints[lastSentBatchEndIndex...])
+        // Flush any unsent points then signal end.
+        // After micro-batch trimming, bufferedPoints only contains the unsent tail.
+        if !bufferedPoints.isEmpty {
             var start = 0
-            while start < remaining.count {
-                let end = min(start + Self.trackPointBatchSize, remaining.count)
-                connectivityService?.send(.watchTrackPoints(Array(remaining[start..<end])))
+            while start < bufferedPoints.count {
+                let end = min(start + Self.trackPointBatchSize, bufferedPoints.count)
+                connectivityService?.send(.watchTrackPoints(Array(bufferedPoints[start..<end])))
                 start = end
             }
         }
@@ -610,6 +751,7 @@ final class WatchWorkoutManager: NSObject {
     // MARK: - Timer
 
     private func startTimer() {
+        timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.updateElapsedTime()
@@ -642,8 +784,33 @@ final class WatchWorkoutManager: NSObject {
         accumulatedPauseTime = 0
         bufferedPoints = []
         lastSentBatchEndIndex = 0
+        totalBufferedPointCount = 0
         lastHeartRatePushAt = nil
         independentSyncStatus = nil
+        isUITestingInteractive = false
+    }
+
+    private func configureUITestWorkoutState(as state: WatchTrackingState) {
+        activeMode = .independent
+        trackingState = state
+        currentSpeed = 12.3
+        maxSpeed = 24.8
+        totalDistance = 5_420
+        totalVertical = 1_180
+        runCount = 6
+        elapsedTime = 2_145
+        currentHeartRate = 142
+        averageHeartRate = 136
+        preferredUnitSystem = .metric
+        lastCompletedRun = .init(
+            runNumber: 6,
+            startDate: Date(timeIntervalSince1970: 1_700_000_000),
+            endDate: Date(timeIntervalSince1970: 1_700_000_180),
+            distance: 1_840,
+            verticalDrop: 390,
+            maxSpeed: 24.8,
+            averageSpeed: 15.6
+        )
     }
 
     private func sendLiveVitalsIfNeeded(force: Bool = false) {

@@ -46,6 +46,8 @@ struct WorkoutControlsView: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.circle)
             .tint(WatchColorTokens.sportAccent)
+            .accessibilityIdentifier("watch_pause_resume_button")
+            .accessibilityValue(Text(isPaused ? "paused" : "active"))
 
             Text(isPaused ? String(localized: "common_resume") : String(localized: "common_pause"))
                 .font(.caption2.weight(.semibold))
@@ -68,7 +70,9 @@ struct WorkoutControlsView: View {
             isDisabled: workoutManager.isCompanionControlPending,
             holdDuration: Self.stopHoldDuration,
             diameter: WatchSpacing.stopButtonDiameter,
-            iconSize: WatchSpacing.stopButtonIconSize
+            iconSize: WatchSpacing.stopButtonIconSize,
+            accessibilityIdentifier: "watch_stop_button",
+            accessibilityLabel: String(localized: "watch_hold_to_stop")
         ) {
             workoutManager.stop()
         }

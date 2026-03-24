@@ -63,9 +63,11 @@ struct WorkoutSummaryView: View {
                     workoutManager.dismiss()
                 }
                 .tint(WatchColorTokens.completedAccent)
+                .accessibilityIdentifier("watch_summary_done_button")
             }
             .padding(WatchSpacing.md)
         }
+        .accessibilityIdentifier("watch_summary_screen")
     }
 
     private var preferredUnitSystem: UnitSystem {

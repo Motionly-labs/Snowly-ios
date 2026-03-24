@@ -14,6 +14,9 @@
         }
       }
     },
+    "active" : {
+
+    },
     "common_distance" : {
       "localizations" : {
         "en" : {
@@ -189,6 +192,9 @@
           }
         }
       }
+    },
+    "paused" : {
+
     },
     "Snowly" : {
 
@@ -527,6 +533,7 @@
       }
     },
     "watch_status_phone_disconnected" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -654,6 +661,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在通过 iPhone 停止..."
+          }
+        }
+      }
+    },
+    "watch_status_switched_independent" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tracking on Watch"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spårar på klockan"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已切换到手表记录"
           }
         }
       }

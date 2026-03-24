@@ -106,9 +106,11 @@ struct SnowlyApp: App {
 
     let modelContainer: ModelContainer
     @State private var services = AppServices()
+    @State private var restorationCoordinator: LaunchRestorationCoordinator
     @State private var deepLinkJoinError: String?
     @Environment(\.scenePhase) private var scenePhase
     private static let storeCompatibilityStampKey = "snowly_store_compatibility_stamp"
+    private static let returningUserGraceDeadlineKey = "snowly_returning_user_grace_deadline"
     private static var cloudContainerIdentifier: String {
         if let bundleIdentifier = Bundle.main.bundleIdentifier, !bundleIdentifier.isEmpty {
             return "iCloud.\(bundleIdentifier)"
@@ -123,12 +125,20 @@ struct SnowlyApp: App {
         let isTesting = isUITesting
             || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 
+        // Check if this is a returning user (Keychain fingerprint survives uninstall).
+        let fingerprint = UserIdentityKeychainService.load()
+        let isReturningUser = fingerprint != nil
+        _restorationCoordinator = State(initialValue: LaunchRestorationCoordinator(fingerprint: fingerprint))
+
         // Pre-flight: reset incompatible store files before SwiftData can abort.
         // If stores were reset, disable CloudKit for this launch to avoid
-        // the mirroring delegate aborting on incompatible remote records.
+        // the mirroring delegate aborting on incompatible remote records —
+        // unless this is a returning user who needs CloudKit to restore data.
         var shouldSkipCloudKitForLaunch = false
         if !isTesting {
-            shouldSkipCloudKitForLaunch = SnowlyApp.preparePersistentStoresForLaunch()
+            shouldSkipCloudKitForLaunch = SnowlyApp.preparePersistentStoresForLaunch(
+                isReturningUser: isReturningUser
+            )
         }
 
         let shouldUseCloudKit = !isTesting && !shouldSkipCloudKitForLaunch && SnowlyApp.canUseCloudKitAtLaunch
@@ -218,6 +228,7 @@ struct SnowlyApp: App {
                 .environment(services.gearReminderService)
 
                 .environment(services.crewPinNotificationService)
+                .environment(restorationCoordinator)
                 .onChange(of: scenePhase) { _, newPhase in
                     services.crewPinNotificationService.scenePhase = newPhase
                     if newPhase == .active {
@@ -378,6 +389,21 @@ struct SnowlyApp: App {
         }
         crewAPIClient.updateBaseURL(apiBaseURL)
         skiDataUploadService.updateBaseURL(apiBaseURL)
+
+        // Migrate legacy global credential to per-server storage
+        let normalizedURL = ServerCredentialService.normalizeURL(activeServer.urlString)
+        if ServerCredentialService.load(forServerURL: normalizedURL) == nil,
+           let legacy = SnowlyUserKeychainService.load() {
+            let credential = ServerCredential(
+                serverURL: normalizedURL,
+                userId: legacy.userId,
+                username: "",
+                deviceSecret: legacy.deviceSecret,
+                apiToken: legacy.apiToken
+            )
+            try? ServerCredentialService.save(credential)
+            SnowlyUserKeychainService.delete()
+        }
     }
 
     private static var canUseCloudKitAtLaunch: Bool {
@@ -431,7 +457,7 @@ struct SnowlyApp: App {
     /// If no migration stages exist, treat an app-bundle change as incompatible
     /// and reset the existing stores once before opening them.
     /// Returns `true` when CloudKit should be skipped for this launch.
-    private static func preparePersistentStoresForLaunch() -> Bool {
+    private static func preparePersistentStoresForLaunch(isReturningUser: Bool = false) -> Bool {
         // Ensure Application Support directory exists before SwiftData tries to create store files.
         // On first install the directory is absent, which causes verbose CoreData recovery noise.
         if let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
@@ -444,12 +470,18 @@ struct SnowlyApp: App {
             storedStamp: storedStamp,
             currentStamp: currentStamp,
             storeFilesExist: storeFilesExist(),
-            hasMigrationStages: hasMigrationStages
+            hasMigrationStages: hasMigrationStages,
+            isReturningUser: isReturningUser
         )
 
         if decision.shouldResetStores {
             print("Persistent store compatibility changed without migration stages. Resetting existing stores before launch.")
             try? resetPersistentStoreFiles()
+            if isReturningUser {
+                // Give CloudKit 60s to deliver data before creating default profiles.
+                let deadline = Date().addingTimeInterval(60)
+                UserDefaults.standard.set(deadline.timeIntervalSince1970, forKey: returningUserGraceDeadlineKey)
+            }
         } else if storedStamp != nil, storedStamp != currentStamp {
             print("Persistent store compatibility stamp updated (\(storedStamp ?? "") -> \(currentStamp)). SwiftData migration will handle the upgrade.")
         }
@@ -459,25 +491,11 @@ struct SnowlyApp: App {
     }
 
     private static var hasMigrationStages: Bool {
-        !SnowlyMigrationPlan.stages.isEmpty
+        false
     }
 
     private static var currentStoreCompatibilityStamp: String {
-        if hasMigrationStages {
-            return "migration:\(currentMigrationSchemaStamp)"
-        }
         return "reset-on-bundle-change:\(currentBundleFingerprint)"
-    }
-
-    private static var currentMigrationSchemaStamp: String {
-        SnowlyMigrationPlan.schemas
-            .map { $0.versionIdentifier }
-            .map { version in
-                [version.major, version.minor, version.patch]
-                    .map(String.init)
-                    .joined(separator: ".")
-            }
-            .joined(separator: "->")
     }
 
     private static var currentBundleFingerprint: String {
@@ -568,7 +586,6 @@ struct SnowlyApp: App {
             for: SkiSession.self, SkiRun.self, Resort.self,
                  GearSetup.self, GearAsset.self, GearMaintenanceEvent.self, UserProfile.self,
                  DeviceSettings.self, ServerProfile.self,
-            migrationPlan: SnowlyMigrationPlan.self,
             configurations: syncedConfig, localConfig
         )
     }
@@ -833,6 +850,7 @@ struct SnowlyApp: App {
 private struct SnowlyAppPreviewHost: View {
     let modelContainer: ModelContainer
     @State private var services = AppServices()
+    @State private var restorationCoordinator = LaunchRestorationCoordinator(fingerprint: nil)
 
     init() {
         do {
@@ -859,6 +877,7 @@ private struct SnowlyAppPreviewHost: View {
             .environment(services.watchBridgeService)
             .environment(services.crewService)
             .environment(services.crewPinNotificationService)
+            .environment(restorationCoordinator)
             .modelContainer(modelContainer)
     }
 }

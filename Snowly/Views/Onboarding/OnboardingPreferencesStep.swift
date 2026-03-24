@@ -97,7 +97,7 @@ struct OnboardingPreferencesStep: View {
         let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if let profile = profiles.first {
-            profile.displayName = trimmedName
+            profile.updateDisplayName(trimmedName)
             profile.preferredUnits = unitSystem
             profile.avatarData = avatarData
 
@@ -125,5 +125,12 @@ struct OnboardingPreferencesStep: View {
 
         // Persist onboarding completion immediately to avoid a relaunch race.
         try? modelContext.save()
+
+        // Write Keychain fingerprint so the app can detect returning users after reinstall.
+        if let profileId = profiles.first?.id ?? (try? modelContext.fetch(FetchDescriptor<UserProfile>()))?.first?.id {
+            try? UserIdentityKeychainService.save(
+                UserIdentityFingerprint(profileId: profileId, createdAt: Date())
+            )
+        }
     }
 }

@@ -21,6 +21,20 @@
                ReferencedContainer = "container:Snowly.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AA0000012F5500000000000006"
+               BuildableName = "Snowly Watch App.app"
+               BlueprintName = "Snowly Watch App"
+               ReferencedContainer = "container:Snowly.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

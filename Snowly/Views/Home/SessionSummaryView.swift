@@ -48,9 +48,7 @@ struct SessionSummaryView: View {
     private var profile: UserProfile? { profiles.first }
 
     private var hasAnyTrackDecodeError: Bool {
-        (displayedSession?.runs ?? []).contains(where: {
-            $0.hasTrackDecodeError || ($0.activityType == .skiing && $0.trackData == nil)
-        })
+        (displayedSession?.runs ?? []).contains(where: \.hasTrackDecodeError)
     }
 
     private var unitSystem: UnitSystem {
@@ -125,7 +123,7 @@ struct SessionSummaryView: View {
                                 await uploadService.upload(
                                     session: session,
                                     userId: profile.id.uuidString,
-                                    displayName: profile.displayName
+                                    displayName: profile.resolvedDisplayName
                                 )
                                 if uploadService.lastError != nil {
                                     showUploadError = true
@@ -434,12 +432,12 @@ struct SessionSummaryView: View {
         HStack(alignment: .center, spacing: Spacing.sm) {
             AvatarView(
                 avatarData: profile?.avatarData,
-                displayName: profile?.displayName ?? "",
+                displayName: profile?.resolvedDisplayName ?? "",
                 size: Spacing.section
             )
 
             VStack(alignment: .leading, spacing: Spacing.xxs) {
-                if let name = profile?.displayName, !name.isEmpty {
+                if let name = profile?.resolvedDisplayName, !name.isEmpty {
                     Text(name)
                         .font(.headline)
                         .lineLimit(1)
@@ -760,7 +758,7 @@ struct SessionSummaryView: View {
                         await uploadService.upload(
                             session: session,
                             userId: profile.id.uuidString,
-                            displayName: profile.displayName
+                            displayName: profile.resolvedDisplayName
                         )
                     }
                 } label: {
@@ -821,7 +819,7 @@ struct SessionSummaryView: View {
                             await uploadService.upload(
                                 session: session,
                                 userId: profile.id.uuidString,
-                                displayName: profile.displayName
+                                displayName: profile.resolvedDisplayName
                             )
                         }
                     } label: {
@@ -985,7 +983,7 @@ struct SessionSummaryView: View {
         let resortName = session.resort?.name
         let currentUnitSystem = unitSystem
         let currentAvatarData = profile?.avatarData
-        let currentDisplayName = profile?.displayName ?? ""
+        let currentDisplayName = profile?.resolvedDisplayName ?? ""
 
         let renderedImage = await ShareCardRenderer.render(
             session: session,

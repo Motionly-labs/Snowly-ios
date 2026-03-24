@@ -18,6 +18,7 @@ struct SettingsView: View {
     @Environment(HealthKitService.self) private var healthKitService
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
     @Query(sort: \DeviceSettings.createdAt) private var deviceSettings: [DeviceSettings]
+    @Query(sort: \ServerProfile.createdAt) private var servers: [ServerProfile]
 
     @State private var showingDeleteConfirmation = false
     @State private var showingExportSuccess = false
@@ -27,6 +28,7 @@ struct SettingsView: View {
     @State private var exportErrorMessage: String?
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var isResettingData = false
+    @State private var profileNameDraft = ""
 
     private var profile: UserProfile? { profiles.first }
     private var defaultUnitSystem: UnitSystem {
@@ -66,10 +68,12 @@ struct SettingsView: View {
             ensureSettingsDataIfNeeded()
             applyTrackingIntervalIfNeeded()
             applyAutoPauseSettingIfNeeded()
+            syncProfileNameDraft()
         }
         .onChange(of: profiles.count) { _, _ in
             guard !isResettingData else { return }
             ensureSettingsDataIfNeeded()
+            syncProfileNameDraft()
         }
         .onChange(of: deviceSettings.count) { _, _ in
             guard !isResettingData else { return }
@@ -81,6 +85,10 @@ struct SettingsView: View {
         }
         .onChange(of: deviceSettings.first?.autoPauseIdleSeconds) { _, _ in
             applyAutoPauseSettingIfNeeded()
+        }
+        .onDisappear {
+            guard let profile else { return }
+            commitProfileNameChanges(for: profile)
         }
         .alert(String(localized: "settings_alert_delete_title"), isPresented: $showingDeleteConfirmation) {
             Button(String(localized: "common_cancel"), role: .cancel) {}
@@ -135,7 +143,7 @@ struct SettingsView: View {
                     PhotosPicker(selection: $selectedPhoto, matching: .images) {
                         AvatarView(
                             avatarData: profile.avatarData,
-                            displayName: profile.displayName,
+                            displayName: profile.resolvedDisplayName,
                             size: 72
                         )
                         .overlay(alignment: .bottomTrailing) {
@@ -153,11 +161,11 @@ struct SettingsView: View {
                 }
 
                 LabeledContent(String(localized: "settings_profile_name_label")) {
-                    TextField(String(localized: "settings_profile_name_placeholder"), text: Binding(
-                        get: { profile.displayName },
-                        set: { profile.displayName = $0 }
-                    ))
+                    TextField(String(localized: "settings_profile_name_placeholder"), text: $profileNameDraft)
                     .multilineTextAlignment(.trailing)
+                    .onSubmit {
+                        commitProfileNameChanges(for: profile)
+                    }
                 }
             }
         } header: {
@@ -172,6 +180,92 @@ struct SettingsView: View {
             return
         }
         profile.avatarData = compressAvatar(original)
+    }
+
+    private func syncProfileNameDraft() {
+        guard let profile else {
+            profileNameDraft = ""
+            return
+        }
+        profile.ensureIdentityDefaults()
+        profileNameDraft = profile.displayName
+    }
+
+    private func commitProfileNameChanges(for profile: UserProfile) {
+        let trimmed = profileNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        let previous = profile.resolvedDisplayName
+        profile.updateDisplayName(trimmed)
+        profileNameDraft = profile.displayName
+
+        guard previous.caseInsensitiveCompare(profile.resolvedDisplayName) != .orderedSame else {
+            return
+        }
+
+        Task { @MainActor in
+            await syncUsernameToServers(for: profile)
+        }
+    }
+
+    private func syncUsernameToServers(for profile: UserProfile) async {
+        let registeredServers = servers.compactMap { server -> (URL, String, ServerCredential)? in
+            guard let apiBaseURL = server.apiBaseURL else { return nil }
+            let normalizedURL = ServerCredentialService.normalizeURL(server.urlString)
+            guard let credential = ServerCredentialService.load(forServerURL: normalizedURL) else {
+                return nil
+            }
+            return (apiBaseURL, normalizedURL, credential)
+        }
+
+        guard !registeredServers.isEmpty else {
+            return
+        }
+
+        for (apiBaseURL, normalizedURL, credential) in registeredServers {
+            do {
+                try await updateUsername(
+                    userId: profile.id.uuidString,
+                    displayName: profile.resolvedDisplayName,
+                    apiBaseURL: apiBaseURL,
+                    normalizedServerURL: normalizedURL,
+                    credential: credential
+                )
+            } catch {
+                return
+            }
+        }
+    }
+
+    private func updateUsername(
+        userId: String,
+        displayName: String,
+        apiBaseURL: URL,
+        normalizedServerURL: String,
+        credential: ServerCredential
+    ) async throws {
+        let client = SkiDataAPIClient(baseURL: apiBaseURL)
+        client.setToken(credential.apiToken)
+
+        do {
+            let identity = try await client.updateProfile(userId: userId, displayName: displayName)
+            try ServerCredentialService.update(username: identity.username, forServerURL: normalizedServerURL)
+        } catch let error as SkiDataAPIError {
+            guard case .unauthorized = error else {
+                throw error
+            }
+
+            let refreshedToken = try await client.reauthenticate(
+                userId: credential.userId,
+                deviceSecret: credential.deviceSecret
+            )
+            try ServerCredentialService.update(apiToken: refreshedToken, forServerURL: normalizedServerURL)
+            client.setToken(refreshedToken)
+            let identity = try await client.updateProfile(userId: userId, displayName: displayName)
+            try ServerCredentialService.update(
+                apiToken: refreshedToken,
+                username: identity.username,
+                forServerURL: normalizedServerURL
+            )
+        }
     }
 
     private func compressAvatar(_ image: UIImage) -> Data? {
@@ -439,6 +533,8 @@ struct SettingsView: View {
             try modelContext.delete(model: ServerProfile.self)
             TrackingStatePersistence.clear()
             CrewKeychainService.delete()
+            ServerCredentialService.deleteAll()
+            UserIdentityKeychainService.delete()
             skiMapService.clearCache()
             try? modelContext.save()
         } catch {

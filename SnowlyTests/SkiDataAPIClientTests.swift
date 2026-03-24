@@ -64,7 +64,7 @@ struct SkiDataAPIClientTests {
             #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
 
             let body = """
-            {"apiToken":"test-token-123"}
+            {"userId":"u1","username":"Test#1234","displayName":"Test","tag":"1234","apiToken":"test-token-123"}
             """.data(using: .utf8)!
             let response = HTTPURLResponse(
                 url: request.url!, statusCode: 201, httpVersion: nil, headerFields: nil
@@ -73,12 +73,13 @@ struct SkiDataAPIClientTests {
         }
 
         let client = makeClient()
-        let token = try await client.register(
+        let registration = try await client.register(
             userId: "u1",
             displayName: "Test",
             deviceSecret: "secret"
         )
-        #expect(token == "test-token-123")
+        #expect(registration.apiToken == "test-token-123")
+        #expect(registration.username == "Test#1234")
     }
 
     @Test @MainActor func reauthenticate_postsToCorrectPath() async throws {

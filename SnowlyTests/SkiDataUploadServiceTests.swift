@@ -26,7 +26,16 @@ final class MockSkiDataAPIClient: SkiDataAPIProviding {
     var uploadArgs: [(payload: SessionUploadPayload, userId: String)] = []
 
     // Response configuration
-    var registerResult: Result<String, Error> = .success("mock-api-token")
+    var registerResult: Result<ServerRegistrationResult, Error> = .success(
+        ServerRegistrationResult(
+            userId: "user",
+            username: "User#1234",
+            displayName: "User",
+            tag: "1234",
+            apiToken: "mock-api-token"
+        )
+    )
+    var registerResults: [Result<ServerRegistrationResult, Error>] = []
     var reauthenticateResult: Result<String, Error> = .success("mock-new-token")
     var uploadError: Error?
     var uploadErrorOnFirstCallOnly = false
@@ -39,9 +48,12 @@ final class MockSkiDataAPIClient: SkiDataAPIProviding {
         currentToken = token
     }
 
-    func register(userId: String, displayName: String, deviceSecret: String) async throws -> String {
+    func register(userId: String, displayName: String, deviceSecret: String) async throws -> ServerRegistrationResult {
         registerCallCount += 1
         registerArgs.append((userId, displayName, deviceSecret))
+        if !registerResults.isEmpty {
+            return try registerResults.removeFirst().get()
+        }
         return try registerResult.get()
     }
 
@@ -61,9 +73,16 @@ final class MockSkiDataAPIClient: SkiDataAPIProviding {
             throw error
         }
     }
+
+    func updateProfile(userId: String, displayName: String) async throws -> ServerUserIdentity {
+        ServerUserIdentity(userId: userId, username: "\(displayName)#1234", displayName: displayName, tag: "1234")
+    }
 }
 
 // MARK: - Test Helpers
+
+private let testServerURL = URL(string: "https://test.snowly.app")!
+private let testServerNormalized = ServerCredentialService.normalizeURL(testServerURL.absoluteString)
 
 @MainActor
 private func makeSession() -> SkiSession {
@@ -75,6 +94,18 @@ private func makeSession() -> SkiSession {
     session.maxSpeed = 20.0
     session.runCount = 3
     return session
+}
+
+@MainActor
+private func makeServiceWithBaseURL(client: MockSkiDataAPIClient) -> SkiDataUploadService {
+    let service = SkiDataUploadService(apiClient: client)
+    service.updateBaseURL(testServerURL)
+    return service
+}
+
+private func cleanUpCredentials() {
+    ServerCredentialService.delete(forServerURL: testServerNormalized)
+    SnowlyUserKeychainService.delete()
 }
 
 // MARK: - Tests
@@ -92,13 +123,21 @@ struct SkiDataUploadServiceTests {
     }
 
     @Test @MainActor func upload_registersWhenNoCredentials() async {
-        // Ensure no stored credentials
-        SnowlyUserKeychainService.delete()
+        cleanUpCredentials()
 
         let client = MockSkiDataAPIClient()
-        let service = SkiDataUploadService(apiClient: client)
+        let service = makeServiceWithBaseURL(client: client)
         let session = makeSession()
 
+        client.registerResult = .success(
+            ServerRegistrationResult(
+                userId: "user-123",
+                username: "Test User#1234",
+                displayName: "Test User",
+                tag: "1234",
+                apiToken: "mock-api-token"
+            )
+        )
         await service.upload(session: session, userId: "user-123", displayName: "Test User")
 
         #expect(client.registerCallCount == 1)
@@ -107,21 +146,23 @@ struct SkiDataUploadServiceTests {
         #expect(client.uploadCallCount == 1)
         #expect(service.uploadState == .success)
 
-        // Clean up
-        SnowlyUserKeychainService.delete()
+        cleanUpCredentials()
     }
 
     @Test @MainActor func upload_usesExistingCredentials() async {
-        // Pre-store credentials
-        let creds = SnowlyUserCredentials(
+        cleanUpCredentials()
+
+        let credential = ServerCredential(
+            serverURL: testServerNormalized,
             userId: "stored-user",
+            username: "Stored#1234",
             deviceSecret: "stored-secret",
             apiToken: "stored-token"
         )
-        try! SnowlyUserKeychainService.save(creds)
+        try! ServerCredentialService.save(credential)
 
         let client = MockSkiDataAPIClient()
-        let service = SkiDataUploadService(apiClient: client)
+        let service = makeServiceWithBaseURL(client: client)
         let session = makeSession()
 
         await service.upload(session: session, userId: "stored-user", displayName: "Stored")
@@ -132,42 +173,50 @@ struct SkiDataUploadServiceTests {
         #expect(client.uploadArgs.first?.userId == "stored-user")
         #expect(service.uploadState == .success)
 
-        SnowlyUserKeychainService.delete()
+        cleanUpCredentials()
     }
 
     @Test @MainActor func upload_passesUserIdToUploadSession() async {
-        let creds = SnowlyUserCredentials(
+        cleanUpCredentials()
+
+        let credential = ServerCredential(
+            serverURL: testServerNormalized,
             userId: "user-456",
+            username: "User#1234",
             deviceSecret: "secret-456",
             apiToken: "token-456"
         )
-        try! SnowlyUserKeychainService.save(creds)
+        try! ServerCredentialService.save(credential)
 
         let client = MockSkiDataAPIClient()
-        let service = SkiDataUploadService(apiClient: client)
+        let service = makeServiceWithBaseURL(client: client)
         let session = makeSession()
 
         await service.upload(session: session, userId: "user-456", displayName: "User")
 
         #expect(client.uploadArgs.first?.userId == "user-456")
 
-        SnowlyUserKeychainService.delete()
+        cleanUpCredentials()
     }
 
     @Test @MainActor func upload_retriesOn401() async {
-        let creds = SnowlyUserCredentials(
+        cleanUpCredentials()
+
+        let credential = ServerCredential(
+            serverURL: testServerNormalized,
             userId: "retry-user",
+            username: "Retry#1234",
             deviceSecret: "retry-secret",
             apiToken: "old-token"
         )
-        try! SnowlyUserKeychainService.save(creds)
+        try! ServerCredentialService.save(credential)
 
         let client = MockSkiDataAPIClient()
         client.uploadError = SkiDataAPIError.unauthorized
         client.uploadErrorOnFirstCallOnly = true
         client.reauthenticateResult = .success("refreshed-token")
 
-        let service = SkiDataUploadService(apiClient: client)
+        let service = makeServiceWithBaseURL(client: client)
         let session = makeSession()
 
         await service.upload(session: session, userId: "retry-user", displayName: "Retry")
@@ -179,16 +228,16 @@ struct SkiDataUploadServiceTests {
         #expect(client.currentToken == "refreshed-token")
         #expect(service.uploadState == .success)
 
-        SnowlyUserKeychainService.delete()
+        cleanUpCredentials()
     }
 
     @Test @MainActor func upload_setsErrorStateOnFailure() async {
-        SnowlyUserKeychainService.delete()
+        cleanUpCredentials()
 
         let client = MockSkiDataAPIClient()
         client.registerResult = .failure(SkiDataAPIError.networkUnavailable)
 
-        let service = SkiDataUploadService(apiClient: client)
+        let service = makeServiceWithBaseURL(client: client)
         let session = makeSession()
 
         await service.upload(session: session, userId: "fail-user", displayName: "Fail")
@@ -199,22 +248,26 @@ struct SkiDataUploadServiceTests {
         #expect(service.lastError != nil)
         #expect(service.isUploading == false)
 
-        SnowlyUserKeychainService.delete()
+        cleanUpCredentials()
     }
 
     @Test @MainActor func upload_setsErrorWhenReauthFails() async {
-        let creds = SnowlyUserCredentials(
+        cleanUpCredentials()
+
+        let credential = ServerCredential(
+            serverURL: testServerNormalized,
             userId: "reauth-fail",
+            username: "Fail#1234",
             deviceSecret: "secret",
             apiToken: "token"
         )
-        try! SnowlyUserKeychainService.save(creds)
+        try! ServerCredentialService.save(credential)
 
         let client = MockSkiDataAPIClient()
         client.uploadError = SkiDataAPIError.unauthorized
         client.reauthenticateResult = .failure(SkiDataAPIError.httpError(statusCode: 403, message: "Forbidden"))
 
-        let service = SkiDataUploadService(apiClient: client)
+        let service = makeServiceWithBaseURL(client: client)
         let session = makeSession()
 
         await service.upload(session: session, userId: "reauth-fail", displayName: "Fail")
@@ -223,7 +276,49 @@ struct SkiDataUploadServiceTests {
         #expect(client.uploadCallCount == 1, "Should not retry when reauthentication fails")
         #expect(service.lastError != nil)
 
-        SnowlyUserKeychainService.delete()
+        cleanUpCredentials()
+    }
+
+    @Test @MainActor func upload_failsWithNoServer() async {
+        let client = MockSkiDataAPIClient()
+        let service = SkiDataUploadService(apiClient: client)
+        let session = makeSession()
+
+        await service.upload(session: session, userId: "user", displayName: "User")
+
+        #expect(service.lastError != nil)
+        #expect(client.uploadCallCount == 0)
+    }
+
+    @Test @MainActor func upload_migratesLegacyCredentials() async {
+        cleanUpCredentials()
+
+        // Store legacy global credentials
+        let legacy = SnowlyUserCredentials(
+            userId: "legacy-user",
+            deviceSecret: "legacy-secret",
+            apiToken: "legacy-token"
+        )
+        try! SnowlyUserKeychainService.save(legacy)
+
+        let client = MockSkiDataAPIClient()
+        let service = makeServiceWithBaseURL(client: client)
+        let session = makeSession()
+
+        await service.upload(session: session, userId: "legacy-user", displayName: "Legacy")
+
+        // Should have migrated — not re-registered
+        #expect(client.registerCallCount == 0)
+        #expect(client.currentToken == "legacy-token")
+        #expect(client.uploadCallCount == 1)
+        #expect(service.uploadState == .success)
+
+        // Legacy entry should be deleted
+        #expect(SnowlyUserKeychainService.load() == nil)
+        // Per-server entry should exist
+        #expect(ServerCredentialService.load(forServerURL: testServerNormalized) != nil)
+
+        cleanUpCredentials()
     }
 
     @Test @MainActor func resetState_returnsToIdle() {
@@ -242,5 +337,34 @@ struct SkiDataUploadServiceTests {
         service.updateBaseURL(newURL)
 
         #expect(client.baseURL == newURL)
+    }
+
+    @Test @MainActor func upload_usesServerAssignedUsernameWhenRegistering() async {
+        cleanUpCredentials()
+
+        let client = MockSkiDataAPIClient()
+        client.registerResults = [
+            .success(
+                ServerRegistrationResult(
+                    userId: "user-123",
+                    username: "Taken#4821",
+                    displayName: "Taken",
+                    tag: "4821",
+                    apiToken: "resolved-token"
+                )
+            )
+        ]
+
+        let service = makeServiceWithBaseURL(client: client)
+        let session = makeSession()
+
+        await service.upload(session: session, userId: "user-123", displayName: "Taken")
+
+        #expect(client.registerCallCount == 1)
+        #expect(client.registerArgs.first?.displayName == "Taken")
+        #expect(ServerCredentialService.load(forServerURL: testServerNormalized)?.username == "Taken#4821")
+        #expect(service.uploadState == .success)
+
+        cleanUpCredentials()
     }
 }

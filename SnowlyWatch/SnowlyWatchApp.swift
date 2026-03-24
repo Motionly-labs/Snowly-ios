@@ -21,6 +21,10 @@ struct SnowlyWatchApp: App {
                 .environment(locationService)
                 .environment(workoutManager)
                 .onAppear {
+                    if workoutManager.applyUITestingConfigurationIfNeeded() {
+                        return
+                    }
+
                     workoutManager.configure(
                         connectivity: connectivityService,
                         location: locationService

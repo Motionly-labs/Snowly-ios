@@ -6956,6 +6956,94 @@
         }
       }
     },
+    "onboarding_restore_progress_gear %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld gear setups"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld utrustningar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 套装备配置"
+          }
+        }
+      }
+    },
+    "onboarding_restore_progress_profile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "个人资料"
+          }
+        }
+      }
+    },
+    "onboarding_restore_progress_resorts %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld resorts"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld skidorter"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个雪场"
+          }
+        }
+      }
+    },
+    "onboarding_restore_progress_sessions %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sessions"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sessioner"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 次滑雪记录"
+          }
+        }
+      }
+    },
     "onboarding_restore_subtitle" : {
       "localizations" : {
         "en" : {
@@ -7084,6 +7172,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "全新开始"
+          }
+        }
+      }
+    },
+    "onboarding_welcome_offline_hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've used Snowly before, but iCloud is currently unavailable. Your data will sync automatically once iCloud is available."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du har använt Snowly tidigare, men iCloud är inte tillgängligt just nu. Dina data synkas automatiskt när iCloud är tillgängligt."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你之前使用过 Snowly，但 iCloud 当前不可用。iCloud 恢复后数据会自动同步。"
+          }
+        }
+      }
+    },
+    "onboarding_welcome_returning_hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We detected your previous data in iCloud"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vi hittade dina tidigare data i iCloud"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "检测到你之前的 iCloud 数据"
           }
         }
       }
@@ -8038,6 +8170,7 @@
       }
     },
     "server_badge_default" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8082,6 +8215,7 @@
       }
     },
     "server_default_alias" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8235,6 +8369,50 @@
         }
       }
     },
+    "server_edit_section_roles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Roles"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Roller"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "角色"
+          }
+        }
+      }
+    },
+    "server_edit_roles_footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select at least one role. A server can serve multiple roles."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Välj minst en roll. En server kan ha flera roller."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "至少选择一个角色。一个服务器可以承担多个角色。"
+          }
+        }
+      }
+    },
     "server_edit_test_connection" : {
       "localizations" : {
         "en" : {
@@ -8319,6 +8497,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "https://your-server.com"
+          }
+        }
+      }
+    },
+    "server_empty_description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap + to add a server"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck + för att lägga till en server"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击右上角 + 添加服务器"
+          }
+        }
+      }
+    },
+    "server_empty_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Storage Server"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingen lagringsserver"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无存储服务器"
           }
         }
       }
@@ -8451,6 +8673,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "服务器"
+          }
+        }
+      }
+    },
+    "server_role_crew" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crew"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crew"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "组队"
+          }
+        }
+      }
+    },
+    "server_role_data" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "数据"
+          }
+        }
+      }
+    },
+    "server_registering" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registering on server…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrerar på servern…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在注册到服务器…"
           }
         }
       }
@@ -11633,6 +11921,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "上传失败，请重试。"
+          }
+        }
+      }
+    },
+    "upload_error_no_server" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please add a server in Settings first"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till en server i Inställningar först"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先在设置中添加服务器"
           }
         }
       }

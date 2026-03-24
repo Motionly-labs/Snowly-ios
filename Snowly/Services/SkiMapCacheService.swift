@@ -51,6 +51,11 @@ final class SkiMapCacheService {
     private(set) var lastError: String?
     private(set) var activeAreaOperations: Set<String> = []
 
+    /// In-flight nearby-areas fetch. Shared so that SwiftUI task cancellation
+    /// doesn't kill a slow Overpass request — the next caller reuses the result.
+    @ObservationIgnored
+    private var nearbyAreasFetchTask: Task<[NearbySkiArea], Never>?
+
     private(set) var displayResortName: String?
     private(set) var displayRegionName: String?
     private(set) var lastClassifiedCoordinate: Coordinate?
@@ -76,21 +81,21 @@ final class SkiMapCacheService {
         )
     }
 
-    private let overpassService: OverpassService
-    private let cacheDirectory: URL
-    private let cacheTTL: TimeInterval
-    private let indexURL: URL
-    private let nearbyAreasURL: URL
-    private var lastReverseGeocodeDate: Date?
-    private var lastReverseGeocodeCoordinate: Coordinate?
-    private var lastReverseGeocodedRegion: String?
+    @ObservationIgnored private let overpassService: OverpassService
+    @ObservationIgnored private let cacheDirectory: URL
+    @ObservationIgnored private let cacheTTL: TimeInterval
+    @ObservationIgnored private let indexURL: URL
+    @ObservationIgnored private let nearbyAreasURL: URL
+    @ObservationIgnored private var lastReverseGeocodeDate: Date?
+    @ObservationIgnored private var lastReverseGeocodeCoordinate: Coordinate?
+    @ObservationIgnored private var lastReverseGeocodedRegion: String?
 
     private static let logger = Logger(subsystem: "com.Snowly", category: "SkiMapCache")
 
     /// Default cache TTL: 7 days.
     nonisolated static let defaultTTL: TimeInterval = 7 * 24 * 3600
-    nonisolated static let defaultNearbySearchRadiusMeters: Double = 30000
-    nonisolated static let extendedNearbySearchRadiusMeters: Double = 90000
+    nonisolated static let defaultNearbySearchRadiusMeters: Double = 30_000
+    nonisolated static let extendedNearbySearchRadiusMeters: Double = 90_000
     nonisolated static let defaultAreaCacheRadiusMeters: Double = 6000
     nonisolated static let defaultReclassifyDistanceMeters: Double = 3000
     nonisolated static let reverseGeocodeThrottleSeconds: TimeInterval = 60
@@ -202,6 +207,8 @@ final class SkiMapCacheService {
     }
 
     /// Search nearby named ski areas around a location.
+    /// Uses a shared in-flight task so SwiftUI `.task(id:)` cancellation
+    /// doesn't kill slow Overpass requests — subsequent callers reuse the result.
     func fetchNearbyAreas(
         center: CLLocationCoordinate2D,
         radiusMeters: Double = SkiMapCacheService.defaultNearbySearchRadiusMeters,
@@ -213,42 +220,63 @@ final class SkiMapCacheService {
             return nearbyAreasFromSnapshot(snapshot, center: center, limit: limit)
         }
 
-        do {
-            lastError = nil
-            var queryRadius = radiusMeters
-            var areas = try await overpassService.searchNearbySkiAreas(
-                center: center,
-                radiusMeters: queryRadius,
-                limit: max(limit, 40)
-            )
+        // Reuse in-flight fetch if one is already running.
+        if let existing = nearbyAreasFetchTask {
+            let allAreas = await existing.value
+            return Array(allAreas.prefix(max(0, limit)))
+        }
 
-            if areas.isEmpty,
-               radiusMeters < Self.extendedNearbySearchRadiusMeters {
-                queryRadius = Self.extendedNearbySearchRadiusMeters
-                areas = try await overpassService.searchNearbySkiAreas(
-                    center: center,
+        let fetchCenter = center
+        let fetchRadius = radiusMeters
+
+        // Launch as a detached-like Task stored on self so it survives
+        // structured-concurrency cancellation from SwiftUI.
+        let task = Task<[NearbySkiArea], Never> { @MainActor [overpassService, weak self] in
+            defer { self?.nearbyAreasFetchTask = nil }
+
+            do {
+                var queryRadius = fetchRadius
+                var areas = try await overpassService.searchNearbySkiAreas(
+                    center: fetchCenter,
                     radiusMeters: queryRadius,
                     limit: max(limit, 40)
                 )
-            }
 
-            writeNearbyAreasSnapshot(.init(
-                fetchedAt: Date(),
-                center: Coordinate(center),
-                radiusMeters: queryRadius,
-                areas: areas
-            ))
-            return Array(areas.prefix(max(0, limit)))
-        } catch {
-            lastError = error.localizedDescription
+                // Only escalate radius when we got a response but it was empty.
+                if areas.isEmpty,
+                   fetchRadius < SkiMapCacheService.extendedNearbySearchRadiusMeters {
+                    queryRadius = SkiMapCacheService.extendedNearbySearchRadiusMeters
+                    areas = try await overpassService.searchNearbySkiAreas(
+                        center: fetchCenter,
+                        radiusMeters: queryRadius,
+                        limit: max(limit, 40)
+                    )
+                }
 
-            // Fallback to cached nearby areas if they're relevant to current location.
-            if let snapshot = readNearbyAreasSnapshot(),
-               canFallbackToNearbySnapshot(snapshot, center: center, radiusMeters: radiusMeters) {
-                return nearbyAreasFromSnapshot(snapshot, center: center, limit: limit)
+                self?.lastError = nil
+                self?.writeNearbyAreasSnapshot(.init(
+                    fetchedAt: Date(),
+                    center: Coordinate(fetchCenter),
+                    radiusMeters: queryRadius,
+                    areas: areas
+                ))
+                return areas
+            } catch {
+                self?.lastError = error.localizedDescription
+
+                // Fallback to cached nearby areas.
+                if let self,
+                   let snapshot = self.readNearbyAreasSnapshot(),
+                   self.canFallbackToNearbySnapshot(snapshot, center: fetchCenter, radiusMeters: fetchRadius) {
+                    return self.nearbyAreasFromSnapshot(snapshot, center: fetchCenter, limit: 40)
+                }
+                return []
             }
-            return []
         }
+
+        nearbyAreasFetchTask = task
+        let allAreas = await task.value
+        return Array(allAreas.prefix(max(0, limit)))
     }
 
     /// Cache one nearby area and update index metadata.

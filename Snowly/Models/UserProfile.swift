@@ -53,7 +53,7 @@ final class UserProfile {
         createdAt: Date = Date()
     ) {
         self.id = id
-        self.displayName = displayName
+        self.displayName = Self.normalizedDisplayName(from: displayName)
         self.preferredUnits = preferredUnits
         self.personalBestMaxSpeed = personalBestMaxSpeed
         self.personalBestVertical = personalBestVertical
@@ -65,5 +65,28 @@ final class UserProfile {
         self.dailyGoalMinutes = dailyGoalMinutes
         self.avatarData = avatarData
         self.createdAt = createdAt
+    }
+
+    var resolvedDisplayName: String {
+        let normalized = Self.normalizedDisplayName(from: displayName)
+        return normalized.isEmpty ? Self.defaultDisplayName : normalized
+    }
+
+    func updateDisplayName(_ newValue: String) {
+        let normalized = Self.normalizedDisplayName(from: newValue)
+        guard displayName != normalized else { return }
+        displayName = normalized
+    }
+
+    func ensureIdentityDefaults() {
+        let normalized = Self.normalizedDisplayName(from: displayName)
+        guard displayName != normalized else { return }
+        displayName = normalized
+    }
+
+    static let defaultDisplayName = "Skier"
+
+    private static func normalizedDisplayName(from value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
