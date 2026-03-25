@@ -1108,6 +1108,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Snowly;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Snowly reads your heart rate and workout data to enrich your ski session stats.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Snowly saves your ski sessions as workouts in Health so you can track your fitness progress.";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "Roy-Kid.Snowly";
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1143,6 +1145,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Snowly;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Snowly reads your heart rate and workout data to enrich your ski session stats.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Snowly saves your ski sessions as workouts in Health so you can track your fitness progress.";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "Roy-Kid.Snowly";
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
