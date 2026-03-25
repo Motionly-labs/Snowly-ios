@@ -21,6 +21,7 @@ struct IdleView: View {
             Text("Snowly")
                 .font(.title2.weight(.bold))
                 .foregroundStyle(WatchColorTokens.brandGradient)
+                .accessibilityIdentifier("watch_idle_title")
 
             HoldProgressCircleButton(
                 systemImage: "figure.skiing.downhill",
@@ -32,12 +33,15 @@ struct IdleView: View {
                 isDisabled: workoutManager.isStartPending,
                 holdDuration: Self.startHoldDuration,
                 diameter: WatchSpacing.startButtonDiameter,
-                iconSize: WatchSpacing.startButtonIconSize
+                iconSize: WatchSpacing.startButtonIconSize,
+                accessibilityIdentifier: "watch_start_button",
+                accessibilityLabel: "Start"
             ) {
                 workoutManager.start()
             }
             Spacer()
         }
         .padding(WatchSpacing.md)
+        .accessibilityIdentifier("watch_idle_screen")
     }
 }

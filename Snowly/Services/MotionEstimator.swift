@@ -157,8 +157,7 @@ enum MotionEstimator {
         return values.indices.map { i in
             let lo = max(0, i - half)
             let hi = min(values.count - 1, i + half)
-            let window = values[lo...hi].sorted()
-            return window[window.count / 2]
+            return nthSmallest(Array(values[lo...hi]), k: (hi - lo + 1) / 2)
         }
     }
 
@@ -216,8 +215,7 @@ enum MotionEstimator {
         maxReliableAccuracy: Double
     ) -> Double {
         guard !accuracies.isEmpty else { return 0.5 }
-        let sorted = accuracies.sorted()
-        let medianAccuracy = sorted[sorted.count / 2]
+        let medianAccuracy = nthSmallest(accuracies, k: accuracies.count / 2)
 
         if medianAccuracy <= idealAccuracy { return 1 }
         if medianAccuracy >= maxReliableAccuracy { return 0 }
@@ -248,6 +246,34 @@ enum MotionEstimator {
 
     nonisolated private static func medianOfThree(_ a: Double, _ b: Double, _ c: Double) -> Double {
         a + b + c - min(a, min(b, c)) - max(a, max(b, c))
+    }
+
+    /// O(n) average-case selection of the kth smallest element (0-indexed).
+    /// Avoids the O(n log n) cost of sorted() for median finding.
+    nonisolated private static func nthSmallest(_ values: [Double], k: Int) -> Double {
+        guard !values.isEmpty else { return 0 }
+        if values.count == 1 { return values[0] }
+        var arr = values
+        var lo = 0
+        var hi = arr.count - 1
+        while lo < hi {
+            let pivot = arr[lo + (hi - lo) / 2]
+            var i = lo
+            var j = hi
+            while i <= j {
+                while arr[i] < pivot { i += 1 }
+                while arr[j] > pivot { j -= 1 }
+                if i <= j {
+                    arr.swapAt(i, j)
+                    i += 1
+                    j -= 1
+                }
+            }
+            if k <= j { hi = j }
+            else if k >= i { lo = i }
+            else { return arr[k] }
+        }
+        return arr[lo]
     }
 
     private struct EstimateWindowBuilder {

@@ -27,11 +27,11 @@ struct ProfileView: View {
                 VStack(spacing: Spacing.md) {
                     AvatarView(
                         avatarData: profile?.avatarData,
-                        displayName: displayName,
+                        displayName: baseDisplayName,
                         size: 72
                     )
 
-                    Text(displayName)
+                    Text(baseDisplayName)
                         .font(Typography.primaryTitle)
 
                     Text(memberSinceText)
@@ -138,10 +138,8 @@ struct ProfileView: View {
         }
     }
 
-    private var displayName: String {
-        guard let profile else { return String(localized: "profile_default_display_name") }
-        let trimmed = profile.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? String(localized: "profile_default_display_name") : trimmed
+    private var baseDisplayName: String {
+        profile?.resolvedDisplayName ?? String(localized: "profile_default_display_name")
     }
 
     private var memberSinceText: String {

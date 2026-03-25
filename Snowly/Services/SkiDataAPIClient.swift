@@ -65,7 +65,6 @@ struct RunUploadPayload: Encodable {
 final class SkiDataAPIClient: SkiDataAPIProviding {
     private(set) var baseURL: URL
     private var apiToken: String?
-    private var userId: String = ""
     private let session: URLSession
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
@@ -99,20 +98,13 @@ final class SkiDataAPIClient: SkiDataAPIProviding {
         self.apiToken = token
     }
 
-    func setUserId(_ id: String) {
-        self.userId = id
-    }
-
     // MARK: - Registration
 
-    func register(userId: String, displayName: String, deviceSecret: String) async throws -> String {
+    func register(userId: String, displayName: String, deviceSecret: String) async throws -> ServerRegistrationResult {
         struct Body: Encodable {
             let userId: String
             let displayName: String
             let deviceSecret: String
-        }
-        struct Response: Decodable {
-            let apiToken: String
         }
 
         let req = try buildRequest(
@@ -121,11 +113,12 @@ final class SkiDataAPIClient: SkiDataAPIProviding {
             body: Body(userId: userId, displayName: displayName, deviceSecret: deviceSecret),
             authenticated: false
         )
+        logRequest(req, action: "register")
         let (data, response) = try await performRequest(req)
         try checkStatus(response, data: data)
 
         do {
-            return try decoder.decode(Response.self, from: data).apiToken
+            return try decoder.decode(ServerRegistrationResult.self, from: data)
         } catch {
             throw SkiDataAPIError.decodingFailed(error)
         }
@@ -146,6 +139,7 @@ final class SkiDataAPIClient: SkiDataAPIProviding {
             body: Body(userId: userId, deviceSecret: deviceSecret),
             authenticated: false
         )
+        logRequest(req, action: "reauthenticate")
         let (data, response) = try await performRequest(req)
         try checkStatus(response, data: data)
 
@@ -158,15 +152,35 @@ final class SkiDataAPIClient: SkiDataAPIProviding {
 
     // MARK: - Upload
 
-    func uploadSession(_ payload: SessionUploadPayload) async throws {
+    func uploadSession(_ payload: SessionUploadPayload, userId: String) async throws {
         let req = try buildRequest(
             method: "POST",
             path: "/snowly/users/\(userId)/sessions",
             body: payload,
             authenticated: true
         )
+        logRequest(req, action: "uploadSession")
         let (data, response) = try await performRequest(req)
         try checkStatus(response, data: data)
+    }
+
+    func updateProfile(userId: String, displayName: String) async throws -> ServerUserIdentity {
+        struct Body: Encodable { let displayName: String }
+        let req = try buildRequest(
+            method: "PATCH",
+            path: "/users/\(userId)",
+            body: Body(displayName: displayName),
+            authenticated: true
+        )
+        logRequest(req, action: "updateProfile")
+        let (data, response) = try await performRequest(req)
+        try checkStatus(response, data: data)
+
+        do {
+            return try decoder.decode(ServerUserIdentity.self, from: data)
+        } catch {
+            throw SkiDataAPIError.decodingFailed(error)
+        }
     }
 
     // MARK: - Private Helpers
@@ -211,7 +225,12 @@ final class SkiDataAPIClient: SkiDataAPIProviding {
         do {
             (data, response) = try await session.data(for: request)
         } catch {
-            Self.logger.error("Network error: \(error.localizedDescription, privacy: .public)")
+            let method = request.httpMethod ?? "UNKNOWN"
+            let url = request.url?.absoluteString ?? "<nil>"
+            debugConsole("Network error during \(method) \(url): \(String(describing: error))")
+            Self.logger.error(
+                "Network error during \(method, privacy: .public) \(url, privacy: .public): \(String(describing: error), privacy: .public)"
+            )
             throw SkiDataAPIError.networkUnavailable
         }
 
@@ -235,6 +254,12 @@ final class SkiDataAPIClient: SkiDataAPIProviding {
         }
 
         let serverMessage = (try? decoder.decode(ServerErrorResponse.self, from: data))?.error.message
+        let responseBody = summarizeResponseBody(data)
+        let url = response.url?.absoluteString ?? "<nil>"
+        debugConsole("HTTP \(code) from \(url). serverMessage=\(serverMessage ?? "<none>") body=\(responseBody)")
+        Self.logger.error(
+            "HTTP \(code, privacy: .public) from \(url, privacy: .public). serverMessage=\(serverMessage ?? "<none>", privacy: .public) body=\(responseBody, privacy: .public)"
+        )
 
         switch code {
         case 401:
@@ -242,5 +267,30 @@ final class SkiDataAPIClient: SkiDataAPIProviding {
         default:
             throw SkiDataAPIError.httpError(statusCode: code, message: serverMessage)
         }
+    }
+
+    private func logRequest(_ request: URLRequest, action: String) {
+        let method = request.httpMethod ?? "UNKNOWN"
+        let url = request.url?.absoluteString ?? "<nil>"
+        let bodyBytes = request.httpBody?.count ?? 0
+        debugConsole("Starting \(action): \(method) \(url) bodyBytes=\(bodyBytes)")
+        Self.logger.info(
+            "Starting \(action, privacy: .public): \(method, privacy: .public) \(url, privacy: .public) bodyBytes=\(bodyBytes, privacy: .public)"
+        )
+    }
+
+    private func summarizeResponseBody(_ data: Data) -> String {
+        guard !data.isEmpty else { return "<empty>" }
+        let text = String(decoding: data, as: UTF8.self)
+        if text.count <= 500 {
+            return text
+        }
+        return String(text.prefix(500)) + "...<truncated>"
+    }
+
+    private func debugConsole(_ message: String) {
+#if DEBUG
+        print("[SkiDataAPI] \(message)")
+#endif
     }
 }

@@ -135,7 +135,7 @@ struct SessionDetailView: View {
                         await uploadService.upload(
                             session: session,
                             userId: profile.id.uuidString,
-                            displayName: profile.displayName
+                            displayName: profile.resolvedDisplayName
                         )
                         if uploadService.lastError != nil {
                             showUploadError = true
@@ -154,7 +154,7 @@ struct SessionDetailView: View {
         let resortName = session.resort?.name
         let currentUnitSystem = unitSystem
         let currentAvatarData = profile?.avatarData
-        let currentDisplayName = profile?.displayName ?? ""
+        let currentDisplayName = profile?.resolvedDisplayName ?? ""
 
         let renderedImage = await ShareCardRenderer.render(
             session: session,

@@ -1543,17 +1543,32 @@ struct ActiveTrackingView: View {
         Task {
             await trackingService.stopTracking()
             await trackingService.finalizeHealthKitWorkout()
+
+            // Save immediately without waiting for resort resolution —
+            // network lookups (Overpass / MapKit) can block for 10-30s.
+            await trackingService.saveSession(to: modelContext, resort: nil)
+            showingSummary = true
+
+            // Resolve resort in background and silently patch the saved session.
             let resortCoordinate = locationService.currentLocation
                 ?? locationService.recentTrackPointsSnapshot().last.map {
                     CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
                 }
+            guard let resortCoordinate else { return }
             let resort = await ResortResolver.resolveCurrentResort(
                 from: skiMapService,
                 using: resortCoordinate,
                 in: modelContext
             )
-            await trackingService.saveSession(to: modelContext, resort: resort)
-            showingSummary = true
+            guard let resort,
+                  let savedId = trackingService.lastSavedSessionOutcome?.sessionId else { return }
+            let descriptor = FetchDescriptor<SkiSession>(
+                predicate: #Predicate<SkiSession> { $0.id == savedId }
+            )
+            if let session = (try? modelContext.fetch(descriptor))?.first, session.resort == nil {
+                session.resort = resort
+                try? modelContext.save()
+            }
         }
     }
 

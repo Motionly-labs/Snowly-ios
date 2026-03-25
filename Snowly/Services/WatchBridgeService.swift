@@ -158,7 +158,9 @@ final class WatchBridgeService {
             pendingWatchTrackPoints.append(contentsOf: points)
             if pendingWatchTrackPoints.count > Self.maxPendingTrackPoints {
                 let overflow = pendingWatchTrackPoints.count - Self.maxPendingTrackPoints
-                pendingWatchTrackPoints.removeFirst(overflow)
+                // Use suffix + reassign instead of removeFirst(overflow) — both
+                // are O(n), but suffix avoids an in-place memmove on 100K elements.
+                pendingWatchTrackPoints = Array(pendingWatchTrackPoints.suffix(Self.maxPendingTrackPoints))
                 Self.logger.warning("Pending Watch track points exceeded \(Self.maxPendingTrackPoints), dropped \(overflow) oldest points")
             }
             Self.logger.debug("Received \(points.count) track points from Watch (total: \(self.pendingWatchTrackPoints.count))")
@@ -268,10 +270,22 @@ final class WatchBridgeService {
               let summary = pendingIndependentWorkoutSummary,
               pendingWatchTrackPoints.count >= summary.trackPointCount else { return }
 
-        let sortedPoints = pendingWatchTrackPoints.sorted { $0.timestamp < $1.timestamp }
+        // Watch sends batches in chronological order, so the array is typically
+        // already sorted. Check first to avoid an O(n log n) sort on 100K points.
+        let needsSort = pendingWatchTrackPoints.count > 1 && {
+            for i in 1..<pendingWatchTrackPoints.count {
+                if pendingWatchTrackPoints[i].timestamp < pendingWatchTrackPoints[i - 1].timestamp {
+                    return true
+                }
+            }
+            return false
+        }()
+        let finalPoints = needsSort
+            ? pendingWatchTrackPoints.sorted { $0.timestamp < $1.timestamp }
+            : pendingWatchTrackPoints
         completedIndependentWorkout = ImportedWatchWorkout(
             summary: summary,
-            trackPoints: sortedPoints
+            trackPoints: finalPoints
         )
         pendingWatchTrackPoints = []
         pendingIndependentWorkoutSummary = nil

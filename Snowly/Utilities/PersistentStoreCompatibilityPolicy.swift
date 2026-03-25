@@ -17,19 +17,26 @@ enum PersistentStoreCompatibilityPolicy {
     /// Decides whether launch should reset incompatible stores.
     ///
     /// Rules:
-    /// - First launch always skips CloudKit so local schema setup completes first.
+    /// - First launch always skips CloudKit so local schema setup completes first,
+    ///   **unless** the user is returning (Keychain fingerprint exists) — in that case
+    ///   CloudKit must remain enabled so their data can sync back.
     /// - If migration stages exist, trust SwiftData migration and preserve stores.
     /// - If no migration stages exist, treat a stamp change as incompatible and reset.
     nonisolated static func evaluate(
         storedStamp: String?,
         currentStamp: String,
         storeFilesExist: Bool,
-        hasMigrationStages: Bool
+        hasMigrationStages: Bool,
+        isReturningUser: Bool = false
     ) -> Decision {
         guard let storedStamp else {
+            // First tracked launch.
+            // Returning users need CloudKit enabled so their data can sync back
+            // after a store reset or reinstall.
+            let skipCloudKit = !isReturningUser
             return Decision(
                 shouldResetStores: storeFilesExist && !hasMigrationStages,
-                shouldSkipCloudKit: true
+                shouldSkipCloudKit: skipCloudKit
             )
         }
 
@@ -47,9 +54,11 @@ enum PersistentStoreCompatibilityPolicy {
             )
         }
 
+        // Stamp changed without migration stages — reset is needed.
+        // Returning users still need CloudKit so they can recover.
         return Decision(
             shouldResetStores: storeFilesExist,
-            shouldSkipCloudKit: storeFilesExist
+            shouldSkipCloudKit: storeFilesExist && !isReturningUser
         )
     }
 }

@@ -16,6 +16,7 @@ struct RootView: View {
     @Environment(CrewService.self) private var crewService
     @Environment(GearReminderService.self) private var gearReminderService
     @Environment(PhoneConnectivityService.self) private var phoneConnectivityService
+    @Environment(LaunchRestorationCoordinator.self) private var restorationCoordinator
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
     @Query(sort: \DeviceSettings.createdAt) private var deviceSettings: [DeviceSettings]
 
@@ -40,6 +41,7 @@ struct RootView: View {
             }
         }
         .onAppear {
+            restorationCoordinator.determine()
             normalizeProfiles()
             normalizeDeviceSettings()
             configureCrewService()
@@ -70,21 +72,60 @@ struct RootView: View {
         }
     }
 
+    private static let returningUserGraceDeadlineKey = "snowly_returning_user_grace_deadline"
+
+    private var isWithinRestorationGracePeriod: Bool {
+        // Check DeviceSettings first (set by coordinator once container is ready).
+        if let deadline = deviceSettings.first?.cloudRestorationGraceDeadline, Date() < deadline {
+            return true
+        }
+        // Fallback: check UserDefaults (set during pre-flight before container exists).
+        let storedTimestamp = UserDefaults.standard.double(forKey: Self.returningUserGraceDeadlineKey)
+        if storedTimestamp > 0, Date() < Date(timeIntervalSince1970: storedTimestamp) {
+            return true
+        }
+        return false
+    }
+
     private func normalizeProfiles() {
         if profiles.isEmpty {
+            // During the grace period after a store reset for a returning user,
+            // do not create a default profile — give CloudKit time to deliver the real one.
+            if isWithinRestorationGracePeriod { return }
             guard hasCompletedOnboarding else { return }
             modelContext.insert(UserProfile(preferredUnits: defaultUnitSystem))
             return
         }
 
-        guard profiles.count > 1, let primary = profiles.first else { return }
+        // Backfill Keychain fingerprint for existing users who upgraded from
+        // a version that didn't write one yet.
+        if UserIdentityKeychainService.load() == nil, let oldest = profiles.min(by: { $0.createdAt < $1.createdAt }) {
+            try? UserIdentityKeychainService.save(
+                UserIdentityFingerprint(profileId: oldest.id, createdAt: oldest.createdAt)
+            )
+        }
 
-        for duplicate in profiles.dropFirst() {
+        // Pick the oldest profile as primary (CloudKit data has earlier createdAt).
+        let sorted = profiles.sorted { $0.createdAt < $1.createdAt }
+        guard sorted.count > 1, let primary = sorted.first else { return }
+
+        for duplicate in sorted.dropFirst() {
+            primary.ensureIdentityDefaults()
+            duplicate.ensureIdentityDefaults()
+            // Merge display name: prefer non-empty values.
             if primary.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 let duplicateName = duplicate.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !duplicateName.isEmpty {
-                    primary.displayName = duplicateName
+                    primary.updateDisplayName(duplicateName)
                 }
+            }
+            // Merge avatar: prefer any profile that has one.
+            if primary.avatarData == nil, let dupAvatar = duplicate.avatarData {
+                primary.avatarData = dupAvatar
+            }
+            // Merge units: prefer the profile that has avatar data (more likely the real profile).
+            if primary.avatarData == nil, duplicate.avatarData != nil {
+                primary.preferredUnits = duplicate.preferredUnits
             }
             primary.personalBestMaxSpeed = max(primary.personalBestMaxSpeed, duplicate.personalBestMaxSpeed)
             primary.personalBestVertical = max(primary.personalBestVertical, duplicate.personalBestVertical)
@@ -124,9 +165,10 @@ struct RootView: View {
 
     private func configureCrewService() {
         guard let profile = profiles.first else { return }
+        profile.ensureIdentityDefaults()
         crewService.configure(
             userId: profile.id.uuidString,
-            displayName: profile.displayName
+            displayName: profile.resolvedDisplayName
         )
     }
 
@@ -166,6 +208,7 @@ struct RootView: View {
         .environment(crew)
         .environment(PhoneConnectivityService())
         .environment(GearReminderService())
+        .environment(LaunchRestorationCoordinator(fingerprint: nil))
         .modelContainer(for: [
             SkiSession.self, SkiRun.self, Resort.self,
             GearSetup.self, GearAsset.self, GearMaintenanceEvent.self, UserProfile.self,

@@ -12,6 +12,7 @@ import SwiftData
 struct ServerManagementView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(CrewService.self) private var crewService
+    @Environment(SkiDataUploadService.self) private var uploadService
     @Query(sort: \ServerProfile.createdAt) private var servers: [ServerProfile]
 
     @State private var editingServer: ServerProfile?
@@ -21,34 +22,15 @@ struct ServerManagementView: View {
     @State private var showingDeleteConfirmation = false
 
     var body: some View {
-        List {
-            Section {
-                ForEach(servers) { server in
-                    serverRow(server)
-                        .contentShape(Rectangle())
-                        .onTapGesture { selectServer(server) }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            if !server.isDefault {
-                                Button(role: .destructive) {
-                                    serverToDelete = server
-                                    showingDeleteConfirmation = true
-                                } label: {
-                                    Label(String(localized: "server_action_delete"), systemImage: "trash")
-                                }
-                            }
-
-                            Button {
-                                editingServer = server
-                            } label: {
-                                Label(String(localized: "server_action_edit"), systemImage: "pencil")
-                            }
-                            .tint(ColorTokens.info)
-                        }
-                }
-            } header: {
-                Label(String(localized: "server_section_servers"), systemImage: "server.rack")
-            } footer: {
-                Text(String(localized: "server_section_footer"))
+        Group {
+            if servers.isEmpty {
+                ContentUnavailableView(
+                    String(localized: "server_empty_title"),
+                    systemImage: "server.rack",
+                    description: Text(String(localized: "server_empty_description"))
+                )
+            } else {
+                serverList
             }
         }
         .scrollContentBackground(.hidden)
@@ -73,11 +55,13 @@ struct ServerManagementView: View {
                 }
             }
 
-            ToolbarItem(placement: .secondaryAction) {
-                Button {
-                    checkAllServers()
-                } label: {
-                    Label(String(localized: "server_check_all"), systemImage: "arrow.trianglehead.2.clockwise")
+            if !servers.isEmpty {
+                ToolbarItem(placement: .secondaryAction) {
+                    Button {
+                        checkAllServers()
+                    } label: {
+                        Label(String(localized: "server_check_all"), systemImage: "arrow.trianglehead.2.clockwise")
+                    }
                 }
             }
         }
@@ -104,8 +88,38 @@ struct ServerManagementView: View {
             Text(String(localized: "server_delete_message"))
         }
         .onAppear {
-            ensureDefaultServerExists()
             checkActiveServerHealth()
+        }
+    }
+
+    private var serverList: some View {
+        List {
+            Section {
+                ForEach(servers) { server in
+                    serverRow(server)
+                        .contentShape(Rectangle())
+                        .onTapGesture { selectServer(server) }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                serverToDelete = server
+                                showingDeleteConfirmation = true
+                            } label: {
+                                Label(String(localized: "server_action_delete"), systemImage: "trash")
+                            }
+
+                            Button {
+                                editingServer = server
+                            } label: {
+                                Label(String(localized: "server_action_edit"), systemImage: "pencil")
+                            }
+                            .tint(ColorTokens.info)
+                        }
+                }
+            } header: {
+                Label(String(localized: "server_section_servers"), systemImage: "server.rack")
+            } footer: {
+                Text(String(localized: "server_section_footer"))
+            }
         }
     }
 
@@ -118,13 +132,12 @@ struct ServerManagementView: View {
                     Text(server.alias)
                         .font(.headline)
 
-                    if server.isDefault {
-                        Text(String(localized: "server_badge_default"))
-                            .font(.caption2.weight(.medium))
+                    registrationBadge(for: server)
+
+                    if let username = serverUsername(for: server), !username.isEmpty {
+                        Label(username, systemImage: "person.fill")
+                            .font(.caption2)
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, Spacing.gap)
-                            .padding(.vertical, Spacing.xxs)
-                            .snowlyGlass(in: Capsule())
                     }
                 }
 
@@ -139,6 +152,25 @@ struct ServerManagementView: View {
             }
 
             Spacer()
+
+            // Role icons
+            ForEach(server.typedRoles) { role in
+                Image(systemName: role.iconName)
+                    .font(.caption)
+                    .foregroundStyle(role.color)
+            }
+
+            // Retry registration button for failed servers
+            if server.resolvedRegistrationStatus == .failed {
+                Button {
+                    retryRegistration(for: server)
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption)
+                        .foregroundStyle(ColorTokens.error)
+                }
+                .buttonStyle(.plain)
+            }
 
             // Health check button
             Button {
@@ -156,6 +188,26 @@ struct ServerManagementView: View {
             }
         }
         .padding(.vertical, Spacing.xs)
+    }
+
+    // MARK: - Registration Badge
+
+    @ViewBuilder
+    private func registrationBadge(for server: ServerProfile) -> some View {
+        switch server.resolvedRegistrationStatus {
+        case .registered:
+            Image(systemName: "checkmark.seal.fill")
+                .font(.caption2)
+                .foregroundStyle(ColorTokens.success)
+        case .failed:
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.caption2)
+                .foregroundStyle(ColorTokens.error)
+        case .pending:
+            Image(systemName: "clock.fill")
+                .font(.caption2)
+                .foregroundStyle(.orange)
+        }
     }
 
     // MARK: - Health Indicators
@@ -207,26 +259,68 @@ struct ServerManagementView: View {
     // MARK: - Actions
 
     private func selectServer(_ server: ServerProfile) {
-        for s in servers where s.isActive {
-            s.isActive = false
-        }
-        server.isActive = true
+        activateServer(server, among: servers)
 
         if let apiBaseURL = server.apiBaseURL {
             crewService.updateServerBaseURL(apiBaseURL)
+            uploadService.updateBaseURL(apiBaseURL)
         }
     }
 
     private func deleteServer(_ server: ServerProfile) {
-        guard !server.isDefault else { return }
+        ServerCredentialService.delete(
+            forServerURL: ServerCredentialService.normalizeURL(server.urlString)
+        )
 
-        if server.isActive {
-            if let defaultServer = servers.first(where: \.isDefault) {
-                selectServer(defaultServer)
-            }
+        if server.isActive, let next = servers.first(where: { $0.id != server.id }) {
+            selectServer(next)
         }
         modelContext.delete(server)
         serverToDelete = nil
+    }
+
+    private func retryRegistration(for server: ServerProfile) {
+        guard let serverURL = server.url else { return }
+
+        let context = modelContext
+        let serverId = server.id
+
+        Task {
+            let registrationService = ServerRegistrationService()
+
+            // Fetch userId and username from UserProfile
+            let profileDescriptor = FetchDescriptor<UserProfile>(sortBy: [SortDescriptor(\.createdAt)])
+            guard let profile = (try? context.fetch(profileDescriptor))?.first else { return }
+
+            await registrationService.register(
+                serverBaseURL: serverURL,
+                userId: profile.id.uuidString,
+                displayName: profile.resolvedDisplayName
+            )
+
+            // Update the server's registration status
+            let serverDescriptor = FetchDescriptor<ServerProfile>(
+                predicate: #Predicate<ServerProfile> { $0.id == serverId }
+            )
+            guard let updatedServer = (try? context.fetch(serverDescriptor))?.first else { return }
+
+            switch registrationService.state {
+            case .success:
+                updatedServer.registrationStatus = RegistrationStatus.registered.rawValue
+                if !servers.contains(where: \.isActive) {
+                    selectServer(updatedServer)
+                }
+            case .failed:
+                updatedServer.registrationStatus = RegistrationStatus.failed.rawValue
+            default:
+                break
+            }
+        }
+    }
+
+    private func serverUsername(for server: ServerProfile) -> String? {
+        let normalizedURL = ServerCredentialService.normalizeURL(server.urlString)
+        return ServerCredentialService.load(forServerURL: normalizedURL)?.username
     }
 
     private func checkHealth(for server: ServerProfile) {
@@ -258,19 +352,6 @@ struct ServerManagementView: View {
         guard let active = servers.first(where: \.isActive) else { return }
         checkHealth(for: active)
     }
-
-    private func ensureDefaultServerExists() {
-        let hasDefault = servers.contains(where: \.isDefault)
-        guard !hasDefault else { return }
-
-        let production = ServerProfile(
-            alias: String(localized: "server_default_alias"),
-            urlString: "https://api.snowly.app",
-            isActive: true,
-            isDefault: true
-        )
-        modelContext.insert(production)
-    }
 }
 
 // MARK: - Health Check State
@@ -300,16 +381,25 @@ private struct ServerEditSheet: View {
     let mode: Mode
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
 
     @State private var alias: String = ""
     @State private var urlString: String = ""
+    @State private var selectedRoles: Set<ServerRole> = []
     @State private var healthStatus: HealthCheckState = .idle
     @State private var isTestingConnection = false
+    @State private var registrationService = ServerRegistrationService()
+    @State private var registrationError: String?
 
     private var isValid: Bool {
         !alias.trimmingCharacters(in: .whitespaces).isEmpty
             && !urlString.trimmingCharacters(in: .whitespaces).isEmpty
             && URL(string: urlString) != nil
+            && !selectedRoles.isEmpty
+    }
+
+    private var isRegistering: Bool {
+        registrationService.state == .registering
     }
 
     var body: some View {
@@ -366,21 +456,68 @@ private struct ServerEditSheet: View {
                 } header: {
                     Label(String(localized: "server_edit_section_test"), systemImage: "antenna.radiowaves.left.and.right")
                 }
+
+                Section {
+                    ForEach(ServerRole.allCases) { role in
+                        Button {
+                            if selectedRoles.contains(role) {
+                                selectedRoles.remove(role)
+                            } else {
+                                selectedRoles.insert(role)
+                            }
+                        } label: {
+                            HStack {
+                                Label(role.label, systemImage: role.iconName)
+                                    .foregroundStyle(role.color)
+                                Spacer()
+                                if selectedRoles.contains(role) {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(role.color)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Label(String(localized: "server_edit_section_roles"), systemImage: "tag")
+                } footer: {
+                    Text(String(localized: "server_edit_roles_footer"))
+                }
+
+                if isRegistering {
+                    Section {
+                        HStack {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text(String(localized: "server_registering"))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                if let error = registrationError {
+                    Section {
+                        Label(error, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(ColorTokens.error)
+                            .font(.caption)
+                    }
+                }
             }
             .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(String(localized: "common_cancel")) { dismiss() }
+                        .disabled(isRegistering)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "common_save")) {
-                        save()
-                        dismiss()
+                        performSave()
                     }
-                    .disabled(!isValid)
+                    .disabled(!isValid || isRegistering)
                 }
             }
+            .interactiveDismissDisabled(isRegistering)
             .onAppear { loadExistingValues() }
         }
     }
@@ -396,10 +533,11 @@ private struct ServerEditSheet: View {
         if case .edit(let server) = mode {
             alias = server.alias
             urlString = server.urlString
+            selectedRoles = Set(server.typedRoles)
         }
     }
 
-    private func save() {
+    private func performSave() {
         let trimmedAlias = alias.trimmingCharacters(in: .whitespaces)
         let trimmedURL = urlString.trimmingCharacters(in: .whitespaces)
 
@@ -407,12 +545,60 @@ private struct ServerEditSheet: View {
         case .add:
             let server = ServerProfile(
                 alias: trimmedAlias,
-                urlString: trimmedURL
+                urlString: trimmedURL,
+                registrationStatus: .pending,
+                roles: selectedRoles.map(\.rawValue)
             )
             modelContext.insert(server)
+            try? modelContext.save()
+
+            guard let serverBaseURL = URL(string: trimmedURL) else {
+                dismiss()
+                return
+            }
+
+            let profile = profiles.first
+            let userId = profile?.id.uuidString ?? UUID().uuidString
+            let displayName = profile?.resolvedDisplayName ?? ""
+            let serverId = server.id
+
+            Task {
+                await registrationService.register(
+                    serverBaseURL: serverBaseURL,
+                    userId: userId,
+                    displayName: displayName
+                )
+
+                let descriptor = FetchDescriptor<ServerProfile>(
+                    predicate: #Predicate<ServerProfile> { $0.id == serverId }
+                )
+                guard let savedServer = (try? modelContext.fetch(descriptor))?.first else {
+                    dismiss()
+                    return
+                }
+
+                switch registrationService.state {
+                case .success:
+                    savedServer.registrationStatus = RegistrationStatus.registered.rawValue
+                    let allServers = (try? modelContext.fetch(FetchDescriptor<ServerProfile>())) ?? []
+                    activateServer(savedServer, among: allServers)
+                    dismiss()
+                case .failed(let message):
+                    savedServer.registrationStatus = RegistrationStatus.failed.rawValue
+                    registrationError = message
+                    // Keep sheet open briefly so user sees the error, then dismiss
+                    try? await Task.sleep(for: .seconds(2))
+                    dismiss()
+                default:
+                    dismiss()
+                }
+            }
+
         case .edit(let server):
             server.alias = trimmedAlias
             server.urlString = trimmedURL
+            server.roles = selectedRoles.map(\.rawValue)
+            dismiss()
         }
     }
 
@@ -433,4 +619,14 @@ private struct ServerEditSheet: View {
             isTestingConnection = false
         }
     }
+}
+
+// MARK: - Server Activation Helper
+
+/// Deactivates all servers then activates the given one.
+private func activateServer(_ server: ServerProfile, among allServers: [ServerProfile]) {
+    for s in allServers where s.isActive {
+        s.isActive = false
+    }
+    server.isActive = true
 }

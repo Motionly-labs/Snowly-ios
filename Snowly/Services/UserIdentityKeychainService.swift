@@ -1,29 +1,29 @@
 //
-//  SnowlyUserKeychainService.swift
+//  UserIdentityKeychainService.swift
 //  Snowly
 //
-//  DEPRECATED: Retained only for migrating legacy global credentials
-//  to per-server storage (ServerCredentialService). Remove after one
-//  release cycle.
+//  Stores a lightweight fingerprint in the iOS Keychain so the app can
+//  distinguish returning users from brand-new users after an uninstall/reinstall
+//  or store reset.  Uses kSecAttrAccessibleAfterFirstUnlock so the data
+//  persists across app deletions.
 //
 
 import Foundation
 import Security
 import os
 
-struct SnowlyUserCredentials: Codable, Sendable {
-    let userId: String
-    let deviceSecret: String
-    let apiToken: String
+struct UserIdentityFingerprint: Codable, Sendable {
+    let profileId: UUID
+    let createdAt: Date
 }
 
-enum SnowlyUserKeychainService {
-    private static let service = "com.Snowly.UserAuth"
-    private static let account = "user-credentials"
-    private static let logger = Logger(subsystem: "com.Snowly", category: "UserKeychain")
+enum UserIdentityKeychainService {
+    private static let service = "com.Snowly.UserIdentity"
+    private static let account = "user-fingerprint"
+    private static let logger = Logger(subsystem: "com.Snowly", category: "UserIdentityKeychain")
 
-    static func save(_ credentials: SnowlyUserCredentials) throws {
-        let data = try JSONEncoder().encode(credentials)
+    static func save(_ fingerprint: UserIdentityFingerprint) throws {
+        let data = try JSONEncoder().encode(fingerprint)
 
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -31,7 +31,6 @@ enum SnowlyUserKeychainService {
             kSecAttrAccount as String: account,
         ]
 
-        // Delete existing entry first
         SecItemDelete(query as CFDictionary)
 
         var addQuery = query
@@ -45,7 +44,7 @@ enum SnowlyUserKeychainService {
         }
     }
 
-    static func load() -> SnowlyUserCredentials? {
+    static func load() -> UserIdentityFingerprint? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -64,7 +63,7 @@ enum SnowlyUserKeychainService {
             return nil
         }
 
-        return try? JSONDecoder().decode(SnowlyUserCredentials.self, from: data)
+        return try? JSONDecoder().decode(UserIdentityFingerprint.self, from: data)
     }
 
     static func delete() {

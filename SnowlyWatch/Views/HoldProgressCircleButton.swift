@@ -16,64 +16,16 @@ struct HoldProgressCircleButton: View {
     let holdDuration: TimeInterval
     let diameter: CGFloat
     let iconSize: CGFloat
+    let accessibilityIdentifier: String?
+    let accessibilityLabel: String?
     let action: () -> Void
 
     @State private var holdProgress: CGFloat = 0
     @State private var didCompleteHold = false
 
     var body: some View {
-        let ringWidth = max(WatchSpacing.holdButtonMinRingWidth, diameter * WatchSpacing.holdButtonRingWidthRatio)
-        let innerDiameter = diameter * WatchSpacing.holdButtonInnerDiameterRatio
         VStack(spacing: WatchSpacing.sm) {
-            ZStack {
-                Circle()
-                    .fill(Color.white.opacity(WatchOpacity.cardBackground))
-                    .frame(width: diameter, height: diameter)
-
-                Circle()
-                    .stroke(Color.white.opacity(WatchOpacity.ringTrack), lineWidth: ringWidth)
-                    .frame(width: diameter, height: diameter)
-
-                Circle()
-                    .trim(from: 0, to: holdProgress)
-                    .stroke(
-                        tint,
-                        style: StrokeStyle(lineWidth: ringWidth, lineCap: .round, lineJoin: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-                    .frame(width: diameter, height: diameter)
-
-                Circle()
-                    .fill(tint.opacity(WatchOpacity.ringInnerFill))
-                    .frame(width: innerDiameter, height: innerDiameter)
-
-                Image(systemName: systemImage)
-                    .font(.system(size: iconSize, weight: .bold))
-                    .foregroundStyle(tint)
-            }
-            .contentShape(Circle())
-            .onLongPressGesture(minimumDuration: holdDuration, maximumDistance: WatchSpacing.holdButtonGestureMaxDistance) {
-                didCompleteHold = true
-                action()
-                holdProgress = 0
-            } onPressingChanged: { pressing in
-                if pressing {
-                    didCompleteHold = false
-                    withAnimation(.linear(duration: holdDuration)) {
-                        holdProgress = 1
-                    }
-                    return
-                }
-
-                if didCompleteHold {
-                    holdProgress = 0
-                    didCompleteHold = false
-                } else {
-                    withAnimation(WatchAnimationTokens.holdRelease) {
-                        holdProgress = 0
-                    }
-                }
-            }
+            primaryControl
 
             if let title, !title.isEmpty {
                 Text(title)
@@ -90,7 +42,91 @@ struct HoldProgressCircleButton: View {
             }
         }
         .opacity(isDisabled ? 0.55 : 1)
-        .allowsHitTesting(!isDisabled)
         .frame(maxWidth: .infinity)
+    }
+
+    private var primaryControl: some View {
+        Group {
+            if isUITestingInteractive {
+                Button(action: action) {
+                    controlFace
+                }
+                .buttonStyle(.plain)
+                .disabled(isDisabled)
+                .accessibilityElement(children: .ignore)
+                .accessibilityIdentifier(accessibilityIdentifier ?? "")
+                .accessibilityLabel(accessibilityLabelText)
+            } else {
+                controlFace
+                    .contentShape(Circle())
+                    .allowsHitTesting(!isDisabled)
+                    .onLongPressGesture(minimumDuration: holdDuration, maximumDistance: WatchSpacing.holdButtonGestureMaxDistance) {
+                        didCompleteHold = true
+                        action()
+                        holdProgress = 0
+                    } onPressingChanged: { pressing in
+                        if pressing {
+                            didCompleteHold = false
+                            withAnimation(.linear(duration: holdDuration)) {
+                                holdProgress = 1
+                            }
+                            return
+                        }
+
+                        if didCompleteHold {
+                            holdProgress = 0
+                            didCompleteHold = false
+                        } else {
+                            withAnimation(WatchAnimationTokens.holdRelease) {
+                                holdProgress = 0
+                            }
+                        }
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityIdentifier(accessibilityIdentifier ?? "")
+                    .accessibilityLabel(accessibilityLabelText)
+            }
+        }
+    }
+
+    private var controlFace: some View {
+        let ringWidth = max(WatchSpacing.holdButtonMinRingWidth, diameter * WatchSpacing.holdButtonRingWidthRatio)
+        let innerDiameter = diameter * WatchSpacing.holdButtonInnerDiameterRatio
+
+        return ZStack {
+            Circle()
+                .fill(Color.white.opacity(WatchOpacity.cardBackground))
+                .frame(width: diameter, height: diameter)
+
+            Circle()
+                .stroke(Color.white.opacity(WatchOpacity.ringTrack), lineWidth: ringWidth)
+                .frame(width: diameter, height: diameter)
+
+            Circle()
+                .trim(from: 0, to: holdProgress)
+                .stroke(
+                    tint,
+                    style: StrokeStyle(lineWidth: ringWidth, lineCap: .round, lineJoin: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .frame(width: diameter, height: diameter)
+
+            Circle()
+                .fill(tint.opacity(WatchOpacity.ringInnerFill))
+                .frame(width: innerDiameter, height: innerDiameter)
+
+            Image(systemName: systemImage)
+                .font(.system(size: iconSize, weight: .bold))
+                .foregroundStyle(tint)
+        }
+    }
+
+    private var isUITestingInteractive: Bool {
+        ProcessInfo.processInfo.arguments.contains("-watch_ui_testing_interactive")
+    }
+
+    private var accessibilityLabelText: String {
+        accessibilityLabel ?? title ?? subtitle ?? systemImage
     }
 }

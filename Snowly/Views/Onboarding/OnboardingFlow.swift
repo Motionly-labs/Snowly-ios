@@ -18,6 +18,7 @@ struct OnboardingFlow: View {
         case preferences
     }
 
+    @Environment(LaunchRestorationCoordinator.self) private var coordinator
     @State private var step: Step = .welcome
 
     var body: some View {
@@ -25,12 +26,19 @@ struct OnboardingFlow: View {
             switch step {
             case .welcome:
                 OnboardingWelcomeStep(
+                    coordinatorState: coordinator.state,
                     onRestore: { step = .restore },
-                    onStartFresh: { step = .permissions }
+                    onStartFresh: {
+                        coordinator.completeFreshSetup()
+                        step = .permissions
+                    }
                 )
             case .restore:
                 OnboardingRestoreStep(
-                    onStartFresh: { step = .permissions }
+                    onStartFresh: {
+                        coordinator.completeFreshSetup()
+                        step = .permissions
+                    }
                 )
             case .permissions:
                 OnboardingPermissionsStep(onNext: { step = .preferences })
@@ -47,5 +55,6 @@ struct OnboardingFlow: View {
         .environment(LocationTrackingService())
         .environment(HealthKitService())
         .environment(SyncMonitorService())
+        .environment(LaunchRestorationCoordinator(fingerprint: nil))
         .modelContainer(for: [UserProfile.self, DeviceSettings.self], inMemory: true)
 }
