@@ -1107,6 +1107,7 @@
 				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+
 				INFOPLIST_KEY_CFBundleDisplayName = Snowly;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Snowly reads your heart rate and workout data to enrich your ski session stats.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Snowly saves your ski sessions as workouts in Health so you can track your fitness progress.";
@@ -1144,6 +1145,7 @@
 				DEVELOPMENT_TEAM = 4DUZQ8DF4R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+
 				INFOPLIST_KEY_CFBundleDisplayName = Snowly;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Snowly reads your heart rate and workout data to enrich your ski session stats.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Snowly saves your ski sessions as workouts in Health so you can track your fitness progress.";
