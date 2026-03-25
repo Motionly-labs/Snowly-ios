@@ -41,6 +41,7 @@ final class LaunchRestorationCoordinator {
     private let fingerprint: UserIdentityFingerprint?
     private var cloudKitObserver: NSObjectProtocol?
     private var timeoutTask: Task<Void, Never>?
+    private var restorationModelContext: ModelContext?
     private let logger = Logger(subsystem: "com.Snowly", category: "RestorationCoordinator")
 
     init(fingerprint: UserIdentityFingerprint?) {
@@ -88,9 +89,10 @@ final class LaunchRestorationCoordinator {
     func beginRestoration(modelContext: ModelContext) {
         guard state == .returningUser || state == .determining else { return }
         state = .restoringFromCloud
+        restorationModelContext = modelContext
         logger.info("Restoration started — listening for CloudKit import events.")
 
-        startCloudKitObserver(modelContext: modelContext)
+        startCloudKitObserver()
         startTimeout()
     }
 
@@ -114,31 +116,34 @@ final class LaunchRestorationCoordinator {
 
     // MARK: - Private
 
-    private func startCloudKitObserver(modelContext: ModelContext) {
+    private func startCloudKitObserver() {
         cloudKitObserver = NotificationCenter.default.addObserver(
             forName: NSPersistentCloudKitContainer.eventChangedNotification,
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            guard let self else { return }
-            guard
-                self.state == .restoringFromCloud,
-                let event = notification.userInfo?[
-                    NSPersistentCloudKitContainer.eventNotificationUserInfoKey
-                ] as? NSPersistentCloudKitContainer.Event,
-                event.type == .import,
-                event.endDate != nil
-            else { return }
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                guard
+                    self.state == .restoringFromCloud,
+                    let event = notification.userInfo?[
+                        NSPersistentCloudKitContainer.eventNotificationUserInfoKey
+                    ] as? NSPersistentCloudKitContainer.Event,
+                    event.type == .import,
+                    event.endDate != nil
+                else { return }
 
-            // Give @Query a moment to reflect newly imported records.
-            Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .milliseconds(500))
-                guard let self, self.state == .restoringFromCloud else { return }
-                // Check if profiles exist now.
-                let descriptor = FetchDescriptor<UserProfile>()
-                let count = (try? modelContext.fetchCount(descriptor)) ?? 0
-                if count > 0 {
-                    self.profilesArrived()
+                // Give @Query a moment to reflect newly imported records.
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(for: .milliseconds(500))
+                    guard let self, self.state == .restoringFromCloud else { return }
+                    guard let modelContext = self.restorationModelContext else { return }
+                    // Check if profiles exist now.
+                    let descriptor = FetchDescriptor<UserProfile>()
+                    let count = (try? modelContext.fetchCount(descriptor)) ?? 0
+                    if count > 0 {
+                        self.profilesArrived()
+                    }
                 }
             }
         }
@@ -162,5 +167,6 @@ final class LaunchRestorationCoordinator {
         }
         timeoutTask?.cancel()
         timeoutTask = nil
+        restorationModelContext = nil
     }
 }
